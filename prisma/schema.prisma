@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Kit {
+  id         String      @id @default(cuid())
+  name       String
+  team       String
+  type       String
+  imageUrl   String?
+  model3DUrl String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  logoUrl    String?
+  PlayerKit  PlayerKit[]
+}
+
+model Nation {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String   @unique
+  flag      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Player    Player[]
+}
+
+model Player {
+  id        String      @id @default(cuid())
+  name      String
+  surname   String?
+  nationId  String?
+  image     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  nation    Nation?     @relation(fields: [nationId], references: [id])
+  PlayerKit PlayerKit[]
+}
+
+model PlayerKit {
+  id        String   @id @default(cuid())
+  playerId  String
+  kitId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  kit       Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, kitId])
+}
