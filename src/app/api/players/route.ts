@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Funzione helper per generare un ID
+const generateId = () => {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 15);
+  return `${timestamp}${randomStr}`;
+};
+
 // GET /api/players - Ottieni tutti i giocatori
 export async function GET() {
   console.log('GET /api/players called');
   try {
     const players = await db.player.findMany({
       include: {
-        nation: true,
+        Nation: true,
         PlayerKit: {
           include: {
-            kit: true,
+            Kit: true,
           },
           orderBy: {
             createdAt: 'desc',
@@ -37,7 +44,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, surname, nationId, image } = body;
+    const { name, surname, nationId, image, biography } = body;
 
     if (!name || !surname) {
       return NextResponse.json(
@@ -64,13 +71,16 @@ export async function POST(request: NextRequest) {
 
     const player = await db.player.create({
       data: {
+        id: generateId(),
         name: name.trim(),
         surname: surname.trim(),
         nationId: nationId || null,
         image,
+        biography: biography || null,
+        updatedAt: new Date(),
       },
       include: {
-        nation: true,
+        Nation: true,
       },
     });
 

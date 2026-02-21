@@ -58,6 +58,7 @@ export async function PUT(
         imageUrl,
         model3DUrl,
         logoUrl,
+        updatedAt: new Date(),
       },
     });
 

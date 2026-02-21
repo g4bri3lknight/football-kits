@@ -56,19 +56,19 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-            <Lock className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-3 sm:p-4">
+      <Card className="w-full max-w-md sm:max-w-md shadow-2xl">
+        <CardHeader className="space-y-1 text-center pb-3 sm:pb-4">
+          <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+            <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl sm:text-2xl font-bold">Admin Login</CardTitle>
+          <CardDescription className="text-sm">
             Inserisci le tue credenziali per accedere al pannello di amministrazione
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
             {error && (
               <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -89,6 +89,7 @@ export default function AdminLoginPage() {
                   className="pl-10"
                   disabled={loading}
                   required
+                  suppressHydrationWarning
                 />
               </div>
             </div>
@@ -106,6 +107,7 @@ export default function AdminLoginPage() {
                   className="pl-10"
                   disabled={loading}
                   required
+                  suppressHydrationWarning
                 />
               </div>
             </div>

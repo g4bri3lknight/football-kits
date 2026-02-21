@@ -8,48 +8,49 @@ datasource db {
 }
 
 model Kit {
-  id         String      @id @default(cuid())
+  id         String      @id
   name       String
   team       String
   type       String
   imageUrl   String?
   model3DUrl String?
   createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  updatedAt  DateTime
   logoUrl    String?
   PlayerKit  PlayerKit[]
 }
 
 model Nation {
-  id        String   @id @default(cuid())
+  id        String   @id
   name      String   @unique
   code      String   @unique
   flag      String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime
   Player    Player[]
 }
 
 model Player {
-  id        String      @id @default(cuid())
+  id        String      @id
   name      String
   surname   String?
   nationId  String?
   image     String?
+  biography String?
   createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  nation    Nation?     @relation(fields: [nationId], references: [id])
+  updatedAt DateTime
+  Nation    Nation?     @relation(fields: [nationId], references: [id])
   PlayerKit PlayerKit[]
 }
 
 model PlayerKit {
-  id        String   @id @default(cuid())
+  id        String   @id
   playerId  String
   kitId     String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  kit       Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
-  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  updatedAt DateTime
+  Player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  Kit       Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, kitId])
 }

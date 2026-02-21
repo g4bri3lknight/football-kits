@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Funzione helper per generare un ID
+const generateId = () => {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 15);
+  return `${timestamp}${randomStr}`;
+};
+
 // GET /api/kits - Ottieni tutti i kit
 export async function GET() {
   try {
@@ -36,12 +43,14 @@ export async function POST(request: NextRequest) {
 
     const kit = await db.kit.create({
       data: {
+        id: generateId(),
         name,
         team,
         type,
         imageUrl,
         model3DUrl,
         logoUrl,
+        updatedAt: new Date(),
       },
     });
 

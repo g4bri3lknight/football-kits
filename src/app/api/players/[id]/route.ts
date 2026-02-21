@@ -1,46 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-// GET /api/players/[id] - Ottieni un giocatore specifico
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const player = await db.player.findUnique({
-      where: { id },
-      include: {
-        nation: true,
-        PlayerKit: {
-          include: {
-            kit: true,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-      },
-    });
-
-    if (!player) {
-      return NextResponse.json(
-        { error: 'Player not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(player);
-  } catch (error) {
-    console.error('Error fetching player:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch player' },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT /api/players/[id] - Aggiorna un giocatore
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -48,67 +8,85 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, surname, nationId, image } = body;
 
-    if (!name || !surname) {
-      return NextResponse.json(
-        { error: 'Nome e cognome sono obbligatori' },
-        {status: 400 }
-      );
-    }
+    console.log('PUT /api/players/[id] - Update request:', { id, body });
 
-    // Verifica se esiste già un player diverso con lo stesso nome, cognome e nazionalità
-    const existingPlayer = await db.player.findFirst({
-      where: {
-        name: name.trim(),
-        surname: surname.trim(),
-        nationId: nationId || null,
-        id: { not: id }, // Esclude il player che si sta modificando
-      },
-    });
-
-    if (existingPlayer) {
-      return NextResponse.json(
-        { error: 'Esiste già un giocatore con lo stesso nome, cognome e nazionalità' },
-        { status: 409 }
-      );
-    }
-
-    const player = await db.player.update({
+    // Check if player exists
+    const existingPlayer = await db.player.findUnique({
       where: { id },
-      data: {
-        name: name.trim(),
-        surname: surname.trim(),
-        nationId: nationId || null,
-        image,
-      },
+    });
+
+    if (!existingPlayer) {
+      console.log('Player not found with id:', id);
+      return NextResponse.json(
+        { error: 'Player not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update player - build data object explicitly
+    const data: any = {
+      ...(body.name !== undefined && { name: body.name }),
+      ...(body.surname !== undefined && { surname: body.surname }),
+      ...(body.nationId !== undefined && {
+        nationId: body.nationId === '' ? null : body.nationId,
+      }),
+      ...(body.image !== undefined && { image: body.image }),
+      ...(body.biography !== undefined && {
+        biography: body.biography === '' ? null : body.biography,
+      }),
+      updatedAt: new Date(),
+    };
+
+    console.log('Updating player with data:', data);
+
+    const updatedPlayer = await db.player.update({
+      where: { id },
+      data,
       include: {
-        nation: true,
+        Nation: true,
       },
     });
 
-    return NextResponse.json(player);
+    console.log('Player updated successfully:', updatedPlayer.id);
+    return NextResponse.json(updatedPlayer);
   } catch (error) {
     console.error('Error updating player:', error);
     return NextResponse.json(
       { error: 'Failed to update player' },
-      {status: 500 }
+      { status: 500 }
     );
   }
 }
 
-// DELETE /api/players/[id] - Elimina un giocatore
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+
+    // Check if player exists
+    const existingPlayer = await db.player.findUnique({
+      where: { id },
+    });
+
+    if (!existingPlayer) {
+      return NextResponse.json(
+        { error: 'Player not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete player (cascade will handle player-kit relationships)
     await db.player.delete({
       where: { id },
     });
 
-    return NextResponse.json({ message: 'Player deleted successfully' });
+    return NextResponse.json(
+      { message: 'Player deleted successfully' },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error deleting player:', error);
     return NextResponse.json(

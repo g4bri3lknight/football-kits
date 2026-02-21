@@ -19,8 +19,8 @@ const VIEWER_CONFIG = {
   camera: {
     initialDistance: 7,       // Distanza iniziale della camera
     fov: 40,                  // Campo visivo (Field of View)
-    minDistance: 3,           // Distanza minima zoom
-    maxDistance: 20,          // Distanza massima zoom
+    minDistance: 10,           // Distanza minima zoom
+    maxDistance: 50,          // Distanza massima zoom
   },
 
   // Angoli di rotazione (in radianti)
@@ -89,7 +89,7 @@ const VIEWER_CONFIG = {
 
   // Canvas
   canvas: {
-    height: '580px',
+    height: '400px',
     minHeight: '250px',
   },
 } as const;

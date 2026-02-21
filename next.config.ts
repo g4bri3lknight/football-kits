@@ -7,7 +7,17 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // Force restart for new Prisma schema
+  // Force rebuild - Feb 13
+  experimental: {
+    turbo: {
+      resolveExtensions: [
+        '.js',
+        '.jsx',
+        '.ts',
+        '.tsx',
+      ],
+    },
+  },
 };
 
 export default nextConfig;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile, access } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 

@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
 
   const handleAdminUpdate = () => {
     // Funzione callback per quando i dati vengono aggiornati
-    // Può essere usata per refreshare dati se necessario
+    // Può essere usata per aggiornare dati se necessario
     console.log('Data updated');
   };
 
@@ -88,17 +88,17 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
-                <ShieldCheck className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Admin Dashboard
                 </h1>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 hidden sm:block">
                   Football Kits Gallery
                 </p>
               </div>
@@ -109,17 +109,19 @@ export default function AdminDashboardPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => router.push('/')}
+                className="h-8 sm:h-9 px-2 sm:px-3"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Torna al sito
+                <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Torna al sito</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
+                className="h-8 sm:h-9 px-2 sm:px-3"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                <LogOut className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -127,13 +129,13 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <AdminPanel onUpdate={handleAdminUpdate} />
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 mt-auto">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-600 dark:text-gray-400">
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-3 sm:py-4 mt-auto">
+        <div className="container mx-auto px-3 sm:px-4 text-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
           © 2024 Football Kits Gallery - Admin Dashboard
         </div>
       </footer>
