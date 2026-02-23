@@ -320,7 +320,7 @@ export default function AssociationsTab({
                       onClick={() => setForm({ ...form, playerId: player.id })}
                     >
                       {player.image && (
-                        <img src={getImageUrl(player.image)} alt={player.name} className="w-8 h-8 rounded-full object-cover" />
+                        <img src={getImageUrl(player.image)} alt={player.name} className="w-8 h-8 rounded-lg object-cover ring-1 ring-border/50" />
                       )}
                       <div>
                         <div className="font-medium">{getPlayerDisplayName(player)}</div>

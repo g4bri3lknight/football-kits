@@ -66,6 +66,9 @@ export default function Home() {
   const [kitTeamFilter, setKitTeamFilter] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedKit, setSelectedKit] = useState<Kit | null>(null);
+  const [selectedKitPlayer, setSelectedKitPlayer] = useState<Player | null>(null);
+  const [currentKitIndex, setCurrentKitIndex] = useState<number>(0);
+  const [playerKitsList, setPlayerKitsList] = useState<PlayerKit[]>([]);
   const [logoLoaded, setLogoLoaded] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -114,8 +117,29 @@ export default function Home() {
     }
   };
 
-  const handleKitClick = (kit: Kit) => {
+  const handleKitClick = (kit: Kit, player: Player) => {
+    const kits = sortKitsBySeason(filterPlayerKits(player));
+    const index = kits.findIndex(pk => pk.Kit.id === kit.id);
     setSelectedKit(kit);
+    setSelectedKitPlayer(player);
+    setPlayerKitsList(kits);
+    setCurrentKitIndex(index >= 0 ? index : 0);
+  };
+
+  const navigateToPreviousKit = () => {
+    if (currentKitIndex > 0) {
+      const newIndex = currentKitIndex - 1;
+      setCurrentKitIndex(newIndex);
+      setSelectedKit(playerKitsList[newIndex].Kit);
+    }
+  };
+
+  const navigateToNextKit = () => {
+    if (currentKitIndex < playerKitsList.length - 1) {
+      const newIndex = currentKitIndex + 1;
+      setCurrentKitIndex(newIndex);
+      setSelectedKit(playerKitsList[newIndex].Kit);
+    }
   };
 
   // Funzione per filtrare i kit di un player
@@ -403,7 +427,7 @@ export default function Home() {
                                 key={playerKit.id}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleKitClick(playerKit.Kit);
+                                  handleKitClick(playerKit.Kit, player);
                                 }}
                                 className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer transition-colors group"
                               >
@@ -467,45 +491,129 @@ export default function Home() {
       )}
 
       {/* Kit Detail Dialog */}
-      <Dialog open={!!selectedKit} onOpenChange={() => setSelectedKit(null)}>
-        <DialogContent className=" w-[95vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] lg:h-[90vh] max-h-[95vh] sm:max-h-[95vh] overflow-hidden dialog-custom-color">
+      <Dialog open={!!selectedKit} onOpenChange={() => {
+        setSelectedKit(null);
+        setSelectedKitPlayer(null);
+        setPlayerKitsList([]);
+      }}>
+        <DialogContent className={`w-[95vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] overflow-hidden dialog-custom-color ${playerKitsList.length > 1 ? 'lg:h-[90vh] max-h-[95vh]' : 'lg:h-[85vh] max-h-[90vh]'}`}>
           <DialogHeader>
-            <DialogTitle className="text-2xl flex items-center gap-3">
-              {selectedKit?.logoUrl ? (
-                <div className="w-10 h-10 overflow-hidden flex-shrink-0">
-                  <img
-                    src={getImageUrl(selectedKit.logoUrl)}
-                    alt={`Logo ${selectedKit.team}`}
-                    className="w-full h-full object-contain p-1"
-                  />
-                </div>
-              ) : selectedKit?.imageUrl && (
-                <div className="w-10 h-10 overflow-hidden flex-shrink-0">
-                  <img
-                    src={getImageUrl(selectedKit.imageUrl)}
-                    alt={selectedKit.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+            <div className="flex items-center justify-between w-full gap-2">
+              {/* Kit precedente - solo se piu di un kit */}
+              {playerKitsList.length > 1 && currentKitIndex > 0 ? (() => {
+                const prevKit = playerKitsList[currentKitIndex - 1].Kit;
+                const truncatedName = prevKit.name.length > 8 ? prevKit.name.slice(0, 8) + '...' : prevKit.name;
+                return (
+                  <button
+                    onClick={navigateToPreviousKit}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                    title={prevKit.name}
+                  >
+                    {prevKit.logoUrl ? (
+                      <img
+                        src={getImageUrl(prevKit.logoUrl)}
+                        alt={prevKit.name}
+                        className="w-6 h-6 sm:w-7 sm:h-7 object-contain"
+                      />
+                    ) : prevKit.imageUrl ? (
+                      <img
+                        src={getImageUrl(prevKit.imageUrl)}
+                        alt={prevKit.name}
+                        className="w-6 h-6 sm:w-7 sm:h-7 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 bg-muted rounded flex items-center justify-center">
+                        <Shirt className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {truncatedName}
+                    </span>
+                  </button>
+                );
+              })() : (
+                <div className="w-[80px] sm:w-[100px] flex-shrink-0" />
               )}
-              {selectedKit?.name}
-              {selectedKit && (
 
-                <Badge className={getKitTypeColor(selectedKit.type) + " mt-1"} variant="secondary">
-                  {translateKitType(selectedKit.type)}
-                </Badge>
+              {/* Titolo centrato */}
+              <DialogTitle className="text-xl sm:text-2xl flex items-center gap-2 sm:gap-3 flex-1 justify-center flex-wrap">
+                {selectedKit?.logoUrl ? (
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden flex-shrink-0">
+                    <img
+                      src={getImageUrl(selectedKit.logoUrl)}
+                      alt={`Logo ${selectedKit.team}`}
+                      className="w-full h-full object-contain p-1"
+                    />
+                  </div>
+                ) : selectedKit?.imageUrl && (
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden flex-shrink-0">
+                    <img
+                      src={getImageUrl(selectedKit.imageUrl)}
+                      alt={selectedKit.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <span className="truncate max-w-[120px] sm:max-w-none">{selectedKit?.name}</span>
+                {selectedKit && (
+                  <Badge className={getKitTypeColor(selectedKit.type)} variant="secondary">
+                    {translateKitType(selectedKit.type)}
+                  </Badge>
+                )}
+              </DialogTitle>
 
+              {/* Kit successivo - solo se piu di un kit */}
+              {playerKitsList.length > 1 && currentKitIndex < playerKitsList.length - 1 ? (() => {
+                const nextKit = playerKitsList[currentKitIndex + 1].Kit;
+                const truncatedName = nextKit.name.length > 8 ? nextKit.name.slice(0, 8) + '...' : nextKit.name;
+                return (
+                  <button
+                    onClick={navigateToNextKit}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer mr-8"
+                    title={nextKit.name}
+                  >
+                    {nextKit.logoUrl ? (
+                      <img
+                        src={getImageUrl(nextKit.logoUrl)}
+                        alt={nextKit.name}
+                        className="w-6 h-6 sm:w-7 sm:h-7 object-contain"
+                      />
+                    ) : nextKit.imageUrl ? (
+                      <img
+                        src={getImageUrl(nextKit.imageUrl)}
+                        alt={nextKit.name}
+                        className="w-6 h-6 sm:w-7 sm:h-7 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 bg-muted rounded flex items-center justify-center">
+                        <Shirt className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {truncatedName}
+                    </span>
+                  </button>
+                );
+              })() : (
+                <div className="w-[80px] sm:w-[100px] flex-shrink-0 mr-8" />
               )}
-            </DialogTitle>
+            </div>
 
+            {/* Indicatore di posizione */}
+            {playerKitsList.length > 1 && (
+              <div className="text-center text-sm text-muted-foreground mt-1">
+                {currentKitIndex + 1} / {playerKitsList.length}
+              </div>
+            )}
           </DialogHeader>
+
           <Tabs defaultValue="image" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="image">Immagine</TabsTrigger>
-              <TabsTrigger value="3d">Modello 3D</TabsTrigger>
+              <TabsTrigger value="image">Image</TabsTrigger>
+              <TabsTrigger value="3d">3D Model</TabsTrigger>
             </TabsList>
             <TabsContent value="image" className="mt-0">
-              <div className="rounded-lg overflow-hidden bg-muted flex items-center justify-center h-[250px] sm:h-[580px]">
+              <div className="rounded-lg overflow-hidden bg-muted flex items-center justify-center h-[250px] sm:h-[480px] lg:h-[500px]">
                 {selectedKit?.imageUrl ? (
                   <img
                     src={getImageUrl(selectedKit.imageUrl)}
@@ -523,7 +631,7 @@ export default function Home() {
               </div>
             </TabsContent>
             <TabsContent value="3d" className="mt-0">
-              <div className="rounded-lg bg-muted h-[250px] sm:h-[580px]">
+              <div className="rounded-lg bg-muted h-[250px] sm:h-[480px] lg:h-[500px]">
                 <KitViewer3D
                   modelUrl={selectedKit?.model3DUrl}
                   maxZoom={20}
@@ -534,8 +642,18 @@ export default function Home() {
               </div>
             </TabsContent>
           </Tabs>
-          <div className="flex justify-end mt-4 pt-4 border-t">
-            <Button variant="outline" onClick={() => setSelectedKit(null)}>
+
+          <div className="flex justify-between items-center pt-3 border-t">
+            <div className="text-base font-medium">
+              {selectedKitPlayer && (
+                <span>Giocatore: <strong className="text-lg">{getPlayerDisplayName(selectedKitPlayer)}</strong></span>
+              )}
+            </div>
+            <Button variant="outline" onClick={() => {
+              setSelectedKit(null);
+              setSelectedKitPlayer(null);
+              setPlayerKitsList([]);
+            }}>
               Chiudi
             </Button>
           </div>

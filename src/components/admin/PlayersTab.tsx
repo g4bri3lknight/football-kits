@@ -238,7 +238,7 @@ export default function PlayersTab({
                     </TableCell>
                     <TableCell>
                       {player.image ? (
-                        <img src={getImageUrl(player.image)} alt={player.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" />
+                        <img src={getImageUrl(player.image)} alt={player.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover ring-1 ring-border/50" />
                       ) : (
                         <span className="text-gray-400 text-sm">-</span>
                       )}
