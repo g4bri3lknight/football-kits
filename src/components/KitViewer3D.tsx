@@ -350,6 +350,7 @@ export default function KitViewer3D({
       onDoubleClick={handleDoubleClick}
     >
       <Canvas
+        key={modelUrl}
         camera={{ position: [0, 0, initialZoom], fov: VIEWER_CONFIG.camera.fov }}
         gl={{
           antialias: true,
