@@ -634,9 +634,6 @@ export default function Home() {
               <div className="rounded-lg bg-muted h-[250px] sm:h-[480px] lg:h-[500px]">
                 <KitViewer3D
                   modelUrl={selectedKit?.model3DUrl}
-                  maxZoom={20}
-                  minZoom={3.2}
-                  enablePan={true}
                   className="h-full"
                 />
               </div>

@@ -13,14 +13,14 @@ import { Shirt } from 'lucide-react';
 // ============================================================================
 const VIEWER_CONFIG = {
   // Posizione del modello [X, Y, Z]
-  modelPosition: { x: 0, y: 0, z: 0 },
+  modelPosition: { x: 0, y: 0.5, z: 0 },
 
   // Configurazione Camera
   camera: {
     initialDistance: 7,       // Distanza iniziale della camera
-    fov: 40,                  // Campo visivo (Field of View)
-    minDistance: 3,           // Distanza minima zoom
-    maxDistance: 20,          // Distanza massima zoom
+    fov: 50,                  // Campo visivo (Field of View)
+    minDistance: 3.5,           // Distanza minima zoom
+    maxDistance: 7,          // Distanza massima zoom
   },
 
   // Angoli di rotazione (in radianti)
@@ -79,7 +79,7 @@ const VIEWER_CONFIG = {
 
   // Ombre
   shadows: {
-    position: [0, -2.45, 0],    // Posizione piano ombre
+    position: [0, -2, 0],    // Posizione piano ombre
     opacity: 0.5,           // Opacità ombra
     scale: 10,               // Dimensione ombra
     blur: 2,                 // Sfocatura ombra
