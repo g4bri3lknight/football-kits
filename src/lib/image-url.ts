@@ -12,8 +12,6 @@ export function getImageUrl(url: string | null | undefined): string {
   }
 
   // Per URL relativi, usa l'endpoint API per servire le immagini
-  // Questo garantisce che le immagini funzionino sempre in produzione
-  // Esempio: /players/image.png → /api/images/players/image.png
   const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
   return `/api/images/${cleanUrl}`;
 }

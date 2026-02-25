@@ -170,7 +170,8 @@
 
 
 :root {
-  --header-h: 210px;
+  /* Valore di default, verrà sovrascritto da JavaScript */
+  --header-h: 200px;
   --footer-h: 45px;
 }
 
