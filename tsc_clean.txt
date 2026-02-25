@@ -1,0 +1,28 @@
+examples/websocket/frontend.tsx(4,20): error TS2307: Cannot find module 'socket.io-client' or its corresponding type declarations.
+examples/websocket/server.ts(2,24): error TS2307: Cannot find module 'socket.io' or its corresponding type declarations.
+next.config.ts(12,5): error TS2353: Object literal may only specify known properties, and 'turbo' does not exist in type 'ExperimentalConfig'.
+prisma/seed-nations.ts(185,7): error TS2322: Type '{ name: string; code: string; }' is not assignable to type '(Without<NationCreateInput, NationUncheckedCreateInput> & NationUncheckedCreateInput) | (Without<...> & NationCreateInput)'.
+  Type '{ name: string; code: string; }' is not assignable to type 'Without<NationUncheckedCreateInput, NationCreateInput> & NationCreateInput'.
+    Type '{ name: string; code: string; }' is missing the following properties from type 'NationCreateInput': id, updatedAt
+scripts/analyze-published-site.ts(1,17): error TS2307: Cannot find module 'z-ai-web-dev-sdk' or its corresponding type declarations.
+src/app/api/kits/[id]/route.ts(16,13): error TS2561: Object literal may only specify known properties, but 'player' does not exist in type 'PlayerKitInclude<DefaultArgs>'. Did you mean to write 'Player'?
+src/app/api/nations/route.ts(239,43): error TS2322: Type '{ OR: ({ name: { contains: string; mode: string; }; } | { code: { contains: string; mode: string; }; })[]; } | undefined' is not assignable to type 'NationWhereInput | undefined'.
+  Type '{ OR: ({ name: { contains: string; mode: string; }; } | { code: { contains: string; mode: string; }; })[]; }' is not assignable to type 'NationWhereInput'.
+    Types of property 'OR' are incompatible.
+      Type '({ name: { contains: string; mode: string; }; } | { code: { contains: string; mode: string; }; })[]' is not assignable to type 'NationWhereInput[]'.
+        Type '{ name: { contains: string; mode: string; }; } | { code: { contains: string; mode: string; }; }' is not assignable to type 'NationWhereInput'.
+          Type '{ name: { contains: string; mode: string; }; }' is not assignable to type 'NationWhereInput'.
+            Types of property 'name' are incompatible.
+              Object literal may only specify known properties, and 'mode' does not exist in type 'StringFilter<"Nation">'.
+src/app/api/nations/route.ts(310,24): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/api/nations/route.ts(311,24): error TS2339: Property 'code' does not exist on type 'never'.
+src/app/api/nations/route.ts(326,20): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/api/nations/route.ts(327,20): error TS2339: Property 'code' does not exist on type 'never'.
+src/app/api/nations/route.ts(328,20): error TS2339: Property 'flag' does not exist on type 'never'.
+src/app/api/seed/route.ts(187,9): error TS2322: Type '{ name: string; code: string; }' is not assignable to type '(Without<NationCreateInput, NationUncheckedCreateInput> & NationUncheckedCreateInput) | (Without<...> & NationCreateInput)'.
+  Type '{ name: string; code: string; }' is not assignable to type 'Without<NationUncheckedCreateInput, NationCreateInput> & NationCreateInput'.
+    Type '{ name: string; code: string; }' is missing the following properties from type 'NationCreateInput': id, updatedAt
+src/components/admin/AssociationsTab.tsx(296,45): error TS2345: Argument of type 'Player | { name: string; }' is not assignable to parameter of type 'Player'.
+  Property 'id' is missing in type '{ name: string; }' but required in type 'Player'.
+src/components/admin/AssociationsTab.tsx(380,70): error TS2322: Type '{ children: string; className: string; size: string; }' is not assignable to type 'IntrinsicAttributes & ClassAttributes<HTMLSpanElement> & HTMLAttributes<HTMLSpanElement> & VariantProps<...> & { ...; }'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & ClassAttributes<HTMLSpanElement> & HTMLAttributes<HTMLSpanElement> & VariantProps<...> & { ...; }'.
