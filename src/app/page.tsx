@@ -36,6 +36,7 @@ export default function Home() {
   // UI states
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState<string>('');
   
   // Dialog states
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -60,7 +61,22 @@ export default function Home() {
 
   useEffect(() => {
     fetchData();
+    loadRandomBackground();
   }, []);
+
+  // Load random background image
+  const loadRandomBackground = async () => {
+    try {
+      const res = await fetch('/api/backgrounds');
+      const data = await res.json();
+      if (data.images && data.images.length > 0) {
+        const randomIndex = Math.floor(Math.random() * data.images.length);
+        setBackgroundImage(`/background/${data.images[randomIndex]}`);
+      }
+    } catch (error) {
+      console.error('Error loading background:', error);
+    }
+  };
 
   // Filter players
   useEffect(() => {
@@ -260,7 +276,7 @@ export default function Home() {
           <SheetHeader>
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
-          <div className="mt-6 flex flex-col gap-4">
+          <div className="mt-6 flex flex-col gap-4 px-2">
             {/* Admin Button */}
             <Button
               variant="outline"
@@ -277,7 +293,7 @@ export default function Home() {
             <Separator />
 
             {/* Filters */}
-            <div className="space-y-4">
+            <div className="space-y-4 p-2">
               <h3 className="font-semibold text-sm text-muted-foreground">Filtri</h3>
 
               {/* Search player */}
@@ -349,7 +365,10 @@ export default function Home() {
       </Sheet>
 
       {/* Main Content */}
-      <div className="bg-fixed">
+      <div 
+        className="bg-fixed"
+        style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
+      >
         <div ref={containerRef} className="content">
           <main className="flex-1 container mx-auto px-4 py-6">
             {loading ? (

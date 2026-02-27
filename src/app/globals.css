@@ -200,11 +200,9 @@ body {
   right: 0;
   bottom: var(--footer-h);
   z-index: 0;
-  background: url("../../public/upload/home-test.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: 100% 100%;
-  /*background-size: cover;*/
 }
 
 /* content: unico elemento che scorre */
