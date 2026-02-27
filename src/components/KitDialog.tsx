@@ -97,11 +97,6 @@ export function KitDialog({
                 </div>
               )}
               <span className="truncate max-w-[120px] sm:max-w-none">{selectedKit?.name}</span>
-              {selectedKit && (
-                <Badge className={getKitTypeColor(selectedKit.type)} variant="secondary">
-                  {translateKitType(selectedKit.type)}
-                </Badge>
-              )}
             </DialogTitle>
 
             {/* Kit successivo */}
@@ -179,9 +174,16 @@ export function KitDialog({
         </Tabs>
 
         <div className="flex justify-between items-center pt-3 border-t">
-          <div className="text-base font-medium">
+          <div className="flex items-center gap-2">
             {selectedKitPlayer && (
-              <span>Giocatore: <strong className="text-lg">{getPlayerDisplayName(selectedKitPlayer)}</strong></span>
+              <>
+                {selectedKit && (
+                  <Badge className={getKitTypeColor(selectedKit.type)} variant="secondary">
+                    {translateKitType(selectedKit.type)}
+                  </Badge>
+                )}
+                <strong className="text-lg">{getPlayerDisplayName(selectedKitPlayer)}</strong>
+              </>
             )}
           </div>
           <Button variant="outline" onClick={onClose}>
