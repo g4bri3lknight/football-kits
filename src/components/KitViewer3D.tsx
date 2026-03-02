@@ -1,8 +1,8 @@
 'use client';
 
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, ContactShadows } from '@react-three/drei';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { getImageUrl } from '@/lib/image-url';
@@ -48,13 +48,15 @@ function Model({ url }: { url: string }) {
   );
 }
 
-// Componente per resettare camera e gestire cursore
-function CameraReset({ 
+// Componente per controlli camera con auto-rotazione
+function CameraController({ 
   resetKey,
+  autoRotate,
   onDragStart,
   onDragEnd
 }: { 
   resetKey: number;
+  autoRotate: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
 }) {
@@ -70,7 +72,14 @@ function CameraReset({
     }
   }, [camera, resetKey]);
 
-  // Gestisci eventi drag per il cursore
+  // Aggiorna autoRotate dinamicamente
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = autoRotate;
+    }
+  }, [autoRotate]);
+
+  // Gestisci eventi drag
   useEffect(() => {
     const controls = controlsRef.current;
     if (!controls) return;
@@ -87,6 +96,13 @@ function CameraReset({
     };
   }, [onDragStart, onDragEnd]);
 
+  // Update loop per damping
+  useFrame(() => {
+    if (controlsRef.current) {
+      controlsRef.current.update();
+    }
+  });
+
   return (
     <OrbitControls
       ref={controlsRef}
@@ -100,6 +116,8 @@ function CameraReset({
       panSpeed={VIEWER_CONFIG.controls.panSpeed}
       enableDamping={VIEWER_CONFIG.controls.enableDamping}
       dampingFactor={VIEWER_CONFIG.controls.dampingFactor}
+      autoRotate={autoRotate}
+      autoRotateSpeed={VIEWER_CONFIG.autoRotate.speed}
     />
   );
 }
@@ -108,11 +126,13 @@ function CameraReset({
 function Scene({ 
   modelUrl, 
   resetKey,
+  autoRotate,
   onDragStart,
   onDragEnd
 }: { 
   modelUrl: string; 
   resetKey: number;
+  autoRotate: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
 }) {
@@ -150,9 +170,10 @@ function Scene({
         resolution={VIEWER_CONFIG.shadows.resolution}
       />
 
-      {/* Controlli con reset */}
-      <CameraReset 
+      {/* Controlli camera */}
+      <CameraController 
         resetKey={resetKey} 
+        autoRotate={autoRotate}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       />
@@ -166,9 +187,20 @@ export default function KitViewer3D({
 }: KitViewer3DProps & { initialZoom?: number }) {
   const [resetKey, setResetKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(VIEWER_CONFIG.autoRotate.enabled);
 
-  const handleDragStart = () => setIsDragging(true);
-  const handleDragEnd = () => setIsDragging(false);
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+    setAutoRotate(false);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    // Riattiva auto-rotazione dopo il delay configurato
+    setTimeout(() => {
+      setAutoRotate(VIEWER_CONFIG.autoRotate.enabled);
+    }, VIEWER_CONFIG.autoRotate.resumeDelay);
+  }, []);
 
   if (!modelUrl) {
     return (
@@ -198,6 +230,7 @@ export default function KitViewer3D({
         <Scene 
           modelUrl={modelUrl} 
           resetKey={resetKey}
+          autoRotate={autoRotate}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         />

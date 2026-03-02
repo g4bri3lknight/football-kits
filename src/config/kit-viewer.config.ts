@@ -31,6 +31,13 @@ export const KIT_VIEWER_CONFIG = {
     enablePan: true,         // Abilita pan (spostamento)
   },
 
+  // Auto-rotazione
+  autoRotate: {
+    enabled: true,           // Abilita rotazione automatica
+    speed: 1.5,              // Velocità rotazione automatica
+    resumeDelay: 2000,       // Millisecondi prima di riattivare dopo interazione
+  },
+
   // Configurazione tasti mouse
   mouseButtons: {
     LEFT: 0,   // ROTATE - Tasto sinistro ruota la camera
