@@ -48,8 +48,16 @@ function Model({ url }: { url: string }) {
   );
 }
 
-// Componente per resettare camera
-function CameraReset({ resetKey }: { resetKey: number }) {
+// Componente per resettare camera e gestire cursore
+function CameraReset({ 
+  resetKey,
+  onDragStart,
+  onDragEnd
+}: { 
+  resetKey: number;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+}) {
   const { camera } = useThree();
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
@@ -61,6 +69,23 @@ function CameraReset({ resetKey }: { resetKey: number }) {
       controlsRef.current.reset();
     }
   }, [camera, resetKey]);
+
+  // Gestisci eventi drag per il cursore
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    const handleStart = () => onDragStart();
+    const handleEnd = () => onDragEnd();
+
+    controls.addEventListener('start', handleStart);
+    controls.addEventListener('end', handleEnd);
+
+    return () => {
+      controls.removeEventListener('start', handleStart);
+      controls.removeEventListener('end', handleEnd);
+    };
+  }, [onDragStart, onDragEnd]);
 
   return (
     <OrbitControls
@@ -80,7 +105,17 @@ function CameraReset({ resetKey }: { resetKey: number }) {
 }
 
 // Scene con illuminazione
-function Scene({ modelUrl, resetKey }: { modelUrl: string; resetKey: number }) {
+function Scene({ 
+  modelUrl, 
+  resetKey,
+  onDragStart,
+  onDragEnd
+}: { 
+  modelUrl: string; 
+  resetKey: number;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+}) {
   return (
     <>
       {/* Illuminazione */}
@@ -116,7 +151,11 @@ function Scene({ modelUrl, resetKey }: { modelUrl: string; resetKey: number }) {
       />
 
       {/* Controlli con reset */}
-      <CameraReset resetKey={resetKey} />
+      <CameraReset 
+        resetKey={resetKey} 
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+      />
     </>
   );
 }
@@ -126,6 +165,10 @@ export default function KitViewer3D({
   className = '',
 }: KitViewer3DProps & { initialZoom?: number }) {
   const [resetKey, setResetKey] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragStart = () => setIsDragging(true);
+  const handleDragEnd = () => setIsDragging(false);
 
   if (!modelUrl) {
     return (
@@ -142,6 +185,7 @@ export default function KitViewer3D({
     <div 
       className={`w-full h-full ${className}`}
       onDoubleClick={() => setResetKey(k => k + 1)}
+      style={{ cursor: isDragging ? 'none' : 'grab' }}
     >
       <Canvas
         key={modelUrl}
@@ -151,7 +195,12 @@ export default function KitViewer3D({
         }}
         gl={{ antialias: true, alpha: true }}
       >
-        <Scene modelUrl={modelUrl} resetKey={resetKey} />
+        <Scene 
+          modelUrl={modelUrl} 
+          resetKey={resetKey}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        />
       </Canvas>
     </div>
   );

@@ -79,23 +79,6 @@ export function KitDialog({
 
             {/* Titolo centrato */}
             <DialogTitle className="text-xl sm:text-2xl flex items-center gap-2 sm:gap-3 flex-1 justify-center flex-wrap">
-              {selectedKit?.logoUrl ? (
-                <div className="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden flex-shrink-0">
-                  <img
-                    src={getImageUrl(selectedKit.logoUrl)}
-                    alt={`Logo ${selectedKit.team}`}
-                    className="w-full h-full object-contain p-1"
-                  />
-                </div>
-              ) : selectedKit?.imageUrl && (
-                <div className="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden flex-shrink-0">
-                  <img
-                    src={getImageUrl(selectedKit.imageUrl)}
-                    alt={selectedKit.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
               <span className="truncate max-w-[120px] sm:max-w-none">{selectedKit?.name}</span>
             </DialogTitle>
 
