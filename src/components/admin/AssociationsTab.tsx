@@ -293,7 +293,7 @@ export default function AssociationsTab({
                 {form.playerId && (
                   <div className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
                     Giocatore selezionato: <strong>
-                      {getPlayerDisplayName(players.find(p => p.id === form.playerId) || { name: '' })}
+                      {getPlayerDisplayName(players.find(p => p.id === form.playerId)!)}
                     </strong>
                   </div>
                 )}
@@ -377,7 +377,7 @@ export default function AssociationsTab({
                       )}
                       <div className="flex-1">
                         <div className="font-medium">{kit.name} - {kit.team}</div>
-                        <Badge className={getKitTypeColor(kit.type)} size="sm">
+                        <Badge className={`${getKitTypeColor(kit.type)} text-xs`}>
                           {translateKitType(kit.type)}
                         </Badge>
                       </div>

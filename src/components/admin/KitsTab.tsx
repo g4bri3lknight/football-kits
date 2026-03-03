@@ -65,6 +65,20 @@ interface KitForm {
   imageUrl: string;
   model3DUrl: string;
   logoUrl: string;
+  // Detail images
+  detail1Url: string;
+  detail2Url: string;
+  detail3Url: string;
+  detail4Url: string;
+  detail5Url: string;
+  detail6Url: string;
+  // Detail labels
+  detail1Label: string;
+  detail2Label: string;
+  detail3Label: string;
+  detail4Label: string;
+  detail5Label: string;
+  detail6Label: string;
 }
 
 export default function KitsTab({
@@ -86,6 +100,18 @@ export default function KitsTab({
     imageUrl: '',
     model3DUrl: '',
     logoUrl: '',
+    detail1Url: '',
+    detail2Url: '',
+    detail3Url: '',
+    detail4Url: '',
+    detail5Url: '',
+    detail6Url: '',
+    detail1Label: '',
+    detail2Label: '',
+    detail3Label: '',
+    detail4Label: '',
+    detail5Label: '',
+    detail6Label: '',
   });
 
   const filteredKits = kits.filter(kit =>
@@ -96,7 +122,26 @@ export default function KitsTab({
 
   const handleOpenNewDialog = () => {
     setEditingKit(null);
-    setForm({ name: '', team: '', type: 'home', imageUrl: '', model3DUrl: '', logoUrl: '' });
+    setForm({
+      name: '',
+      team: '',
+      type: 'home',
+      imageUrl: '',
+      model3DUrl: '',
+      logoUrl: '',
+      detail1Url: '',
+      detail2Url: '',
+      detail3Url: '',
+      detail4Url: '',
+      detail5Url: '',
+      detail6Url: '',
+      detail1Label: '',
+      detail2Label: '',
+      detail3Label: '',
+      detail4Label: '',
+      detail5Label: '',
+      detail6Label: '',
+    });
     setDialogOpen(true);
   };
 
@@ -109,13 +154,44 @@ export default function KitsTab({
       imageUrl: kit.imageUrl || '',
       model3DUrl: kit.model3DUrl || '',
       logoUrl: kit.logoUrl || '',
+      detail1Url: kit.detail1Url || '',
+      detail2Url: kit.detail2Url || '',
+      detail3Url: kit.detail3Url || '',
+      detail4Url: kit.detail4Url || '',
+      detail5Url: kit.detail5Url || '',
+      detail6Url: kit.detail6Url || '',
+      detail1Label: kit.detail1Label || '',
+      detail2Label: kit.detail2Label || '',
+      detail3Label: kit.detail3Label || '',
+      detail4Label: kit.detail4Label || '',
+      detail5Label: kit.detail5Label || '',
+      detail6Label: kit.detail6Label || '',
     });
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setEditingKit(null);
-    setForm({ name: '', team: '', type: 'home', imageUrl: '', model3DUrl: '', logoUrl: '' });
+    setForm({
+      name: '',
+      team: '',
+      type: 'home',
+      imageUrl: '',
+      model3DUrl: '',
+      logoUrl: '',
+      detail1Url: '',
+      detail2Url: '',
+      detail3Url: '',
+      detail4Url: '',
+      detail5Url: '',
+      detail6Url: '',
+      detail1Label: '',
+      detail2Label: '',
+      detail3Label: '',
+      detail4Label: '',
+      detail5Label: '',
+      detail6Label: '',
+    });
     setDialogOpen(false);
   };
 
@@ -143,7 +219,7 @@ export default function KitsTab({
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    field: 'imageUrl' | 'logoUrl' | 'model3DUrl',
+    field: 'imageUrl' | 'logoUrl' | 'model3DUrl' | 'detail1Url' | 'detail2Url' | 'detail3Url' | 'detail4Url' | 'detail5Url' | 'detail6Url',
     folder: string
   ) => {
     const file = e.target.files?.[0];
@@ -414,6 +490,149 @@ export default function KitsTab({
                 )}
               </div>
             </div>
+            
+            {/* Detail Images Section */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold mb-3">Immagini Dettagli</h4>
+              <p className="text-xs text-muted-foreground mb-4">
+                Carica le immagini dei dettagli del kit (colletto, logo, guanti, calzini, ecc.)
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Detail 1 */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Dettaglio 1 (Sinistra alto)</Label>
+                  <Input
+                    type="text"
+                    placeholder="Es: Colletto"
+                    value={form.detail1Label}
+                    onChange={(e) => setForm({ ...form, detail1Label: e.target.value })}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'detail1Url', 'details')}
+                    disabled={uploading}
+                    className="h-8 text-xs"
+                  />
+                  {form.detail1Url && (
+                    <img src={getImageUrl(form.detail1Url)} alt="Detail 1" className="w-16 h-16 object-cover rounded" />
+                  )}
+                </div>
+                
+                {/* Detail 2 */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Dettaglio 2 (Sinistra centro)</Label>
+                  <Input
+                    type="text"
+                    placeholder="Es: Logo squadra"
+                    value={form.detail2Label}
+                    onChange={(e) => setForm({ ...form, detail2Label: e.target.value })}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'detail2Url', 'details')}
+                    disabled={uploading}
+                    className="h-8 text-xs"
+                  />
+                  {form.detail2Url && (
+                    <img src={getImageUrl(form.detail2Url)} alt="Detail 2" className="w-16 h-16 object-cover rounded" />
+                  )}
+                </div>
+                
+                {/* Detail 3 */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Dettaglio 3 (Sinistra basso)</Label>
+                  <Input
+                    type="text"
+                    placeholder="Es: Maniche"
+                    value={form.detail3Label}
+                    onChange={(e) => setForm({ ...form, detail3Label: e.target.value })}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'detail3Url', 'details')}
+                    disabled={uploading}
+                    className="h-8 text-xs"
+                  />
+                  {form.detail3Url && (
+                    <img src={getImageUrl(form.detail3Url)} alt="Detail 3" className="w-16 h-16 object-cover rounded" />
+                  )}
+                </div>
+                
+                {/* Detail 4 */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Dettaglio 4 (Destra alto)</Label>
+                  <Input
+                    type="text"
+                    placeholder="Es: Guanti"
+                    value={form.detail4Label}
+                    onChange={(e) => setForm({ ...form, detail4Label: e.target.value })}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'detail4Url', 'details')}
+                    disabled={uploading}
+                    className="h-8 text-xs"
+                  />
+                  {form.detail4Url && (
+                    <img src={getImageUrl(form.detail4Url)} alt="Detail 4" className="w-16 h-16 object-cover rounded" />
+                  )}
+                </div>
+                
+                {/* Detail 5 */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Dettaglio 5 (Destra centro)</Label>
+                  <Input
+                    type="text"
+                    placeholder="Es: Calzini"
+                    value={form.detail5Label}
+                    onChange={(e) => setForm({ ...form, detail5Label: e.target.value })}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'detail5Url', 'details')}
+                    disabled={uploading}
+                    className="h-8 text-xs"
+                  />
+                  {form.detail5Url && (
+                    <img src={getImageUrl(form.detail5Url)} alt="Detail 5" className="w-16 h-16 object-cover rounded" />
+                  )}
+                </div>
+                
+                {/* Detail 6 */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Dettaglio 6 (Destra basso)</Label>
+                  <Input
+                    type="text"
+                    placeholder="Es: Pantaloncini"
+                    value={form.detail6Label}
+                    onChange={(e) => setForm({ ...form, detail6Label: e.target.value })}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'detail6Url', 'details')}
+                    disabled={uploading}
+                    className="h-8 text-xs"
+                  />
+                  {form.detail6Url && (
+                    <img src={getImageUrl(form.detail6Url)} alt="Detail 6" className="w-16 h-16 object-cover rounded" />
+                  )}
+                </div>
+              </div>
+            </div>
+            
             {(form.imageUrl || form.logoUrl) && (
               <div className="flex gap-4 mt-4">
                 {form.imageUrl && (

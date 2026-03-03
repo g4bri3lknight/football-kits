@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Shirt } from 'lucide-react';
 import KitViewer3D from '@/components/KitViewer3D';
 import { getKitTypeColor, translateKitType, getPlayerDisplayName } from '@/lib/player-utils';
+import { KIT_DETAIL_IMAGE_CONFIG } from '@/config/kit-viewer.config';
 
 interface KitDialogProps {
   selectedKit: Kit | null;
@@ -129,19 +130,142 @@ export function KitDialog({
             <TabsTrigger value="3d">3D Model</TabsTrigger>
           </TabsList>
           <TabsContent value="image" className="mt-0">
-            <div className="rounded-lg overflow-hidden bg-muted flex items-center justify-center h-[250px] sm:h-[480px] lg:h-[500px]">
+            <div className="rounded-lg bg-muted p-2 sm:p-4 min-h-[280px] sm:min-h-[480px] lg:min-h-[500px]">
               {selectedKit?.imageUrl ? (
-                <img
-                  src={getImageUrl(selectedKit.imageUrl)}
-                  alt={selectedKit.name}
-                  className="max-w-full max-h-full object-contain"
-                />
+                <div className="grid grid-cols-5 gap-2 sm:gap-3 lg:gap-5 h-full">
+                  {/* Left detail images */}
+                  <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
+                    {[ 
+                      { url: selectedKit.detail1Url, label: selectedKit.detail1Label },
+                      { url: selectedKit.detail2Url, label: selectedKit.detail2Label },
+                      { url: selectedKit.detail3Url, label: selectedKit.detail3Label },
+                    ].map((detail, index) => (
+                      <div key={index} className="flex-1 min-h-0 relative group">
+                        <div 
+                          className={`absolute inset-0 rounded-lg bg-background border-2 flex items-center justify-center transition-all overflow-hidden ${detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'}`}
+                          style={{
+                            transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (detail.url) {
+                              e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                        >
+                          {detail.url ? (
+                            <>
+                              <img
+                                src={getImageUrl(detail.url)}
+                                alt={detail.label || `Dettaglio ${index + 1}`}
+                                className="max-w-full max-h-full object-contain p-1"
+                              />
+                              {detail.label && (
+                                <div 
+                                  className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg transition-transform"
+                                  style={{
+                                    transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                                  }}
+                                >
+                                  <p 
+                                    className="text-center text-foreground truncate transition-all"
+                                    style={{
+                                      fontSize: KIT_DETAIL_IMAGE_CONFIG.label.baseSize.mobile,
+                                      transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                                    }}
+                                  >
+                                    {detail.label}
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                              <Shirt className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Central main image */}
+                  <div className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-background border border-border">
+                    <img
+                      src={getImageUrl(selectedKit.imageUrl)}
+                      alt={selectedKit.name}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                  
+                  {/* Right detail images */}
+                  <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
+                    {[ 
+                      { url: selectedKit.detail4Url, label: selectedKit.detail4Label },
+                      { url: selectedKit.detail5Url, label: selectedKit.detail5Label },
+                      { url: selectedKit.detail6Url, label: selectedKit.detail6Label },
+                    ].map((detail, index) => (
+                      <div key={index} className="flex-1 min-h-0 relative group">
+                        <div 
+                          className={`absolute inset-0 rounded-lg bg-background border-2 flex items-center justify-center transition-all overflow-hidden ${detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'}`}
+                          style={{
+                            transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (detail.url) {
+                              e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                        >
+                          {detail.url ? (
+                            <>
+                              <img
+                                src={getImageUrl(detail.url)}
+                                alt={detail.label || `Dettaglio ${index + 4}`}
+                                className="max-w-full max-h-full object-contain p-1"
+                              />
+                              {detail.label && (
+                                <div 
+                                  className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg transition-transform"
+                                  style={{
+                                    transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                                  }}
+                                >
+                                  <p 
+                                    className="text-center text-foreground truncate transition-all"
+                                    style={{
+                                      fontSize: KIT_DETAIL_IMAGE_CONFIG.label.baseSize.mobile,
+                                      transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                                    }}
+                                  >
+                                    {detail.label}
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                              <Shirt className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ) : (
-                <div className="text-center p-8">
-                  <Shirt className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    Nessuna immagine presente
-                  </p>
+                <div className="text-center p-8 h-full flex items-center justify-center">
+                  <div>
+                    <Shirt className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      Nessuna immagine presente
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

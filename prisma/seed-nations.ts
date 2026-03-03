@@ -2,6 +2,12 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+const generateId = () => {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 15);
+  return `${timestamp}${randomStr}`;
+};
+
 const nations = [
   { name: 'Afghanistan', code: 'AF' },
   { name: 'Albania', code: 'AL' },
@@ -176,6 +182,8 @@ const nations = [
 ]
 
 async function main() {
+  console.log('Deleting existing nations...')
+  await prisma.nation.deleteMany({})
   console.log('Seeding nations...')
 
   for (const nation of nations) {
@@ -183,8 +191,10 @@ async function main() {
       where: { code: nation.code },
       update: {},
       create: {
+        id: generateId(),
         name: nation.name,
         code: nation.code,
+        updatedAt: new Date(),
       },
     })
   }

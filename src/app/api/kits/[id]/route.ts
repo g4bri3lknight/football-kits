@@ -13,7 +13,7 @@ export async function GET(
       include: {
         PlayerKit: {
           include: {
-            player: true,
+            Player: true,
           },
           orderBy: {
             createdAt: 'desc',
@@ -47,17 +47,51 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, team, type, imageUrl, model3DUrl, logoUrl } = body;
+    console.log('Update kit request body:', JSON.stringify(body, null, 2));
+    
+    const {
+      name,
+      team,
+      type,
+      imageUrl,
+      model3DUrl,
+      logoUrl,
+      detail1Url,
+      detail2Url,
+      detail3Url,
+      detail4Url,
+      detail5Url,
+      detail6Url,
+      detail1Label,
+      detail2Label,
+      detail3Label,
+      detail4Label,
+      detail5Label,
+      detail6Label,
+    } = body;
 
+    // Convert empty strings to null for optional fields
     const kit = await db.kit.update({
       where: { id },
       data: {
         name,
         team,
         type,
-        imageUrl,
-        model3DUrl,
-        logoUrl,
+        imageUrl: imageUrl || null,
+        model3DUrl: model3DUrl || null,
+        logoUrl: logoUrl || null,
+        detail1Url: detail1Url || null,
+        detail2Url: detail2Url || null,
+        detail3Url: detail3Url || null,
+        detail4Url: detail4Url || null,
+        detail5Url: detail5Url || null,
+        detail6Url: detail6Url || null,
+        detail1Label: detail1Label || null,
+        detail2Label: detail2Label || null,
+        detail3Label: detail3Label || null,
+        detail4Label: detail4Label || null,
+        detail5Label: detail5Label || null,
+        detail6Label: detail6Label || null,
         updatedAt: new Date(),
       },
     });
@@ -66,7 +100,7 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating kit:', error);
     return NextResponse.json(
-      { error: 'Failed to update kit' },
+      { error: 'Failed to update kit', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

@@ -263,7 +263,7 @@ export default function KitViewer3D({
 }: KitViewer3DProps) {
   const [resetKey, setResetKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [autoRotate, setAutoRotate] = useState(CFG.autoRotate.enabled);
+  const [autoRotate, setAutoRotate] = useState<boolean>(CFG.autoRotate.enabled);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInteractingRef = useRef(false);
 

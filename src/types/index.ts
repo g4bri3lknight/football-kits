@@ -24,6 +24,20 @@ export interface Kit {
   imageUrl?: string;
   model3DUrl?: string;
   logoUrl?: string;
+  // Detail images (3 left, 3 right)
+  detail1Url?: string;
+  detail2Url?: string;
+  detail3Url?: string;
+  detail4Url?: string;
+  detail5Url?: string;
+  detail6Url?: string;
+  // Labels for detail images
+  detail1Label?: string;
+  detail2Label?: string;
+  detail3Label?: string;
+  detail4Label?: string;
+  detail5Label?: string;
+  detail6Label?: string;
 }
 
 export interface PlayerKit {

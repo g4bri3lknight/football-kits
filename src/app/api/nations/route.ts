@@ -236,8 +236,8 @@ export async function GET(request: NextRequest) {
       where: search
         ? {
             OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { code: { contains: search, mode: 'insensitive' } },
+              { name: { contains: search } },
+              { code: { contains: search } },
             ],
           }
         : undefined,
@@ -257,7 +257,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Prova a leggere il body della richiesta
-    let body = null;
+    let body: { name?: string; code?: string; flag?: string } | null = null;
     try {
       const text = await request.text();
       if (text && text.trim()) {
@@ -323,8 +323,8 @@ export async function POST(request: NextRequest) {
     const nation = await db.nation.create({
       data: {
         id: generateId(),
-        name: body.name,
-        code: body.code,
+        name: body.name!,
+        code: body.code!,
         flag: body.flag || null,
         updatedAt: new Date(),
       },

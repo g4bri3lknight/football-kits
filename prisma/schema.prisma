@@ -8,16 +8,28 @@ datasource db {
 }
 
 model Kit {
-  id         String      @id
-  name       String
-  team       String
-  type       String
-  imageUrl   String?
-  model3DUrl String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime
-  logoUrl    String?
-  PlayerKit  PlayerKit[]
+  id           String      @id
+  name         String
+  team         String
+  type         String
+  imageUrl     String?
+  model3DUrl   String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime
+  logoUrl      String?
+  detail1Label String?
+  detail1Url   String?
+  detail2Label String?
+  detail2Url   String?
+  detail3Label String?
+  detail3Url   String?
+  detail4Label String?
+  detail4Url   String?
+  detail5Label String?
+  detail5Url   String?
+  detail6Label String?
+  detail6Url   String?
+  PlayerKit    PlayerKit[]
 }
 
 model Nation {
@@ -36,9 +48,9 @@ model Player {
   surname   String?
   nationId  String?
   image     String?
-  biography String?
   createdAt DateTime    @default(now())
   updatedAt DateTime
+  biography String?
   Nation    Nation?     @relation(fields: [nationId], references: [id])
   PlayerKit PlayerKit[]
 }

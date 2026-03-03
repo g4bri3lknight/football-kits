@@ -81,4 +81,27 @@ export const KIT_VIEWER_CONFIG = {
   },
 } as const;
 
+// ============================================================================
+// CONFIGURAZIONE IMMAGINI DETTAGLIO KIT
+// Modifica questi valori per personalizzare l'effetto hover
+// ============================================================================
+export const KIT_DETAIL_IMAGE_CONFIG = {
+  // === EFFETTO HOVER ===
+  hover: {
+    scale: 1.25,               // Fattore di scala (1.25 = 125%, 1.35 = 135%, ecc.)
+    transitionDuration: 300,   // Durata transizione in millisecondi
+  },
+
+  // === STILE DESCRIZIONE ===
+  label: {
+    baseSize: {
+      mobile: '11px',
+      tablet: '13px',
+      desktop: '15px',
+    },
+    hoverScale: 1.2,           // Fattore di scala descrizione durante hover
+  },
+} as const;
+
 export type KitViewerConfig = typeof KIT_VIEWER_CONFIG;
+export type KitDetailImageConfig = typeof KIT_DETAIL_IMAGE_CONFIG;

@@ -231,7 +231,11 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
         body: JSON.stringify(kitData),
       });
 
-      if (!response.ok) throw new Error('Failed to update kit');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Update kit error response:', errorData);
+        throw new Error(errorData.details || errorData.error || 'Failed to update kit');
+      }
 
       const updatedKit = await response.json();
       setKits(kits.map((k) => (k.id === kitId ? updatedKit : k)));
