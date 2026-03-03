@@ -99,7 +99,7 @@ export const KIT_DETAIL_IMAGE_CONFIG = {
       tablet: '13px',
       desktop: '15px',
     },
-    hoverScale: 1.2,           // Fattore di scala descrizione durante hover
+    hoverScale: 1.25,           // Fattore di scala descrizione durante hover
   },
 } as const;
 
