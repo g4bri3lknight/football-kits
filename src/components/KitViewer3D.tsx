@@ -2,24 +2,21 @@
 
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, ContactShadows } from '@react-three/drei';
-import { Suspense, useEffect, useRef, useState, useCallback } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { getImageUrl } from '@/lib/image-url';
 import { Shirt } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
 
-const VIEWER_CONFIG = KIT_VIEWER_CONFIG;
+const CFG = KIT_VIEWER_CONFIG;
 
 interface KitViewer3DProps {
   modelUrl?: string;
-  maxZoom?: number;
-  minZoom?: number;
-  enablePan?: boolean;
   className?: string;
 }
 
-// Componente Modello - calcola solo posizione e scala
+// Componente Modello
 function Model({ url }: { url: string }) {
   const { scene } = useGLTF(getImageUrl(url));
   const groupRef = useRef<THREE.Group>(null);
@@ -31,7 +28,7 @@ function Model({ url }: { url: string }) {
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDimension = Math.max(size.x, size.y, size.z);
-    const scale = VIEWER_CONFIG.model.targetSize / maxDimension;
+    const scale = CFG.model.targetSize / maxDimension;
 
     groupRef.current.scale.setScalar(scale);
     groupRef.current.position.set(
@@ -48,27 +45,35 @@ function Model({ url }: { url: string }) {
   );
 }
 
-// Componente per controlli camera con auto-rotazione
+// Componente controlli camera
 function CameraController({ 
   resetKey,
   autoRotate,
-  onDragStart,
-  onDragEnd
+  onResumeAutoRotate,
+  onPauseAutoRotate,
 }: { 
   resetKey: number;
   autoRotate: boolean;
-  onDragStart: () => void;
-  onDragEnd: () => void;
+  onResumeAutoRotate: () => void;
+  onPauseAutoRotate: () => void;
 }) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const controlsRef = useRef<OrbitControlsImpl>(null);
+  const initialTarget = useRef(new THREE.Vector3(0, 0, 0));
+  const panOffset = useRef(new THREE.Vector2(0, 0));
+  const isPanning = useRef(false);
+  const lastMousePos = useRef(new THREE.Vector2(0, 0));
+
+  // Pan personalizzato se uno degli assi è disabilitato
+  const useCustomPan = !CFG.controls.enablePanHorizontal || !CFG.controls.enablePanVertical;
 
   useEffect(() => {
-    camera.position.set(0, 0, VIEWER_CONFIG.camera.initialDistance);
+    camera.position.set(0, 0, CFG.camera.initialDistance);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
     if (controlsRef.current) {
       controlsRef.current.reset();
+      initialTarget.current.copy(controlsRef.current.target);
     }
   }, [camera, resetKey]);
 
@@ -79,13 +84,21 @@ function CameraController({
     }
   }, [autoRotate]);
 
-  // Gestisci eventi drag
+  // Gestisci eventi drag di OrbitControls (rotazione e zoom)
   useEffect(() => {
     const controls = controlsRef.current;
     if (!controls) return;
 
-    const handleStart = () => onDragStart();
-    const handleEnd = () => onDragEnd();
+    const handleStart = () => {
+      if (!isPanning.current) {
+        onPauseAutoRotate();
+      }
+    };
+    const handleEnd = () => {
+      if (!isPanning.current) {
+        onResumeAutoRotate();
+      }
+    };
 
     controls.addEventListener('start', handleStart);
     controls.addEventListener('end', handleEnd);
@@ -94,9 +107,76 @@ function CameraController({
       controls.removeEventListener('start', handleStart);
       controls.removeEventListener('end', handleEnd);
     };
-  }, [onDragStart, onDragEnd]);
+  }, [onPauseAutoRotate, onResumeAutoRotate]);
 
-  // Update loop per damping
+  // Gestione pan personalizzata con tasto destro
+  useEffect(() => {
+    if (!useCustomPan) return;
+
+    const canvas = gl.domElement;
+    
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button === 2 || e.button === 1) { // Tasto destro o centrale
+        isPanning.current = true;
+        lastMousePos.current.set(e.clientX, e.clientY);
+        onPauseAutoRotate();
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isPanning.current || !controlsRef.current) return;
+
+      const deltaX = e.clientX - lastMousePos.current.x;
+      const deltaY = e.clientY - lastMousePos.current.y;
+      lastMousePos.current.set(e.clientX, e.clientY);
+
+      const speed = CFG.controls.panSpeed * 0.01;
+      
+      if (CFG.controls.enablePanHorizontal) {
+        panOffset.current.x -= deltaX * speed;
+      }
+      if (CFG.controls.enablePanVertical) {
+        panOffset.current.y += deltaY * speed;
+      }
+
+      const target = controlsRef.current.target;
+      target.x = initialTarget.current.x + panOffset.current.x;
+      target.y = initialTarget.current.y + panOffset.current.y;
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (isPanning.current && (e.button === 2 || e.button === 1)) {
+        isPanning.current = false;
+        onResumeAutoRotate();
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (isPanning.current) {
+        isPanning.current = false;
+        onResumeAutoRotate();
+      }
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    canvas.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      canvas.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [gl, useCustomPan, onPauseAutoRotate, onResumeAutoRotate]);
+
   useFrame(() => {
     if (controlsRef.current) {
       controlsRef.current.update();
@@ -106,76 +186,72 @@ function CameraController({
   return (
     <OrbitControls
       ref={controlsRef}
-      enablePan={VIEWER_CONFIG.controls.enablePan}
-      minDistance={VIEWER_CONFIG.camera.minDistance}
-      maxDistance={VIEWER_CONFIG.camera.maxDistance}
-      minPolarAngle={VIEWER_CONFIG.rotation.minPolarAngle}
-      maxPolarAngle={VIEWER_CONFIG.rotation.maxPolarAngle}
-      rotateSpeed={VIEWER_CONFIG.controls.rotateSpeed}
-      zoomSpeed={VIEWER_CONFIG.controls.zoomSpeed}
-      panSpeed={VIEWER_CONFIG.controls.panSpeed}
-      enableDamping={VIEWER_CONFIG.controls.enableDamping}
-      dampingFactor={VIEWER_CONFIG.controls.dampingFactor}
+      enablePan={useCustomPan ? false : CFG.controls.enablePan}
+      minDistance={CFG.camera.minDistance}
+      maxDistance={CFG.camera.maxDistance}
+      minPolarAngle={CFG.rotation.minPolarAngle}
+      maxPolarAngle={CFG.rotation.maxPolarAngle}
+      rotateSpeed={CFG.controls.rotateSpeed}
+      zoomSpeed={CFG.controls.zoomSpeed}
+      panSpeed={CFG.controls.panSpeed}
+      enableDamping={CFG.controls.enableDamping}
+      dampingFactor={CFG.controls.dampingFactor}
       autoRotate={autoRotate}
-      autoRotateSpeed={VIEWER_CONFIG.autoRotate.speed}
+      autoRotateSpeed={CFG.autoRotate.speed}
     />
   );
 }
 
-// Scene con illuminazione
+// Scene
 function Scene({ 
   modelUrl, 
   resetKey,
   autoRotate,
-  onDragStart,
-  onDragEnd
+  onResumeAutoRotate,
+  onPauseAutoRotate,
 }: { 
   modelUrl: string; 
   resetKey: number;
   autoRotate: boolean;
-  onDragStart: () => void;
-  onDragEnd: () => void;
+  onResumeAutoRotate: () => void;
+  onPauseAutoRotate: () => void;
 }) {
   return (
     <>
-      {/* Illuminazione */}
-      <ambientLight intensity={VIEWER_CONFIG.lighting.ambientIntensity} />
+      <ambientLight intensity={CFG.lighting.ambientIntensity} />
       <directionalLight
-        position={VIEWER_CONFIG.lighting.mainLight.position}
-        intensity={VIEWER_CONFIG.lighting.mainLight.intensity}
+        position={CFG.lighting.mainLight.position as [number, number, number]}
+        intensity={CFG.lighting.mainLight.intensity}
         castShadow
       />
       <directionalLight
-        position={VIEWER_CONFIG.lighting.secondaryLight.position}
-        intensity={VIEWER_CONFIG.lighting.secondaryLight.intensity}
+        position={CFG.lighting.secondaryLight.position as [number, number, number]}
+        intensity={CFG.lighting.secondaryLight.intensity}
       />
-      {VIEWER_CONFIG.lighting.fillLights.map((light, i) => (
-        <pointLight key={i} position={light.position} intensity={light.intensity} />
+      {CFG.lighting.fillLights.map((light, i) => (
+        <pointLight key={i} position={light.position as [number, number, number]} intensity={light.intensity} />
       ))}
 
-      {/* Modello */}
       <group>
         <Suspense fallback={null}>
           <Model url={modelUrl} />
         </Suspense>
       </group>
 
-      {/* Ombra */}
       <ContactShadows
-        position={VIEWER_CONFIG.shadows.position}
-        opacity={VIEWER_CONFIG.shadows.opacity}
-        scale={VIEWER_CONFIG.shadows.scale}
-        blur={VIEWER_CONFIG.shadows.blur}
-        far={VIEWER_CONFIG.shadows.far}
-        resolution={VIEWER_CONFIG.shadows.resolution}
+        position={CFG.shadows.position as [number, number, number]}
+        opacity={CFG.shadows.opacity}
+        scale={CFG.shadows.scale}
+        blur={CFG.shadows.blur}
+        far={CFG.shadows.far}
+        resolution={CFG.shadows.resolution}
       />
 
-      {/* Controlli camera */}
       <CameraController 
         resetKey={resetKey} 
         autoRotate={autoRotate}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
+        onResumeAutoRotate={onResumeAutoRotate}
+        onPauseAutoRotate={onPauseAutoRotate}
       />
     </>
   );
@@ -184,23 +260,41 @@ function Scene({
 export default function KitViewer3D({
   modelUrl,
   className = '',
-}: KitViewer3DProps & { initialZoom?: number }) {
+}: KitViewer3DProps) {
   const [resetKey, setResetKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [autoRotate, setAutoRotate] = useState(VIEWER_CONFIG.autoRotate.enabled);
+  const [autoRotate, setAutoRotate] = useState(CFG.autoRotate.enabled);
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isInteractingRef = useRef(false);
 
-  const handleDragStart = useCallback(() => {
+  const pauseAutoRotate = () => {
+    isInteractingRef.current = true;
     setIsDragging(true);
     setAutoRotate(false);
-  }, []);
+    // Cancella qualsiasi timeout pendente
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = null;
+    }
+  };
 
-  const handleDragEnd = useCallback(() => {
+  const resumeAutoRotate = () => {
+    isInteractingRef.current = false;
     setIsDragging(false);
-    // Riattiva auto-rotazione dopo il delay configurato
-    setTimeout(() => {
-      setAutoRotate(VIEWER_CONFIG.autoRotate.enabled);
-    }, VIEWER_CONFIG.autoRotate.resumeDelay);
-  }, []);
+    // Cancella timeout precedente se esiste
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = null;
+    }
+    // Imposta nuovo timeout solo se non c'è già un'interazione in corso
+    resumeTimeoutRef.current = setTimeout(() => {
+      // Verifica che non ci sia una nuova interazione iniziata mentre aspettavamo
+      if (!isInteractingRef.current) {
+        setAutoRotate(CFG.autoRotate.enabled);
+      }
+      resumeTimeoutRef.current = null;
+    }, CFG.autoRotate.resumeDelay);
+  };
 
   if (!modelUrl) {
     return (
@@ -222,8 +316,8 @@ export default function KitViewer3D({
       <Canvas
         key={modelUrl}
         camera={{ 
-          position: [0, 0, VIEWER_CONFIG.camera.initialDistance], 
-          fov: VIEWER_CONFIG.camera.fov 
+          position: [0, 0, CFG.camera.initialDistance], 
+          fov: CFG.camera.fov 
         }}
         gl={{ antialias: true, alpha: true }}
       >
@@ -231,8 +325,8 @@ export default function KitViewer3D({
           modelUrl={modelUrl} 
           resetKey={resetKey}
           autoRotate={autoRotate}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          onResumeAutoRotate={resumeAutoRotate}
+          onPauseAutoRotate={pauseAutoRotate}
         />
       </Canvas>
     </div>
