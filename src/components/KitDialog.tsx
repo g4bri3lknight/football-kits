@@ -30,11 +30,11 @@ export function KitDialog({
   onNavigatePrevious,
   onNavigateNext,
 }: KitDialogProps) {
-  const prevKit = currentKitIndex > 0 && playerKitsList[currentKitIndex - 1]
-    ? playerKitsList[currentKitIndex - 1].Kit
+  const prevKit = currentKitIndex > 0 && playerKitsList[currentKitIndex - 1] 
+    ? playerKitsList[currentKitIndex - 1].Kit 
     : null;
-  const nextKit = currentKitIndex < playerKitsList.length - 1 && playerKitsList[currentKitIndex + 1]
-    ? playerKitsList[currentKitIndex + 1].Kit
+  const nextKit = currentKitIndex < playerKitsList.length - 1 && playerKitsList[currentKitIndex + 1] 
+    ? playerKitsList[currentKitIndex + 1].Kit 
     : null;
 
   const truncateName = (name: string, maxLength: number = 8) => {
@@ -130,19 +130,19 @@ export function KitDialog({
             <TabsTrigger value="3d">3D Model</TabsTrigger>
           </TabsList>
           <TabsContent value="image" className="mt-0">
-            <div className="rounded-lg bg-muted p-2 sm:p-4 min-h-[280px] sm:min-h-[480px] lg:min-h-[500px]">
+            <div className="rounded-lg p-2 sm:p-4 min-h-[280px] sm:min-h-[480px] lg:min-h-[500px]">
               {selectedKit?.imageUrl ? (
                 <div className="grid grid-cols-5 gap-2 sm:gap-3 lg:gap-5 h-full">
                   {/* Left detail images */}
                   <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
-                    {[
+                    {[ 
                       { url: selectedKit.detail1Url, label: selectedKit.detail1Label },
                       { url: selectedKit.detail2Url, label: selectedKit.detail2Label },
                       { url: selectedKit.detail3Url, label: selectedKit.detail3Label },
                     ].map((detail, index) => (
                       <div key={index} className="flex-1 min-h-0 relative group">
-                        <div
-                          className={`absolute inset-0 rounded-lg bg-background border-2 flex items-center justify-center transition-all overflow-hidden ${detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'}`}
+                        <div 
+                          className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'}`}
                           style={{
                             transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
                           }}
@@ -163,13 +163,13 @@ export function KitDialog({
                                 className="max-w-full max-h-full object-contain p-1"
                               />
                               {detail.label && (
-                                <div
+                                <div 
                                   className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg transition-transform"
                                   style={{
                                     transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
                                   }}
                                 >
-                                  <p
+                                  <p 
                                     className="text-center text-foreground truncate transition-all"
                                     style={{
                                       fontSize: KIT_DETAIL_IMAGE_CONFIG.label.baseSize.mobile,
@@ -190,26 +190,26 @@ export function KitDialog({
                       </div>
                     ))}
                   </div>
-
+                  
                   {/* Central main image */}
-                  <div className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-background border-2" style={{ borderColor: '#002f42' }}>
+                  <div className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2" style={{ borderColor: '#002f42' }}>
                     <img
                       src={getImageUrl(selectedKit.imageUrl)}
                       alt={selectedKit.name}
                       className="max-w-full max-h-full object-contain"
                     />
                   </div>
-
+                  
                   {/* Right detail images */}
                   <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
-                    {[
+                    {[ 
                       { url: selectedKit.detail4Url, label: selectedKit.detail4Label },
                       { url: selectedKit.detail5Url, label: selectedKit.detail5Label },
                       { url: selectedKit.detail6Url, label: selectedKit.detail6Label },
                     ].map((detail, index) => (
                       <div key={index} className="flex-1 min-h-0 relative group">
-                        <div
-                          className={`absolute inset-0 rounded-lg bg-background border-2 flex items-center justify-center transition-all overflow-hidden ${detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'}`}
+                        <div 
+                          className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'}`}
                           style={{
                             transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
                           }}
@@ -230,13 +230,13 @@ export function KitDialog({
                                 className="max-w-full max-h-full object-contain p-1"
                               />
                               {detail.label && (
-                                <div
+                                <div 
                                   className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg transition-transform"
                                   style={{
                                     transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
                                   }}
                                 >
-                                  <p
+                                  <p 
                                     className="text-center text-foreground truncate transition-all"
                                     style={{
                                       fontSize: KIT_DETAIL_IMAGE_CONFIG.label.baseSize.mobile,
