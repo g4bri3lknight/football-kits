@@ -43,7 +43,7 @@ export function KitDialog({
 
   return (
     <Dialog open={!!selectedKit} onOpenChange={() => onClose()}>
-      <DialogContent className={`w-[95vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] overflow-hidden dialog-custom-color ${playerKitsList.length > 1 ? 'lg:h-[90vh] max-h-[95vh]' : 'lg:h-[85vh] max-h-[90vh]'}`}>
+      <DialogContent className={`w-[95vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] overflow-x-auto dialog-custom-color ${playerKitsList.length > 1 ? 'lg:h-[90vh] max-h-[95vh]' : 'lg:h-[85vh] max-h-[90vh]'}`}>
         <DialogHeader>
           <div className="flex items-center justify-between w-full gap-2">
             {/* Kit precedente */}
