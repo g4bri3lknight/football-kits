@@ -88,7 +88,7 @@ export const KIT_VIEWER_CONFIG = {
 export const KIT_DETAIL_IMAGE_CONFIG = {
   // === EFFETTO HOVER ===
   hover: {
-    scale: 1.25,               // Fattore di scala (1.25 = 125%, 1.35 = 135%, ecc.)
+    scale: 1.05,               // Fattore di scala (1.05 = 105%, 1.10 = 110%, ecc.)
     transitionDuration: 300,   // Durata transizione in millisecondi
   },
 
@@ -99,7 +99,7 @@ export const KIT_DETAIL_IMAGE_CONFIG = {
       tablet: '13px',
       desktop: '15px',
     },
-    hoverScale: 1.25,           // Fattore di scala descrizione durante hover
+    hoverScale: 1.2,           // Fattore di scala descrizione durante hover
   },
 } as const;
 

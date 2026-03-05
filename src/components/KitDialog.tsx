@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Kit, Player, PlayerKit } from '@/types';
 import { getImageUrl } from '@/lib/image-url';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -21,6 +23,13 @@ interface KitDialogProps {
   onNavigateNext: () => void;
 }
 
+interface SelectedDetail {
+  url: string;
+  label: string | null;
+  index: number;
+  side: 'left' | 'right';
+}
+
 export function KitDialog({
   selectedKit,
   selectedKitPlayer,
@@ -30,6 +39,8 @@ export function KitDialog({
   onNavigatePrevious,
   onNavigateNext,
 }: KitDialogProps) {
+  const [selectedDetail, setSelectedDetail] = useState<SelectedDetail | null>(null);
+
   const prevKit = currentKitIndex > 0 && playerKitsList[currentKitIndex - 1] 
     ? playerKitsList[currentKitIndex - 1].Kit 
     : null;
@@ -41,9 +52,44 @@ export function KitDialog({
     return name.length > maxLength ? name.slice(0, maxLength) + '...' : name;
   };
 
+  const handleDetailClick = (detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
+    if (detail.url) {
+      // If clicking the same detail that's already selected, do nothing
+      if (selectedDetail?.url === detail.url) {
+        return;
+      }
+      // Otherwise select the new detail
+      setSelectedDetail({ url: detail.url, label: detail.label, index, side });
+    }
+  };
+
+  const handleCentralImageClick = () => {
+    if (selectedDetail) {
+      setSelectedDetail(null);
+    }
+  };
+
+  const handleDetailMouseLeave = (detailUrl: string) => {
+    if (selectedDetail?.url === detailUrl) {
+      setSelectedDetail(null);
+    }
+  };
+
+  const leftDetails = [
+    { url: selectedKit?.detail1Url, label: selectedKit?.detail1Label },
+    { url: selectedKit?.detail2Url, label: selectedKit?.detail2Label },
+    { url: selectedKit?.detail3Url, label: selectedKit?.detail3Label },
+  ];
+
+  const rightDetails = [
+    { url: selectedKit?.detail4Url, label: selectedKit?.detail4Label },
+    { url: selectedKit?.detail5Url, label: selectedKit?.detail5Label },
+    { url: selectedKit?.detail6Url, label: selectedKit?.detail6Label },
+  ];
+
   return (
     <Dialog open={!!selectedKit} onOpenChange={() => onClose()}>
-      <DialogContent className={`w-[95vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] overflow-x-auto dialog-custom-color ${playerKitsList.length > 1 ? 'lg:h-[90vh] max-h-[95vh]' : 'lg:h-[85vh] max-h-[90vh]'}`}>
+      <DialogContent className={`w-[95vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] overflow-y-auto dialog-custom-color ${playerKitsList.length > 1 ? 'lg:max-h-[95vh]' : 'lg:max-h-[90vh]'}`}>
         <DialogHeader>
           <div className="flex items-center justify-between w-full gap-2">
             {/* Kit precedente */}
@@ -135,32 +181,48 @@ export function KitDialog({
                 <div className="grid grid-cols-5 gap-2 sm:gap-3 lg:gap-5 h-full">
                   {/* Left detail images */}
                   <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
-                    {[ 
-                      { url: selectedKit.detail1Url, label: selectedKit.detail1Label },
-                      { url: selectedKit.detail2Url, label: selectedKit.detail2Label },
-                      { url: selectedKit.detail3Url, label: selectedKit.detail3Label },
-                    ].map((detail, index) => (
+                    {leftDetails.map((detail, index) => (
                       <div key={index} className="flex-1 min-h-0 relative group">
                         <div 
-                          className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'}`}
+                          className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
+                            detail.url 
+                              ? `hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0` 
+                              : 'border-transparent'
+                          }`}
                           style={{
                             transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                            borderColor: selectedDetail?.url === detail.url ? '#cd2127' : '#002f42',
+                            transform: selectedDetail?.url === detail.url ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
                           }}
                           onMouseEnter={(e) => {
-                            if (detail.url) {
+                            if (detail.url && selectedDetail?.url !== detail.url) {
                               e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
+                              e.currentTarget.style.borderColor = '#cd2127';
                             }
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
+                            if (selectedDetail?.url !== detail.url) {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.borderColor = '#002f42';
+                            }
+                            if (selectedDetail?.url === detail.url) {
+                              handleDetailMouseLeave(detail.url!);
+                            }
                           }}
+                          onClick={() => handleDetailClick(detail, index, 'left')}
                         >
                           {detail.url ? (
                             <>
-                              <img
+                              <motion.img
+                                layoutId={detail.url}
                                 src={getImageUrl(detail.url)}
                                 alt={detail.label || `Dettaglio ${index + 1}`}
                                 className="max-w-full max-h-full object-contain p-1"
+                                transition={{ 
+                                  type: 'spring', 
+                                  stiffness: 350, 
+                                  damping: 30 
+                                }}
                               />
                               {detail.label && (
                                 <div 
@@ -192,42 +254,89 @@ export function KitDialog({
                   </div>
                   
                   {/* Central main image */}
-                  <div className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2" style={{ borderColor: '#002f42' }}>
+                  <div 
+                    className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2 relative cursor-pointer"
+                    style={{ borderColor: '#002f42' }}
+                    onClick={handleCentralImageClick}
+                  >
+                    {/* Main kit image */}
                     <img
                       src={getImageUrl(selectedKit.imageUrl)}
                       alt={selectedKit.name}
-                      className="max-w-full max-h-full object-contain"
+                      className={`max-w-full max-h-full object-contain transition-all duration-300 ${
+                        selectedDetail ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+                      }`}
                     />
+                    
+                    {/* Selected detail overlay with Framer Motion */}
+                    <AnimatePresence>
+                      {selectedDetail && (
+                        <motion.img
+                          layoutId={selectedDetail.url}
+                          src={getImageUrl(selectedDetail.url)}
+                          alt={selectedDetail.label || 'Dettaglio selezionato'}
+                          className="absolute inset-0 m-auto max-w-full max-h-full object-contain p-4"
+                          transition={{ 
+                            type: 'spring', 
+                            stiffness: 350, 
+                            damping: 30 
+                          }}
+                        />
+                      )}
+                    </AnimatePresence>
+                    {selectedDetail?.label && (
+                      <div className="absolute bottom-2 left-2 right-2 bg-background/80 backdrop-blur-sm py-1 px-2 rounded-lg">
+                        <p className="text-center text-foreground text-sm">
+                          {selectedDetail.label}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Right detail images */}
                   <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
-                    {[ 
-                      { url: selectedKit.detail4Url, label: selectedKit.detail4Label },
-                      { url: selectedKit.detail5Url, label: selectedKit.detail5Label },
-                      { url: selectedKit.detail6Url, label: selectedKit.detail6Label },
-                    ].map((detail, index) => (
+                    {rightDetails.map((detail, index) => (
                       <div key={index} className="flex-1 min-h-0 relative group">
                         <div 
-                          className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'}`}
+                          className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
+                            detail.url 
+                              ? `hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0` 
+                              : 'border-transparent'
+                          }`}
                           style={{
                             transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                            borderColor: selectedDetail?.url === detail.url ? '#cd2127' : '#002f42',
+                            transform: selectedDetail?.url === detail.url ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
                           }}
                           onMouseEnter={(e) => {
-                            if (detail.url) {
+                            if (detail.url && selectedDetail?.url !== detail.url) {
                               e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
+                              e.currentTarget.style.borderColor = '#cd2127';
                             }
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
+                            if (selectedDetail?.url !== detail.url) {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.borderColor = '#002f42';
+                            }
+                            if (selectedDetail?.url === detail.url) {
+                              handleDetailMouseLeave(detail.url!);
+                            }
                           }}
+                          onClick={() => handleDetailClick(detail, index, 'right')}
                         >
                           {detail.url ? (
                             <>
-                              <img
+                              <motion.img
+                                layoutId={detail.url}
                                 src={getImageUrl(detail.url)}
                                 alt={detail.label || `Dettaglio ${index + 4}`}
                                 className="max-w-full max-h-full object-contain p-1"
+                                transition={{ 
+                                  type: 'spring', 
+                                  stiffness: 350, 
+                                  damping: 30 
+                                }}
                               />
                               {detail.label && (
                                 <div 
