@@ -7,10 +7,10 @@ import { getImageUrl } from '@/lib/image-url';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Shirt } from 'lucide-react';
 import KitViewer3D from '@/components/KitViewer3D';
-import { getKitTypeColor, translateKitType, getPlayerDisplayName } from '@/lib/player-utils';
+import { getPlayerDisplayName } from '@/lib/player-utils';
 import { KIT_DETAIL_IMAGE_CONFIG } from '@/config/kit-viewer.config';
 
 interface KitDialogProps {
@@ -52,27 +52,14 @@ export function KitDialog({
     return name.length > maxLength ? name.slice(0, maxLength) + '...' : name;
   };
 
-  const handleDetailClick = (detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
+  const handleDetailMouseEnter = (detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
     if (detail.url) {
-      // If clicking the same detail that's already selected, do nothing
-      if (selectedDetail?.url === detail.url) {
-        return;
-      }
-      // Otherwise select the new detail
       setSelectedDetail({ url: detail.url, label: detail.label, index, side });
     }
   };
 
-  const handleCentralImageClick = () => {
-    if (selectedDetail) {
-      setSelectedDetail(null);
-    }
-  };
-
-  const handleDetailMouseLeave = (detailUrl: string) => {
-    if (selectedDetail?.url === detailUrl) {
-      setSelectedDetail(null);
-    }
+  const handleDetailMouseLeave = () => {
+    setSelectedDetail(null);
   };
 
   const leftDetails = [
@@ -195,21 +182,17 @@ export function KitDialog({
                             transform: selectedDetail?.url === detail.url ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
                           }}
                           onMouseEnter={(e) => {
-                            if (detail.url && selectedDetail?.url !== detail.url) {
+                            if (detail.url) {
                               e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
                               e.currentTarget.style.borderColor = '#cd2127';
+                              handleDetailMouseEnter(detail, index, 'left');
                             }
                           }}
                           onMouseLeave={(e) => {
-                            if (selectedDetail?.url !== detail.url) {
-                              e.currentTarget.style.transform = 'scale(1)';
-                              e.currentTarget.style.borderColor = '#002f42';
-                            }
-                            if (selectedDetail?.url === detail.url) {
-                              handleDetailMouseLeave(detail.url!);
-                            }
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.borderColor = '#002f42';
+                            handleDetailMouseLeave();
                           }}
-                          onClick={() => handleDetailClick(detail, index, 'left')}
                         >
                           {detail.url ? (
                             <>
@@ -255,9 +238,8 @@ export function KitDialog({
                   
                   {/* Central main image */}
                   <div 
-                    className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2 relative cursor-pointer"
+                    className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2 relative"
                     style={{ borderColor: '#002f42' }}
-                    onClick={handleCentralImageClick}
                   >
                     {/* Main kit image */}
                     <img
@@ -309,21 +291,17 @@ export function KitDialog({
                             transform: selectedDetail?.url === detail.url ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
                           }}
                           onMouseEnter={(e) => {
-                            if (detail.url && selectedDetail?.url !== detail.url) {
+                            if (detail.url) {
                               e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
                               e.currentTarget.style.borderColor = '#cd2127';
+                              handleDetailMouseEnter(detail, index, 'right');
                             }
                           }}
                           onMouseLeave={(e) => {
-                            if (selectedDetail?.url !== detail.url) {
-                              e.currentTarget.style.transform = 'scale(1)';
-                              e.currentTarget.style.borderColor = '#002f42';
-                            }
-                            if (selectedDetail?.url === detail.url) {
-                              handleDetailMouseLeave(detail.url!);
-                            }
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.borderColor = '#002f42';
+                            handleDetailMouseLeave();
                           }}
-                          onClick={() => handleDetailClick(detail, index, 'right')}
                         >
                           {detail.url ? (
                             <>
@@ -390,14 +368,15 @@ export function KitDialog({
         </Tabs>
 
         <div className="flex justify-between items-center pt-3 border-t">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {selectedKitPlayer && (
               <>
-                {selectedKit && (
-                  <Badge className={getKitTypeColor(selectedKit.type)} variant="secondary">
-                    {translateKitType(selectedKit.type)}
-                  </Badge>
-                )}
+                <Avatar className="w-10 h-10 ring-2 avatar-custom-color">
+                  <AvatarImage src={getImageUrl(selectedKitPlayer.image)} alt={getPlayerDisplayName(selectedKitPlayer)} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {(selectedKitPlayer.name[0] + (selectedKitPlayer.surname?.[0] || '')).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <strong className="text-lg">{getPlayerDisplayName(selectedKitPlayer)}</strong>
               </>
             )}
