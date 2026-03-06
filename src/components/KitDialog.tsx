@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { Kit, Player, PlayerKit } from '@/types';
 import { getImageUrl } from '@/lib/image-url';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -40,6 +40,11 @@ export function KitDialog({
   onNavigateNext,
 }: KitDialogProps) {
   const [selectedDetail, setSelectedDetail] = useState<SelectedDetail | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const pendingDetailRef = useRef<SelectedDetail | null>(null);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const ANIMATION_DURATION = 250; // ms to wait for exit animation
 
   const prevKit = currentKitIndex > 0 && playerKitsList[currentKitIndex - 1] 
     ? playerKitsList[currentKitIndex - 1].Kit 
@@ -52,15 +57,57 @@ export function KitDialog({
     return name.length > maxLength ? name.slice(0, maxLength) + '...' : name;
   };
 
-  const handleDetailMouseEnter = (detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
+  const handleDetailMouseEnter = useCallback((detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
     if (detail.url) {
-      setSelectedDetail({ url: detail.url, label: detail.label, index, side });
+      const newDetail: SelectedDetail = { url: detail.url, label: detail.label, index, side };
+      
+      // If same detail is already selected, do nothing
+      if (selectedDetail?.url === detail.url) {
+        return;
+      }
+      
+      // If already transitioning, just update pending
+      if (isTransitioning) {
+        pendingDetailRef.current = newDetail;
+        return;
+      }
+      
+      // If there's a current selection, trigger exit first
+      if (selectedDetail) {
+        // Clear any existing timeout
+        if (transitionTimeoutRef.current) {
+          clearTimeout(transitionTimeoutRef.current);
+        }
+        
+        pendingDetailRef.current = newDetail;
+        setIsTransitioning(true);
+        setSelectedDetail(null);
+        
+        // Wait for exit animation, then set new detail
+        transitionTimeoutRef.current = setTimeout(() => {
+          if (pendingDetailRef.current) {
+            setSelectedDetail(pendingDetailRef.current);
+            pendingDetailRef.current = null;
+          }
+          setIsTransitioning(false);
+        }, ANIMATION_DURATION);
+      } else {
+        // No current selection, just set directly
+        setSelectedDetail(newDetail);
+      }
     }
-  };
+  }, [selectedDetail, isTransitioning]);
 
-  const handleDetailMouseLeave = () => {
+  const handleDetailMouseLeave = useCallback(() => {
+    // Clear any pending timeout
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
+    }
+    pendingDetailRef.current = null;
+    setIsTransitioning(false);
     setSelectedDetail(null);
-  };
+  }, []);
 
   const leftDetails = [
     { url: selectedKit?.detail1Url, label: selectedKit?.detail1Label },
@@ -167,7 +214,10 @@ export function KitDialog({
               {selectedKit?.imageUrl ? (
                 <div className="grid grid-cols-5 gap-2 sm:gap-3 lg:gap-5 h-full">
                   {/* Left detail images */}
-                  <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
+                  <div 
+                    className="col-span-1 flex flex-col gap-2 sm:gap-3"
+                    onMouseLeave={() => handleDetailMouseLeave()}
+                  >
                     {leftDetails.map((detail, index) => (
                       <div key={index} className="flex-1 min-h-0 relative group">
                         <div 
@@ -191,7 +241,6 @@ export function KitDialog({
                           onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'scale(1)';
                             e.currentTarget.style.borderColor = '#002f42';
-                            handleDetailMouseLeave();
                           }}
                         >
                           {detail.url ? (
@@ -251,21 +300,20 @@ export function KitDialog({
                     />
                     
                     {/* Selected detail overlay with Framer Motion */}
-                    <AnimatePresence>
-                      {selectedDetail && (
-                        <motion.img
-                          layoutId={selectedDetail.url}
-                          src={getImageUrl(selectedDetail.url)}
-                          alt={selectedDetail.label || 'Dettaglio selezionato'}
-                          className="absolute inset-0 m-auto max-w-full max-h-full object-contain p-4"
-                          transition={{ 
-                            type: 'spring', 
-                            stiffness: 350, 
-                            damping: 30 
-                          }}
-                        />
-                      )}
-                    </AnimatePresence>
+                    {selectedDetail && (
+                      <motion.img
+                        key={selectedDetail.url}
+                        layoutId={selectedDetail.url}
+                        src={getImageUrl(selectedDetail.url)}
+                        alt={selectedDetail.label || 'Dettaglio selezionato'}
+                        className="absolute inset-0 m-auto max-w-full max-h-full object-contain p-4"
+                        transition={{ 
+                          type: 'spring', 
+                          stiffness: 350, 
+                          damping: 30
+                        }}
+                      />
+                    )}
                     {selectedDetail?.label && (
                       <div className="absolute bottom-2 left-2 right-2 bg-background/80 backdrop-blur-sm py-1 px-2 rounded-lg">
                         <p className="text-center text-foreground text-sm">
@@ -276,7 +324,10 @@ export function KitDialog({
                   </div>
                   
                   {/* Right detail images */}
-                  <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
+                  <div 
+                    className="col-span-1 flex flex-col gap-2 sm:gap-3"
+                    onMouseLeave={() => handleDetailMouseLeave()}
+                  >
                     {rightDetails.map((detail, index) => (
                       <div key={index} className="flex-1 min-h-0 relative group">
                         <div 
@@ -300,7 +351,6 @@ export function KitDialog({
                           onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'scale(1)';
                             e.currentTarget.style.borderColor = '#002f42';
-                            handleDetailMouseLeave();
                           }}
                         >
                           {detail.url ? (
