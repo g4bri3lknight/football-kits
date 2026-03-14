@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { getImageUrl } from '@/lib/image-url';
 import {
   Card,
   CardContent,
@@ -37,7 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Player, Nation } from './types';
 import Flag from 'react-world-flags';
@@ -57,9 +56,24 @@ interface PlayerForm {
   name: string;
   surname: string;
   nationId: string;
-  image: string;
+  imageData: string | null;
+  imageMimeType: string | null;
   biography: string;
 }
+
+// Helper per convertire File in base64
+const fileToBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(',')[1];
+      resolve({ data: base64, mimeType: file.type });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 export default function PlayersTab({
   players,
@@ -75,11 +89,13 @@ export default function PlayersTab({
   const [nationFilter, setNationFilter] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<PlayerForm>({
     name: '',
     surname: '',
     nationId: '',
-    image: '',
+    imageData: null,
+    imageMimeType: null,
     biography: '',
   });
   const [nationSearch, setNationSearch] = useState('');
@@ -94,7 +110,7 @@ export default function PlayersTab({
 
   const handleOpenNewDialog = () => {
     setEditingPlayer(null);
-    setForm({ name: '', surname: '', nationId: '', image: '', biography: '' });
+    setForm({ name: '', surname: '', nationId: '', imageData: null, imageMimeType: null, biography: '' });
     setNationSearch('');
     setDialogOpen(true);
   };
@@ -105,7 +121,8 @@ export default function PlayersTab({
       name: player.name,
       surname: player.surname || '',
       nationId: player.nationId || '',
-      image: player.image || '',
+      imageData: null,
+      imageMimeType: null,
       biography: player.biography || '',
     });
     setNationSearch('');
@@ -114,7 +131,7 @@ export default function PlayersTab({
 
   const handleCloseDialog = () => {
     setEditingPlayer(null);
-    setForm({ name: '', surname: '', nationId: '', image: '', biography: '' });
+    setForm({ name: '', surname: '', nationId: '', imageData: null, imageMimeType: null, biography: '' });
     setNationSearch('');
     setDialogOpen(false);
   };
@@ -129,27 +146,40 @@ export default function PlayersTab({
       return;
     }
 
+    setSaving(true);
     try {
       if (editingPlayer) {
-        await onUpdatePlayer(editingPlayer.id, {
+        // Quando modifichi, includi solo i campi immagine se c'è un nuovo file
+        // per NON sovrascrivere i dati esistenti
+        const updateData: any = {
           name: form.name,
           surname: form.surname,
           nationId: form.nationId || null,
-          image: form.image,
           biography: form.biography || null,
-        });
+        };
+
+        // Aggiungi solo i file che sono stati caricati (non null)
+        if (form.imageData) {
+          updateData.imageData = form.imageData;
+          updateData.imageMimeType = form.imageMimeType;
+        }
+
+        await onUpdatePlayer(editingPlayer.id, updateData);
       } else {
         await onCreatePlayer({
           name: form.name,
           surname: form.surname,
           nationId: form.nationId || null,
-          image: form.image,
+          imageData: form.imageData,
+          imageMimeType: form.imageMimeType,
           biography: form.biography || null,
         });
       }
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving player:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -157,10 +187,10 @@ export default function PlayersTab({
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const url = await onUpload(file, 'players');
-        setForm({ ...form, image: url });
+        const { data, mimeType } = await fileToBase64(file);
+        setForm({ ...form, imageData: data, imageMimeType: mimeType });
       } catch (error) {
-        console.error('Upload failed:', error);
+        console.error('File reading failed:', error);
       }
     }
   };
@@ -237,8 +267,12 @@ export default function PlayersTab({
                       )}
                     </TableCell>
                     <TableCell>
-                      {player.image ? (
-                        <img src={getImageUrl(player.image)} alt={player.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover ring-1 ring-border/50" />
+                      {player.hasImage ? (
+                        <img
+                          src={`/api/players/${player.id}/image?t=${player.updatedAt || Date.now()}`}
+                          alt={player.name}
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover ring-1 ring-border/50"
+                        />
                       ) : (
                         <span className="text-gray-400 text-sm">-</span>
                       )}
@@ -288,7 +322,7 @@ export default function PlayersTab({
 
       {/* Player Dialog */}
       <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-md sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-3 sm:pb-4">
             <DialogTitle className="text-lg sm:text-xl">
               {editingPlayer ? 'Modifica Giocatore' : 'Nuovo Giocatore'}
@@ -297,8 +331,9 @@ export default function PlayersTab({
               {editingPlayer ? 'Modifica i dettagli del giocatore' : 'Aggiungi un nuovo giocatore'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="space-y-6">
+            {/* Dati principali - 2 colonne */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome *</Label>
                 <Input
@@ -318,10 +353,12 @@ export default function PlayersTab({
                 />
               </div>
             </div>
+            
+            {/* Nazione - a tutta larghezza */}
             <div className="space-y-2">
               <Label htmlFor="nation">
                 {form.nationId && nations.find(n => n.id === form.nationId)
-                  ? `Nazione selezionata: ${nations.find(n => n.id === form.nationId)?.name}`
+                  ? `Nazione: ${nations.find(n => n.id === form.nationId)?.name}`
                   : 'Nazione'}
               </Label>
               <div className="relative">
@@ -353,39 +390,36 @@ export default function PlayersTab({
                   ))}
               </div>
             </div>
+            
+            {/* Immagine */}
             <div className="space-y-2">
-              <Label htmlFor="image">URL Immagine</Label>
+              <Label>Immagine giocatore</Label>
               <Input
-                id="image"
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                placeholder="/path/to/image.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                disabled={uploading}
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Oppure carica un'immagine</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                />
-                {uploading && (
-                  <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                )}
-              </div>
-              {form.image && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Anteprima:</p>
-                  <img
-                    src={getImageUrl(form.image)}
-                    alt="Preview"
-                    className="w-32 h-32 object-cover rounded-lg"
-                  />
+              {form.imageData ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <img src={`data:${form.imageMimeType};base64,${form.imageData}`} alt="Preview" className="w-10 h-10 rounded object-cover border" />
+                  <span className="text-xs text-muted-foreground">Nuovo file</span>
                 </div>
+              ) : editingPlayer?.hasImage ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <img
+                    src={`/api/players/${editingPlayer.id}/image?t=${editingPlayer.updatedAt || Date.now()}`}
+                    alt="Preview"
+                    className="w-10 h-10 rounded object-cover border"
+                  />
+                  <span className="text-xs text-muted-foreground">File presente - carica un nuovo file per sostituirlo</span>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Nessun file selezionato</p>
               )}
             </div>
+            
+            {/* Biografia - a tutta larghezza */}
             <div className="space-y-2">
               <Label htmlFor="biography">Biografia</Label>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -401,11 +435,18 @@ export default function PlayersTab({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
+            <Button variant="outline" onClick={handleCloseDialog} disabled={saving}>
               Annulla
             </Button>
-            <Button onClick={handleSubmit}>
-              {editingPlayer ? 'Aggiorna' : 'Crea'}
+            <Button onClick={handleSubmit} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : (
+                editingPlayer ? 'Aggiorna' : 'Crea'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

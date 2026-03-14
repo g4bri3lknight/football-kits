@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Funzione helper per rimuovere i dati binari dalla risposta
+const sanitizePlayer = (player: any) => {
+  const { imageData, ...rest } = player;
+  return {
+    ...rest,
+    hasImage: !!imageData,
+  };
+};
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,7 +18,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    console.log('PUT /api/players/[id] - Update request:', { id, body });
+    console.log('PUT /api/players/[id] - Update request:', { id, bodyKeys: Object.keys(body) });
 
     // Check if player exists
     const existingPlayer = await db.player.findUnique({
@@ -24,21 +33,28 @@ export async function PUT(
       );
     }
 
-    // Update player - build data object explicitly
+    // Build update data object
     const data: any = {
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.surname !== undefined && { surname: body.surname }),
-      ...(body.nationId !== undefined && {
-        nationId: body.nationId === '' ? null : body.nationId,
-      }),
-      ...(body.image !== undefined && { image: body.image }),
-      ...(body.biography !== undefined && {
-        biography: body.biography === '' ? null : body.biography,
-      }),
       updatedAt: new Date(),
     };
 
-    console.log('Updating player with data:', data);
+    if (body.name !== undefined) data.name = body.name.trim();
+    if (body.surname !== undefined) data.surname = body.surname.trim();
+    if (body.nationId !== undefined) {
+      data.nationId = body.nationId === '' ? null : body.nationId;
+    }
+    if (body.biography !== undefined) {
+      data.biography = body.biography === '' ? null : body.biography;
+    }
+
+    // Gestione immagine BLOB
+    if (body.imageData !== undefined) {
+      data.imageData = body.imageData ? Buffer.from(body.imageData, 'base64') : null;
+      data.imageMimeType = body.imageMimeType || null;
+      data.hasImage = !!body.imageData;
+    }
+
+    console.log('Updating player with data keys:', Object.keys(data));
 
     const updatedPlayer = await db.player.update({
       where: { id },
@@ -49,7 +65,7 @@ export async function PUT(
     });
 
     console.log('Player updated successfully:', updatedPlayer.id);
-    return NextResponse.json(updatedPlayer);
+    return NextResponse.json(sanitizePlayer(updatedPlayer));
   } catch (error) {
     console.error('Error updating player:', error);
     return NextResponse.json(

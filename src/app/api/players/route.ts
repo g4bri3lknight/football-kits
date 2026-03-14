@@ -8,16 +8,62 @@ const generateId = () => {
   return `${timestamp}${randomStr}`;
 };
 
+// Funzione helper per rimuovere i dati binari dalla risposta
+const sanitizePlayer = (player: any) => {
+  const { imageData, ...rest } = player;
+  return {
+    ...rest,
+    hasImage: !!imageData,
+  };
+};
+
 // GET /api/players - Ottieni tutti i giocatori
 export async function GET() {
   console.log('GET /api/players called');
   try {
     const players = await db.player.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        surname: true,
+        nationId: true,
+        biography: true,
+        updatedAt: true,
+        hasImage: true,
         Nation: true,
         PlayerKit: {
-          include: {
-            Kit: true,
+          select: {
+            id: true,
+            playerId: true,
+            kitId: true,
+            Kit: {
+              select: {
+                id: true,
+                name: true,
+                team: true,
+                type: true,
+                likes: true,
+                dislikes: true,
+                updatedAt: true,
+                // Flag per la presenza di file
+                hasImage: true,
+                hasLogo: true,
+                hasModel3D: true,
+                hasDetail1: true,
+                hasDetail2: true,
+                hasDetail3: true,
+                hasDetail4: true,
+                hasDetail5: true,
+                hasDetail6: true,
+                // Labels dei dettagli
+                detail1Label: true,
+                detail2Label: true,
+                detail3Label: true,
+                detail4Label: true,
+                detail5Label: true,
+                detail6Label: true,
+              },
+            },
           },
           orderBy: {
             createdAt: 'desc',
@@ -44,7 +90,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, surname, nationId, image, biography } = body;
+    const { name, surname, nationId, imageData, imageMimeType, biography } = body;
 
     if (!name || !surname) {
       return NextResponse.json(
@@ -75,7 +121,9 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         surname: surname.trim(),
         nationId: nationId || null,
-        image,
+        hasImage: !!imageData,
+        imageData: imageData ? Buffer.from(imageData, 'base64') : null,
+        imageMimeType: imageMimeType || null,
         biography: biography || null,
         updatedAt: new Date(),
       },
@@ -84,7 +132,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(player, { status: 201 });
+    return NextResponse.json(sanitizePlayer(player), { status: 201 });
   } catch (error) {
     console.error('Error creating player:', error);
     return NextResponse.json(

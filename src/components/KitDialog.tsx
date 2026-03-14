@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Kit, Player, PlayerKit } from '@/types';
-import { getImageUrl } from '@/lib/image-url';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Shirt, ThumbsUp, ThumbsDown } from 'lucide-react';
@@ -21,11 +20,10 @@ interface KitDialogProps {
   onNavigateNext: () => void;
 }
 
-interface SelectedDetail {
-  url: string;
+interface DetailInfo {
+  kitId: string;
+  detailNum: number;
   label: string | null;
-  index: number;
-  side: 'left' | 'right';
 }
 
 const truncateName = (name: string, maxLength: number = 8) => {
@@ -35,7 +33,7 @@ const truncateName = (name: string, maxLength: number = 8) => {
 // Funzione per generare o recuperare l'ID utente
 const getUserId = (): string => {
   if (typeof window === 'undefined') return '';
-  
+
   let userId = localStorage.getItem('kit-voter-id');
   if (!userId) {
     userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -53,8 +51,12 @@ export function KitDialog({
   onNavigatePrevious,
   onNavigateNext,
 }: KitDialogProps) {
-  const [selectedDetail, setSelectedDetail] = useState<SelectedDetail | null>(null);
-  const clearDetailTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Dettaglio selezionato con click (mostrato al centro)
+  const [selectedDetail, setSelectedDetail] = useState<DetailInfo | null>(null);
+  // Dettaglio in hover (solo evidenziazione bordo)
+  const [hoveredDetail, setHoveredDetail] = useState<DetailInfo | null>(null);
+  // Traccia se il mouse è premuto (per evitare hover durante rotazione modello)
+  const [isMouseDown, setIsMouseDown] = useState(false);
   const [likes, setLikes] = useState(0);
   const [dislikes, setDislikes] = useState(0);
   const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null);
@@ -65,6 +67,27 @@ export function KitDialog({
   useEffect(() => {
     setUserId(getUserId());
   }, []);
+
+  // Event listener globali per tracciare lo stato del mouse
+  useEffect(() => {
+    const handleMouseDown = () => setIsMouseDown(true);
+    const handleMouseUp = () => setIsMouseDown(false);
+
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  // Reset dettaglio selezionato quando cambia il kit
+  useEffect(() => {
+    setSelectedDetail(null);
+    setHoveredDetail(null);
+    setIsMouseDown(false);
+  }, [selectedKit?.id]);
 
   // Carica i voti quando cambia il kit selezionato
   useEffect(() => {
@@ -80,30 +103,24 @@ export function KitDialog({
     }
   }, [selectedKit?.id, userId]);
 
-  const prevKit = currentKitIndex > 0 && playerKitsList[currentKitIndex - 1] 
-    ? playerKitsList[currentKitIndex - 1].Kit 
+  const prevKit = currentKitIndex > 0 && playerKitsList[currentKitIndex - 1]
+    ? playerKitsList[currentKitIndex - 1].Kit
     : null;
-  const nextKit = currentKitIndex < playerKitsList.length - 1 && playerKitsList[currentKitIndex + 1] 
-    ? playerKitsList[currentKitIndex + 1].Kit 
+  const nextKit = currentKitIndex < playerKitsList.length - 1 && playerKitsList[currentKitIndex + 1]
+    ? playerKitsList[currentKitIndex + 1].Kit
     : null;
 
   const handleVote = async (voteType: 'like' | 'dislike') => {
-    console.log('handleVote called:', voteType, 'userId:', userId, 'selectedKit:', selectedKit?.id);
-    if (!selectedKit?.id || isVoting || !userId) {
-      console.log('Early return - missing data');
-      return;
-    }
-    
+    if (!selectedKit?.id || isVoting || !userId) return;
+
     setIsVoting(true);
     try {
-      console.log('Sending vote request...');
       const res = await fetch(`/api/kits/${selectedKit.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ voteType, userId }),
       });
       const data = await res.json();
-      console.log('Vote response:', data);
       if (data.success) {
         setLikes(data.likes);
         setDislikes(data.dislikes);
@@ -116,40 +133,47 @@ export function KitDialog({
     }
   };
 
-  const handleDetailPointerEnter = useCallback((detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
-    if (detail.url) {
-      if (clearDetailTimeoutRef.current) {
-        clearTimeout(clearDetailTimeoutRef.current);
-        clearDetailTimeoutRef.current = null;
-      }
-      
-      const newDetail: SelectedDetail = { url: detail.url, label: detail.label, index, side };
-      setSelectedDetail(newDetail);
-    }
-  }, []);
-
-  const handleColumnPointerLeave = useCallback(() => {
-    clearDetailTimeoutRef.current = setTimeout(() => {
+  // Click su un dettaglio - mostra al centro
+  const handleDetailClick = useCallback((kitId: string, detailNum: number, label: string | null) => {
+    // Se è già selezionato, lo deseleziona
+    if (selectedDetail?.kitId === kitId && selectedDetail?.detailNum === detailNum) {
       setSelectedDetail(null);
-      clearDetailTimeoutRef.current = null;
-    }, 100);
-  }, []);
+    } else {
+      setSelectedDetail({ kitId, detailNum, label });
+    }
+  }, [selectedDetail]);
+
+  // Helper per ottenere l'URL del dettaglio con cache buster
+  const getDetailUrl = (kitId: string, detailNum: number, updatedAt?: string | Date) => {
+    const cacheBuster = updatedAt ? `?t=${new Date(updatedAt).getTime()}` : '';
+    return `/api/kits/${kitId}/detail/${detailNum}${cacheBuster}`;
+  };
 
   const leftDetails = [
-    { url: selectedKit?.detail1Url, label: selectedKit?.detail1Label },
-    { url: selectedKit?.detail2Url, label: selectedKit?.detail2Label },
-    { url: selectedKit?.detail3Url, label: selectedKit?.detail3Label },
+    { hasDetail: selectedKit?.hasDetail1, label: selectedKit?.detail1Label },
+    { hasDetail: selectedKit?.hasDetail2, label: selectedKit?.detail2Label },
+    { hasDetail: selectedKit?.hasDetail3, label: selectedKit?.detail3Label },
   ];
 
   const rightDetails = [
-    { url: selectedKit?.detail4Url, label: selectedKit?.detail4Label },
-    { url: selectedKit?.detail5Url, label: selectedKit?.detail5Label },
-    { url: selectedKit?.detail6Url, label: selectedKit?.detail6Label },
+    { hasDetail: selectedKit?.hasDetail4, label: selectedKit?.detail4Label },
+    { hasDetail: selectedKit?.hasDetail5, label: selectedKit?.detail5Label },
+    { hasDetail: selectedKit?.hasDetail6, label: selectedKit?.detail6Label },
   ];
+
+  // Helper per ottenere l'URL dell'immagine del kit
+  const getKitImageUrl = (kit: Kit) => {
+    if (kit.hasLogo) return `/api/kits/${kit.id}/logo`;
+    if (kit.hasImage) return `/api/kits/${kit.id}/image`;
+    return null;
+  };
 
   return (
     <Dialog open={!!selectedKit} onOpenChange={() => onClose()}>
-      <DialogContent className="w-[95vw] sm:w-[700px] md:w-[900px] lg:w-[1050px] sm:h-[700px] md:h-[800px] lg:h-[850px] overflow-hidden dialog-custom-color flex flex-col">
+      <DialogContent 
+        className="w-[95vw] h-[65vh] sm:w-[700px] sm:h-[700px] md:w-[900px] md:h-[800px] lg:w-[1050px] lg:h-[850px] overflow-hidden dialog-custom-color flex flex-col"
+        style={{ cursor: isMouseDown ? 'none' : 'default' }}
+      >
         <DialogHeader>
           <div className="flex items-center justify-between w-full gap-2">
             {/* Kit precedente */}
@@ -159,17 +183,11 @@ export function KitDialog({
                 className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer"
                 title={prevKit.name}
               >
-                {prevKit.logoUrl ? (
+                {getKitImageUrl(prevKit) ? (
                   <img
-                    src={getImageUrl(prevKit.logoUrl)}
+                    src={getKitImageUrl(prevKit)!}
                     alt={prevKit.name}
                     className="w-6 h-6 sm:w-7 sm:h-7 object-contain"
-                  />
-                ) : prevKit.imageUrl ? (
-                  <img
-                    src={getImageUrl(prevKit.imageUrl)}
-                    alt={prevKit.name}
-                    className="w-6 h-6 sm:w-7 sm:h-7 object-cover rounded"
                   />
                 ) : (
                   <div className="w-6 h-6 sm:w-7 sm:h-7 bg-muted rounded flex items-center justify-center">
@@ -196,17 +214,11 @@ export function KitDialog({
                 className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer mr-16"
                 title={nextKit.name}
               >
-                {nextKit.logoUrl ? (
+                {getKitImageUrl(nextKit) ? (
                   <img
-                    src={getImageUrl(nextKit.logoUrl)}
+                    src={getKitImageUrl(nextKit)!}
                     alt={nextKit.name}
                     className="w-6 h-6 sm:w-7 sm:h-7 object-contain"
-                  />
-                ) : nextKit.imageUrl ? (
-                  <img
-                    src={getImageUrl(nextKit.imageUrl)}
-                    alt={nextKit.name}
-                    className="w-6 h-6 sm:w-7 sm:h-7 object-cover rounded"
                   />
                 ) : (
                   <div className="w-6 h-6 sm:w-7 sm:h-7 bg-muted rounded flex items-center justify-center">
@@ -234,190 +246,230 @@ export function KitDialog({
         <div className="rounded-lg p-2 sm:p-4 flex-1 min-h-0">
           <div className="grid grid-cols-5 gap-2 sm:gap-3 lg:gap-5 h-full">
             {/* Left detail images */}
-            <div 
-              className="col-span-1 flex flex-col gap-2 sm:gap-3"
-              onPointerLeave={() => handleColumnPointerLeave()}
-            >
-              {leftDetails.map((detail, index) => (
-                <div key={index} className="flex-1 min-h-0 relative group">
-                  <div 
-                    className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
-                      detail.url 
-                        ? `hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0` 
-                        : 'border-transparent'
-                    }`}
-                    style={{
-                      transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
-                      borderColor: selectedDetail?.url === detail.url ? '#cd2127' : '#002f42',
-                      transform: selectedDetail?.url === detail.url ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
-                    }}
-                    onPointerEnter={(e) => {
-                      if (detail.url) {
-                        e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
-                        e.currentTarget.style.borderColor = '#cd2127';
-                        handleDetailPointerEnter(detail, index, 'left');
-                      }
-                    }}
-                  >
-                    {detail.url ? (
-                      <>
-                        <motion.img
-                          layoutId={detail.url}
-                          src={getImageUrl(detail.url)}
-                          alt={detail.label || `Dettaglio ${index + 1}`}
-                          className="max-w-full max-h-full object-contain p-1"
-                          style={{ 
-                            opacity: selectedDetail?.url === detail.url ? 0 : 1 
-                          }}
-                          transition={{ 
-                            type: 'spring', 
-                            stiffness: 350, 
-                            damping: 30 
-                          }}
-                        />
-                        {detail.label && (
-                          <div 
-                            className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg transition-transform"
+            <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
+              {leftDetails.map((detail, index) => {
+                const detailNum = index + 1;
+                const detailUrl = selectedKit ? getDetailUrl(selectedKit.id, detailNum, selectedKit.updatedAt) : null;
+                const isSelected = selectedDetail?.kitId === selectedKit?.id && selectedDetail?.detailNum === detailNum;
+                const isHovered = hoveredDetail?.kitId === selectedKit?.id && hoveredDetail?.detailNum === detailNum;
+
+                return (
+                  <div key={index} className="flex-1 min-h-0 relative group">
+                    <div
+                      className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
+                        detail.hasDetail
+                          ? `transition-custom-color hover:z-30 z-0`
+                          : 'border-transparent'
+                      }`}
+                      style={{
+                        transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                        borderColor: isSelected || isHovered ? '#cd2127' : '#002f42',
+                        transform: isSelected || isHovered ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
+                        cursor: isMouseDown ? 'none' : (detail.hasDetail ? 'pointer' : 'default'),
+                      }}
+                      onMouseEnter={() => {
+                        // Non fare nulla se mouse premuto
+                        if (isMouseDown || !detail.hasDetail || !selectedKit) return;
+                        setHoveredDetail({ kitId: selectedKit.id, detailNum, label: detail.label || null });
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredDetail(null);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (detail.hasDetail && selectedKit) {
+                          handleDetailClick(selectedKit.id, detailNum, detail.label || null);
+                        }
+                      }}
+                    >
+                      {detail.hasDetail && detailUrl ? (
+                        <>
+                          <motion.img
+                            layoutId={`detail-${selectedKit?.id}-${detailNum}`}
+                            src={detailUrl}
+                            alt={detail.label || `Dettaglio ${detailNum}`}
+                            className="max-w-full max-h-full object-contain p-1"
                             style={{
-                              transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
-                              opacity: selectedDetail?.url === detail.url ? 0 : 1,
+                              opacity: isSelected ? 0 : 1
                             }}
-                          >
-                            <p 
-                              className="text-center text-foreground truncate transition-all"
+                            transition={{
+                              type: 'spring',
+                              stiffness: 350,
+                              damping: 30
+                            }}
+                          />
+                          {detail.label && (
+                            <div
+                              className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg"
                               style={{
-                                fontSize: KIT_DETAIL_IMAGE_CONFIG.label.baseSize.mobile,
-                                transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                                opacity: isSelected ? 0 : 1,
                               }}
                             >
-                              {detail.label}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                        <Shirt className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </div>
-                    )}
+                              <p
+                                className="text-center text-foreground truncate"
+                                style={{
+                                  fontSize: KIT_DETAIL_IMAGE_CONFIG.label.baseSize.mobile,
+                                }}
+                              >
+                                {detail.label}
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                          <Shirt className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            
+
             {/* Central 3D Model */}
-            <div 
+            <div
               className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2 relative"
               style={{ borderColor: '#002f42' }}
-              onPointerEnter={() => {
-                if (clearDetailTimeoutRef.current) {
-                  clearTimeout(clearDetailTimeoutRef.current);
-                  clearDetailTimeoutRef.current = null;
-                }
-                setSelectedDetail(null);
-              }}
+              onClick={() => setSelectedDetail(null)}
             >
-              {/* Selected detail overlay */}
-              {selectedDetail ? (
-                <>
+              {/* Selected detail overlay con AnimatePresence */}
+              <AnimatePresence mode="popLayout">
+                {selectedDetail && selectedKit ? (
                   <motion.img
-                    key={selectedDetail.url}
-                    layoutId={selectedDetail.url}
-                    src={getImageUrl(selectedDetail.url)}
+                    key={`center-detail-${selectedDetail.kitId}-${selectedDetail.detailNum}`}
+                    layoutId={`detail-${selectedDetail.kitId}-${selectedDetail.detailNum}`}
+                    src={getDetailUrl(selectedDetail.kitId, selectedDetail.detailNum, selectedKit?.updatedAt)}
                     alt={selectedDetail.label || 'Dettaglio selezionato'}
                     className="absolute inset-0 m-auto max-w-full max-h-full object-contain p-4 z-10"
-                    transition={{ 
-                      type: 'spring', 
-                      stiffness: 350, 
-                      damping: 30
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      layout: {
+                        type: 'spring',
+                        stiffness: 350,
+                        damping: 30
+                      },
+                      opacity: { duration: 0.15 }
                     }}
                   />
-                  {selectedDetail.label && (
-                    <div className="absolute bottom-2 left-2 right-2 bg-background/80 backdrop-blur-sm py-1 px-2 rounded-lg z-20">
-                      <p className="text-center text-foreground text-sm">
-                        {selectedDetail.label}
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <KitViewer3D
-                  modelUrl={selectedKit?.model3DUrl}
-                  className="h-full"
-                />
+                ) : null}
+              </AnimatePresence>
+
+              {/* Label del dettaglio selezionato */}
+              <AnimatePresence>
+                {selectedDetail && selectedDetail.label && (
+                  <motion.div
+                    key={`label-${selectedDetail.kitId}-${selectedDetail.detailNum}`}
+                    className="absolute bottom-2 left-2 right-2 bg-background/80 backdrop-blur-sm py-1 px-2 rounded-lg z-20"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <p className="text-center text-foreground text-sm">
+                      {selectedDetail.label}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Modello 3D o placeholder - visibile solo quando nessun dettaglio è selezionato */}
+              {!selectedDetail && (
+                selectedKit?.hasModel3D ? (
+                  <KitViewer3D
+                    kitId={selectedKit.id}
+                    className="h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">
+                    <Shirt className="w-16 h-16" />
+                  </div>
+                )
               )}
             </div>
-            
+
             {/* Right detail images */}
-            <div 
-              className="col-span-1 flex flex-col gap-2 sm:gap-3"
-              onPointerLeave={() => handleColumnPointerLeave()}
-            >
-              {rightDetails.map((detail, index) => (
-                <div key={index} className="flex-1 min-h-0 relative group">
-                  <div 
-                    className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
-                      detail.url 
-                        ? `hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0` 
-                        : 'border-transparent'
-                    }`}
-                    style={{
-                      transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
-                      borderColor: selectedDetail?.url === detail.url ? '#cd2127' : '#002f42',
-                      transform: selectedDetail?.url === detail.url ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
-                    }}
-                    onPointerEnter={(e) => {
-                      if (detail.url) {
-                        e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
-                        e.currentTarget.style.borderColor = '#cd2127';
-                        handleDetailPointerEnter(detail, index, 'right');
-                      }
-                    }}
-                  >
-                    {detail.url ? (
-                      <>
-                        <motion.img
-                          layoutId={detail.url}
-                          src={getImageUrl(detail.url)}
-                          alt={detail.label || `Dettaglio ${index + 4}`}
-                          className="max-w-full max-h-full object-contain p-1"
-                          style={{ 
-                            opacity: selectedDetail?.url === detail.url ? 0 : 1 
-                          }}
-                          transition={{ 
-                            type: 'spring', 
-                            stiffness: 350, 
-                            damping: 30 
-                          }}
-                        />
-                        {detail.label && (
-                          <div 
-                            className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg transition-transform"
+            <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
+              {rightDetails.map((detail, index) => {
+                const detailNum = index + 4;
+                const detailUrl = selectedKit ? getDetailUrl(selectedKit.id, detailNum, selectedKit.updatedAt) : null;
+                const isSelected = selectedDetail?.kitId === selectedKit?.id && selectedDetail?.detailNum === detailNum;
+                const isHovered = hoveredDetail?.kitId === selectedKit?.id && hoveredDetail?.detailNum === detailNum;
+
+                return (
+                  <div key={index} className="flex-1 min-h-0 relative group">
+                    <div
+                      className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
+                        detail.hasDetail
+                          ? `transition-custom-color hover:z-30 z-0`
+                          : 'border-transparent'
+                      }`}
+                      style={{
+                        transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                        borderColor: isSelected || isHovered ? '#cd2127' : '#002f42',
+                        transform: isSelected || isHovered ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
+                        cursor: isMouseDown ? 'none' : (detail.hasDetail ? 'pointer' : 'default'),
+                      }}
+                      onMouseEnter={() => {
+                        // Non fare nulla se mouse premuto
+                        if (isMouseDown || !detail.hasDetail || !selectedKit) return;
+                        setHoveredDetail({ kitId: selectedKit.id, detailNum, label: detail.label || null });
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredDetail(null);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (detail.hasDetail && selectedKit) {
+                          handleDetailClick(selectedKit.id, detailNum, detail.label || null);
+                        }
+                      }}
+                    >
+                      {detail.hasDetail && detailUrl ? (
+                        <>
+                          <motion.img
+                            layoutId={`detail-${selectedKit?.id}-${detailNum}`}
+                            src={detailUrl}
+                            alt={detail.label || `Dettaglio ${detailNum}`}
+                            className="max-w-full max-h-full object-contain p-1"
                             style={{
-                              transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
-                              opacity: selectedDetail?.url === detail.url ? 0 : 1,
+                              opacity: isSelected ? 0 : 1
                             }}
-                          >
-                            <p 
-                              className="text-center text-foreground truncate transition-all"
+                            transition={{
+                              type: 'spring',
+                              stiffness: 350,
+                              damping: 30
+                            }}
+                          />
+                          {detail.label && (
+                            <div
+                              className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg"
                               style={{
-                                fontSize: KIT_DETAIL_IMAGE_CONFIG.label.baseSize.mobile,
-                                transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
+                                opacity: isSelected ? 0 : 1,
                               }}
                             >
-                              {detail.label}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                        <Shirt className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </div>
-                    )}
+                              <p
+                                className="text-center text-foreground truncate"
+                                style={{
+                                  fontSize: KIT_DETAIL_IMAGE_CONFIG.label.baseSize.mobile,
+                                }}
+                              >
+                                {detail.label}
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                          <Shirt className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -428,7 +480,10 @@ export function KitDialog({
             {selectedKitPlayer && (
               <>
                 <Avatar className="w-10 h-10 ring-2 avatar-custom-color">
-                  <AvatarImage src={getImageUrl(selectedKitPlayer.image)} alt={getPlayerDisplayName(selectedKitPlayer)} />
+                  <AvatarImage
+                    src={selectedKitPlayer.hasImage ? `/api/players/${selectedKitPlayer.id}/image?t=${selectedKitPlayer.updatedAt ? new Date(selectedKitPlayer.updatedAt).getTime() : Date.now()}` : undefined}
+                    alt={getPlayerDisplayName(selectedKitPlayer)}
+                  />
                   <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                     {(selectedKitPlayer.name[0] + (selectedKitPlayer.surname?.[0] || '')).toUpperCase()}
                   </AvatarFallback>
@@ -450,16 +505,16 @@ export function KitDialog({
               disabled={isVoting}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 transition-all cursor-pointer disabled:opacity-50"
               style={{
-                backgroundColor: userVote === 'like' ? '#002f42' : 'rgba(0, 47, 66, 0.15)',
-                borderColor: userVote === 'like' ? '#004d6d' : 'rgba(0, 47, 66, 0.5)',
+                backgroundColor: userVote === 'like' ? '#002f42' : 'rgba(0, 102, 204, 0.15)',
+                borderColor: userVote === 'like' ? '#004d6d' : 'rgba(0, 102, 204, 0.5)',
               }}
             >
               <ThumbsUp 
                 className="w-5 h-5 transition-colors" 
-                style={{ color: userVote === 'like' ? '#ffffff' : '#002f42' }}
+                style={{ color: userVote === 'like' ? '#ffffff' : '#0066cc' }}
                 fill={userVote === 'like' ? '#ffffff' : 'transparent'}
               />
-              <span className="font-semibold" style={{ color: userVote === 'like' ? '#ffffff' : '#002f42' }}>{likes}</span>
+              <span className="font-semibold" style={{ color: userVote === 'like' ? '#ffffff' : '#0066cc' }}>{likes}</span>
             </button>
             <button
               type="button"

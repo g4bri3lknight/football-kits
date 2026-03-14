@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
 
 export const dynamic = 'force-dynamic';
 
-// POST /api/upload - Carica un file
+// POST /api/upload - Carica un file e restituisce i dati in base64
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const folder = (formData.get('folder') as string) || 'uploads';
 
     if (!file) {
       return NextResponse.json(
@@ -19,32 +15,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Creare la cartella se non esiste
-    const uploadDir = join(process.cwd(), 'public', folder);
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    // Generare un nome unico per il file
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${timestamp}-${randomString}.${fileExtension}`;
-    const filePath = join(uploadDir, fileName);
-
-    // Convertire il file in buffer e salvarlo
+    // Leggi il file come ArrayBuffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    
+    // Converti in base64
+    const base64 = buffer.toString('base64');
+    const mimeType = file.type || 'application/octet-stream';
 
-    // Restituire l'URL del file
-    const fileUrl = `/${folder}/${fileName}`;
-
+    // Restituisci i dati del file
     return NextResponse.json({
-      url: fileUrl,
-      fileName,
+      success: true,
+      data: base64,
+      mimeType,
+      fileName: file.name,
       size: file.size,
-      type: file.type,
     }, { status: 201 });
   } catch (error) {
     console.error('Error uploading file:', error);

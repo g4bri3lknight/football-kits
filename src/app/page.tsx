@@ -84,12 +84,14 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string>('');
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [headerBackgrounds, setHeaderBackgrounds] = useState<string[]>([]);
   const [layer1ImageIndex, setLayer1ImageIndex] = useState(0);
   const [layer2ImageIndex, setLayer2ImageIndex] = useState(1);
   const [layer1IsTop, setLayer1IsTop] = useState(true); // true = layer1 è sopra, false = layer2 è sopra
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [backgroundsReady, setBackgroundsReady] = useState(false);
   
   // Dialog states
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -112,65 +114,21 @@ export default function Home() {
     return () => window.removeEventListener('resize', updateHeaderHeight);
   }, [loading, players, nations]);
 
+  // Carica prima gli sfondi, poi i dati
   useEffect(() => {
-    fetchData();
-    loadRandomBackground();
-    trackHomePageView();
-  }, []);
-
-  // Carica le immagini di sfondo disponibili per l'header
-  useEffect(() => {
-    const loadHeaderBackgrounds = async () => {
-      try {
-        const res = await fetch('/api/backgrounds/header');
-        const data = await res.json();
-        
-        if (data.hasImages && data.images && data.images.length > 0) {
-          const images = data.images;
-          setHeaderBackgrounds(images);
-          headerBackgroundsRef.current = images;
-          
-          // Imposta indici casuali per iniziare
-          const randomIndex1 = Math.floor(Math.random() * images.length);
-          const randomIndex2 = (randomIndex1 + 1) % images.length;
-          setLayer1ImageIndex(randomIndex1);
-          setLayer2ImageIndex(randomIndex2);
-          
-          // Precarica tutte le immagini e poi segnala che sono pronte
-          let loadedCount = 0;
-          images.forEach((img: string) => {
-            const preloadImg = new window.Image();
-            preloadImg.onload = () => {
-              loadedCount++;
-              if (loadedCount === images.length) {
-                setImagesLoaded(true);
-              }
-            };
-            preloadImg.onerror = () => {
-              loadedCount++;
-              if (loadedCount === images.length) {
-                setImagesLoaded(true);
-              }
-            };
-            preloadImg.src = `/background/header/${img}`;
-          });
-          
-          // Fallback: segnala come caricato dopo 2 secondi comunque
-          setTimeout(() => setImagesLoaded(true), 2000);
-        } else {
-          setHeaderBackgrounds([]);
-          headerBackgroundsRef.current = [];
-          setImagesLoaded(true);
-        }
-      } catch (error) {
-        console.error('Error loading header backgrounds:', error);
-        setHeaderBackgrounds([]);
-        headerBackgroundsRef.current = [];
-        setImagesLoaded(true);
-      }
+    const loadBackgroundsFirst = async () => {
+      // Carica entrambi gli sfondi in parallelo
+      await Promise.all([
+        loadRandomBackground(),
+        loadHeaderBackgrounds(),
+      ]);
+      setBackgroundsReady(true);
+      // Ora carica i dati dei giocatori
+      await fetchData();
     };
     
-    loadHeaderBackgrounds();
+    loadBackgroundsFirst();
+    trackHomePageView();
   }, []);
 
   // Cambia lo sfondo dell'header - fade-out del layer superiore
@@ -240,10 +198,97 @@ export default function Home() {
       const data = await res.json();
       if (data.images && data.images.length > 0) {
         const randomIndex = Math.floor(Math.random() * data.images.length);
-        setBackgroundImage(`/background/${data.images[randomIndex]}`);
+        const selectedImage = `/background/${data.images[randomIndex]}`;
+        
+        // Precarica l'immagine prima di impostarla
+        return new Promise<void>((resolve) => {
+          const img = new window.Image();
+          img.onload = () => {
+            setBackgroundImage(selectedImage);
+            setBackgroundLoaded(true);
+            resolve();
+          };
+          img.onerror = () => {
+            setBackgroundImage(selectedImage);
+            setBackgroundLoaded(true);
+            resolve();
+          };
+          img.src = selectedImage;
+        });
       }
     } catch (error) {
       console.error('Error loading background:', error);
+      setBackgroundLoaded(true);
+    }
+  };
+
+  // Load header background images
+  const loadHeaderBackgrounds = async () => {
+    try {
+      const res = await fetch('/api/backgrounds/header');
+      const data = await res.json();
+      
+      if (data.hasImages && data.images && data.images.length > 0) {
+        const images = data.images;
+        
+        return new Promise<void>((resolve) => {
+          // Imposta indici casuali per iniziare
+          const randomIndex1 = Math.floor(Math.random() * images.length);
+          const randomIndex2 = (randomIndex1 + 1) % images.length;
+          
+          // Precarica tutte le immagini
+          let loadedCount = 0;
+          const totalImages = images.length;
+          
+          images.forEach((img: string) => {
+            const preloadImg = new window.Image();
+            preloadImg.onload = () => {
+              loadedCount++;
+              if (loadedCount === totalImages) {
+                setHeaderBackgrounds(images);
+                headerBackgroundsRef.current = images;
+                setLayer1ImageIndex(randomIndex1);
+                setLayer2ImageIndex(randomIndex2);
+                setImagesLoaded(true);
+                resolve();
+              }
+            };
+            preloadImg.onerror = () => {
+              loadedCount++;
+              if (loadedCount === totalImages) {
+                setHeaderBackgrounds(images);
+                headerBackgroundsRef.current = images;
+                setLayer1ImageIndex(randomIndex1);
+                setLayer2ImageIndex(randomIndex2);
+                setImagesLoaded(true);
+                resolve();
+              }
+            };
+            preloadImg.src = `/background/header/${img}`;
+          });
+          
+          // Fallback dopo 3 secondi
+          setTimeout(() => {
+            if (loadedCount < totalImages) {
+              setHeaderBackgrounds(images);
+              headerBackgroundsRef.current = images;
+              setLayer1ImageIndex(randomIndex1);
+              setLayer2ImageIndex(randomIndex2);
+              setImagesLoaded(true);
+              resolve();
+            }
+          }, 3000);
+        });
+      } else {
+        setHeaderBackgrounds([]);
+        headerBackgroundsRef.current = [];
+        setImagesLoaded(true);
+      }
+    } catch (error) {
+      console.error('Error loading header backgrounds:', error);
+      setHeaderBackgrounds([]);
+      headerBackgroundsRef.current = [];
+      setImagesLoaded(true);
     }
   };
 

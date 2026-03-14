@@ -1,7 +1,6 @@
 'use client';
 
 import { Player } from '@/types';
-import { getImageUrl } from '@/lib/image-url';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +44,10 @@ export function PlayerCard({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="w-10 h-10 sm:w-12 sm:h-12 ring-1 avatar-custom-color">
-              <AvatarImage src={getImageUrl(player.image)} alt={player.name} />
+              <AvatarImage 
+                src={player.hasImage ? `/api/players/${player.id}/image?t=${player.updatedAt ? new Date(player.updatedAt).getTime() : Date.now()}` : undefined} 
+                alt={player.name} 
+              />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {(player.name[0] + (player.surname?.[0] || '')).toUpperCase()}
               </AvatarFallback>
@@ -89,23 +91,23 @@ export function PlayerCard({
                   className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer transition-colors group"
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {playerKit.Kit.logoUrl ? (
+                    {playerKit.Kit.hasLogo ? (
                       <div className="w-10 h-10 overflow-hidden flex-shrink-0">
                         <img
-                          src={getImageUrl(playerKit.Kit.logoUrl)}
+                          src={`/api/kits/${playerKit.Kit.id}/logo`}
                           alt={`Logo ${playerKit.Kit.team}`}
                           className="w-full h-full object-contain p-1"
                         />
                       </div>
-                    ) : playerKit.Kit.imageUrl && (
+                    ) : playerKit.Kit.hasImage ? (
                       <div className="w-10 h-10 overflow-hidden flex-shrink-0">
                         <img
-                          src={getImageUrl(playerKit.Kit.imageUrl)}
+                          src={`/api/kits/${playerKit.Kit.id}/image`}
                           alt={playerKit.Kit.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
-                    )}
+                    ) : null}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
                         {playerKit.Kit.name} - {playerKit.Kit.team}

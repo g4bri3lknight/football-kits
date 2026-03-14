@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Funzione helper per rimuovere i dati binari dalla risposta
+const sanitizeKit = (kit: any) => {
+  const { imageData, logoData, model3DData, detail1Data, detail2Data, detail3Data, detail4Data, detail5Data, detail6Data, ...rest } = kit;
+  // I flag hasImage, hasLogo, ecc. sono già nel database
+  return rest;
+};
+
 // GET /api/kits/[id] - Ottieni un kit specifico
 export async function GET(
   request: NextRequest,
@@ -13,7 +20,11 @@ export async function GET(
       include: {
         PlayerKit: {
           include: {
-            Player: true,
+            Player: {
+              include: {
+                Nation: true,
+              },
+            },
           },
           orderBy: {
             createdAt: 'desc',
@@ -29,7 +40,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(kit);
+    return NextResponse.json(sanitizeKit(kit));
   } catch (error) {
     console.error('Error fetching kit:', error);
     return NextResponse.json(
@@ -47,56 +58,114 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    console.log('Update kit request body:', JSON.stringify(body, null, 2));
-    
+    console.log('Update kit request body keys:', Object.keys(body));
+
     const {
       name,
       team,
       type,
-      imageUrl,
-      model3DUrl,
-      logoUrl,
-      detail1Url,
-      detail2Url,
-      detail3Url,
-      detail4Url,
-      detail5Url,
-      detail6Url,
+      // Nuovi campi BLOB
+      imageData,
+      imageMimeType,
+      logoData,
+      logoMimeType,
+      model3DData,
+      model3DName,
+      detail1Data,
+      detail1MimeType,
       detail1Label,
+      detail2Data,
+      detail2MimeType,
       detail2Label,
+      detail3Data,
+      detail3MimeType,
       detail3Label,
+      detail4Data,
+      detail4MimeType,
       detail4Label,
+      detail5Data,
+      detail5MimeType,
       detail5Label,
+      detail6Data,
+      detail6MimeType,
       detail6Label,
     } = body;
 
-    // Convert empty strings to null for optional fields
+    // Costruisci l'oggetto data dinamicamente
+    const data: any = {
+      updatedAt: new Date(),
+    };
+
+    if (name !== undefined) data.name = name;
+    if (team !== undefined) data.team = team;
+    if (type !== undefined) data.type = type;
+
+    // Gestione dei dati binari (se forniti) + aggiornamento flag
+    if (imageData !== undefined) {
+      data.imageData = imageData ? Buffer.from(imageData, 'base64') : null;
+      data.imageMimeType = imageMimeType || null;
+      data.hasImage = !!imageData;
+    }
+    if (logoData !== undefined) {
+      data.logoData = logoData ? Buffer.from(logoData, 'base64') : null;
+      data.logoMimeType = logoMimeType || null;
+      data.hasLogo = !!logoData;
+    }
+    if (model3DData !== undefined) {
+      data.model3DData = model3DData ? Buffer.from(model3DData, 'base64') : null;
+      data.model3DName = model3DName || null;
+      data.hasModel3D = !!model3DData;
+    }
+
+    // Dettagli
+    if (detail1Data !== undefined) {
+      data.detail1Data = detail1Data ? Buffer.from(detail1Data, 'base64') : null;
+      data.detail1MimeType = detail1MimeType || null;
+      data.hasDetail1 = !!detail1Data;
+    }
+    if (detail1Label !== undefined) data.detail1Label = detail1Label || null;
+
+    if (detail2Data !== undefined) {
+      data.detail2Data = detail2Data ? Buffer.from(detail2Data, 'base64') : null;
+      data.detail2MimeType = detail2MimeType || null;
+      data.hasDetail2 = !!detail2Data;
+    }
+    if (detail2Label !== undefined) data.detail2Label = detail2Label || null;
+
+    if (detail3Data !== undefined) {
+      data.detail3Data = detail3Data ? Buffer.from(detail3Data, 'base64') : null;
+      data.detail3MimeType = detail3MimeType || null;
+      data.hasDetail3 = !!detail3Data;
+    }
+    if (detail3Label !== undefined) data.detail3Label = detail3Label || null;
+
+    if (detail4Data !== undefined) {
+      data.detail4Data = detail4Data ? Buffer.from(detail4Data, 'base64') : null;
+      data.detail4MimeType = detail4MimeType || null;
+      data.hasDetail4 = !!detail4Data;
+    }
+    if (detail4Label !== undefined) data.detail4Label = detail4Label || null;
+
+    if (detail5Data !== undefined) {
+      data.detail5Data = detail5Data ? Buffer.from(detail5Data, 'base64') : null;
+      data.detail5MimeType = detail5MimeType || null;
+      data.hasDetail5 = !!detail5Data;
+    }
+    if (detail5Label !== undefined) data.detail5Label = detail5Label || null;
+
+    if (detail6Data !== undefined) {
+      data.detail6Data = detail6Data ? Buffer.from(detail6Data, 'base64') : null;
+      data.detail6MimeType = detail6MimeType || null;
+      data.hasDetail6 = !!detail6Data;
+    }
+    if (detail6Label !== undefined) data.detail6Label = detail6Label || null;
+
     const kit = await db.kit.update({
       where: { id },
-      data: {
-        name,
-        team,
-        type,
-        imageUrl: imageUrl || null,
-        model3DUrl: model3DUrl || null,
-        logoUrl: logoUrl || null,
-        detail1Url: detail1Url || null,
-        detail2Url: detail2Url || null,
-        detail3Url: detail3Url || null,
-        detail4Url: detail4Url || null,
-        detail5Url: detail5Url || null,
-        detail6Url: detail6Url || null,
-        detail1Label: detail1Label || null,
-        detail2Label: detail2Label || null,
-        detail3Label: detail3Label || null,
-        detail4Label: detail4Label || null,
-        detail5Label: detail5Label || null,
-        detail6Label: detail6Label || null,
-        updatedAt: new Date(),
-      },
+      data,
     });
 
-    return NextResponse.json(kit);
+    return NextResponse.json(sanitizeKit(kit));
   } catch (error) {
     console.error('Error updating kit:', error);
     return NextResponse.json(

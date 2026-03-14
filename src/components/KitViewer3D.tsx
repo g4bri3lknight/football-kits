@@ -5,20 +5,19 @@ import { OrbitControls, useGLTF, ContactShadows } from '@react-three/drei';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { getImageUrl } from '@/lib/image-url';
 import { Shirt } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
 
 const CFG = KIT_VIEWER_CONFIG;
 
 interface KitViewer3DProps {
-  modelUrl?: string;
+  kitId?: string;
   className?: string;
 }
 
 // Componente Modello
 function Model({ url }: { url: string }) {
-  const { scene } = useGLTF(getImageUrl(url));
+  const { scene } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
@@ -258,7 +257,7 @@ function Scene({
 }
 
 export default function KitViewer3D({
-  modelUrl,
+  kitId,
   className = '',
 }: KitViewer3DProps) {
   const [resetKey, setResetKey] = useState(0);
@@ -296,7 +295,7 @@ export default function KitViewer3D({
     }, CFG.autoRotate.resumeDelay);
   };
 
-  if (!modelUrl) {
+  if (!kitId) {
     return (
       <div className={`w-full h-full flex items-center justify-center ${className}`}>
         <div className="text-center p-8">
@@ -306,6 +305,9 @@ export default function KitViewer3D({
       </div>
     );
   }
+
+  // URL del modello dall'API
+  const modelUrl = `/api/kits/${kitId}/model3d`;
 
   return (
     <div 

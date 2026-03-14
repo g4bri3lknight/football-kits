@@ -11,8 +11,9 @@ export interface Player {
   surname?: string;
   nationId?: string | null;
   Nation?: Nation | null;
-  image?: string;
+  hasImage?: boolean;
   biography?: string;
+  updatedAt?: string | Date;
   PlayerKit: PlayerKit[];
 }
 
@@ -21,16 +22,16 @@ export interface Kit {
   name: string;
   team: string;
   type: string;
-  imageUrl?: string;
-  model3DUrl?: string;
-  logoUrl?: string;
-  // Detail images (3 left, 3 right)
-  detail1Url?: string;
-  detail2Url?: string;
-  detail3Url?: string;
-  detail4Url?: string;
-  detail5Url?: string;
-  detail6Url?: string;
+  // Indicatori per la presenza di immagini
+  hasImage?: boolean;
+  hasLogo?: boolean;
+  hasModel3D?: boolean;
+  hasDetail1?: boolean;
+  hasDetail2?: boolean;
+  hasDetail3?: boolean;
+  hasDetail4?: boolean;
+  hasDetail5?: boolean;
+  hasDetail6?: boolean;
   // Labels for detail images
   detail1Label?: string;
   detail2Label?: string;
@@ -39,8 +40,10 @@ export interface Kit {
   detail5Label?: string;
   detail6Label?: string;
   // Voti
-  likes: number;
-  dislikes: number;
+  likes?: number;
+  dislikes?: number;
+  // Timestamp per cache busting
+  updatedAt?: string | Date;
 }
 
 export interface PlayerKit {

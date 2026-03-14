@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { getImageUrl } from '@/lib/image-url';
 import {
   Card,
   CardContent,
@@ -37,7 +36,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Search, Pencil } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Player, Kit, PlayerKit } from './types';
 import { getPlayerDisplayName, getKitTypeColor, translateKitType } from './utils';
@@ -65,6 +64,7 @@ export default function AssociationsTab({
   const [search, setSearch] = useState({ player: '', season: '', team: '' });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAssociation, setEditingAssociation] = useState<PlayerKit | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ playerId: '', kitId: '' });
   const [playerSearch, setPlayerSearch] = useState('');
   const [kitSearch, setKitSearch] = useState('');
@@ -136,6 +136,7 @@ export default function AssociationsTab({
       }
     }
 
+    setSaving(true);
     try {
       if (editingAssociation) {
         await onUpdatePlayerKit(editingAssociation.id, form);
@@ -145,6 +146,8 @@ export default function AssociationsTab({
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving association:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -277,7 +280,7 @@ export default function AssociationsTab({
 
       {/* Association Dialog */}
       <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-md sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-3 sm:pb-4">
             <DialogTitle className="text-lg sm:text-xl">
               {editingAssociation ? 'Modifica Associazione' : 'Nuova Associazione'}
@@ -286,18 +289,17 @@ export default function AssociationsTab({
               {editingAssociation ? 'Modifica l\'associazione tra giocatore e kit' : 'Associa un giocatore a un kit'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Giocatore */}
             <div className="space-y-2">
-              <div>
-                <Label htmlFor="player">Giocatore *</Label>
-                {form.playerId && (
-                  <div className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
-                    Giocatore selezionato: <strong>
-                      {getPlayerDisplayName(players.find(p => p.id === form.playerId)!)}
-                    </strong>
-                  </div>
-                )}
-              </div>
+              <Label htmlFor="player">Giocatore *</Label>
+              {form.playerId && (
+                <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                  Selezionato: <strong>
+                    {getPlayerDisplayName(players.find(p => p.id === form.playerId)!)}
+                  </strong>
+                </div>
+              )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -319,8 +321,8 @@ export default function AssociationsTab({
                       }`}
                       onClick={() => setForm({ ...form, playerId: player.id })}
                     >
-                      {player.image && (
-                        <img src={getImageUrl(player.image)} alt={player.name} className="w-8 h-8 rounded-lg object-cover ring-1 ring-border/50" />
+                      {player.hasImage && (
+                        <img src={`/api/players/${player.id}/image`} alt={player.name} className="w-8 h-8 rounded-lg object-cover ring-1 ring-border/50" />
                       )}
                       <div>
                         <div className="font-medium">{getPlayerDisplayName(player)}</div>
@@ -335,20 +337,20 @@ export default function AssociationsTab({
                   ))}
               </div>
             </div>
+            
+            {/* Kit */}
             <div className="space-y-2">
-              <div>
-                <Label htmlFor="kit">Kit *</Label>
-                {form.kitId && (
-                  <div className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
-                    Kit selezionato: <strong>
-                      {(() => {
-                        const kit = kits.find(k => k.id === form.kitId);
-                        return kit ? `${kit.name} - ${kit.team}` : '';
-                      })()}
-                    </strong>
-                  </div>
-                )}
-              </div>
+              <Label htmlFor="kit">Kit *</Label>
+              {form.kitId && (
+                <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                  Selezionato: <strong>
+                    {(() => {
+                      const kit = kits.find(k => k.id === form.kitId);
+                      return kit ? `${kit.name} - ${kit.team}` : '';
+                    })()}
+                  </strong>
+                </div>
+              )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -372,8 +374,8 @@ export default function AssociationsTab({
                       }`}
                       onClick={() => setForm({ ...form, kitId: kit.id })}
                     >
-                      {kit.imageUrl && (
-                        <img src={getImageUrl(kit.imageUrl)} alt={kit.name} className="w-8 h-8 rounded object-cover" />
+                      {kit.hasImage && (
+                        <img src={`/api/kits/${kit.id}/image`} alt={kit.name} className="w-8 h-8 rounded object-cover" />
                       )}
                       <div className="flex-1">
                         <div className="font-medium">{kit.name} - {kit.team}</div>
@@ -387,11 +389,18 @@ export default function AssociationsTab({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
+            <Button variant="outline" onClick={handleCloseDialog} disabled={saving}>
               Annulla
             </Button>
-            <Button onClick={handleSubmit}>
-              {editingAssociation ? 'Aggiorna' : 'Crea Associazione'}
+            <Button onClick={handleSubmit} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : (
+                editingAssociation ? 'Aggiorna' : 'Crea Associazione'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -12,20 +12,58 @@ const generateId = () => {
 export async function GET() {
   try {
     const playerKits = await db.playerKit.findMany({
-      include: {
+      select: {
+        id: true,
+        playerId: true,
+        kitId: true,
+        createdAt: true,
         Player: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            nationId: true,
             Nation: true,
           },
         },
-        Kit: true,
+        Kit: {
+          select: {
+            id: true,
+            name: true,
+            team: true,
+            type: true,
+            likes: true,
+            dislikes: true,
+            detail1Label: true,
+            detail2Label: true,
+            detail3Label: true,
+            detail4Label: true,
+            detail5Label: true,
+            detail6Label: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return NextResponse.json(playerKits);
+    // Aggiungi flag per le immagini (non verifichiamo per performance)
+    const result = playerKits.map(pk => ({
+      ...pk,
+      Player: {
+        ...pk.Player,
+        hasImage: false,
+      },
+      Kit: {
+        ...pk.Kit,
+        hasImage: false,
+        hasLogo: false,
+        hasModel3D: false,
+      },
+    }));
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching player kits:', error);
     return NextResponse.json(
@@ -72,17 +110,46 @@ export async function POST(request: NextRequest) {
         kitId,
         updatedAt: new Date(),
       },
-      include: {
+      select: {
+        id: true,
+        playerId: true,
+        kitId: true,
+        createdAt: true,
         Player: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            nationId: true,
             Nation: true,
           },
         },
-        Kit: true,
+        Kit: {
+          select: {
+            id: true,
+            name: true,
+            team: true,
+            type: true,
+            likes: true,
+            dislikes: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(playerKit, { status: 201 });
+    return NextResponse.json({
+      ...playerKit,
+      Player: {
+        ...playerKit.Player,
+        hasImage: false,
+      },
+      Kit: {
+        ...playerKit.Kit,
+        hasImage: false,
+        hasLogo: false,
+        hasModel3D: false,
+      },
+    }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating player kit:', error);
     console.error('Error details:', {
