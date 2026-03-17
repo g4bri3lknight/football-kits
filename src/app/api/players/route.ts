@@ -79,8 +79,9 @@ export async function GET() {
     return NextResponse.json(players);
   } catch (error) {
     console.error('Error fetching players:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to fetch players' },
+      { error: 'Failed to fetch players', details: errorMessage },
       { status: 500 }
     );
   }

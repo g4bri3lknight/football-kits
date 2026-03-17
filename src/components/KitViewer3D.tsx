@@ -11,12 +11,13 @@ import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
 const CFG = KIT_VIEWER_CONFIG;
 
 interface KitViewer3DProps {
-  kitId?: string;
+  modelUrl?: string;
   className?: string;
 }
 
 // Componente Modello
 function Model({ url }: { url: string }) {
+  // L'URL è già completo (es. /api/kits/xxx/model3d), non serve elaborarlo
   const { scene } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
 
@@ -257,7 +258,7 @@ function Scene({
 }
 
 export default function KitViewer3D({
-  kitId,
+  modelUrl,
   className = '',
 }: KitViewer3DProps) {
   const [resetKey, setResetKey] = useState(0);
@@ -295,7 +296,7 @@ export default function KitViewer3D({
     }, CFG.autoRotate.resumeDelay);
   };
 
-  if (!kitId) {
+  if (!modelUrl) {
     return (
       <div className={`w-full h-full flex items-center justify-center ${className}`}>
         <div className="text-center p-8">
@@ -305,9 +306,6 @@ export default function KitViewer3D({
       </div>
     );
   }
-
-  // URL del modello dall'API
-  const modelUrl = `/api/kits/${kitId}/model3d`;
 
   return (
     <div 

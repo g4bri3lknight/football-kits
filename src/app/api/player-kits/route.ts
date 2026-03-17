@@ -8,62 +8,69 @@ const generateId = () => {
   return `${timestamp}${randomStr}`;
 };
 
+// Funzione helper per rimuovere i dati binari dalla risposta
+const sanitizePlayerKit = (playerKit: any) => {
+  return {
+    ...playerKit,
+    Player: playerKit.Player ? {
+      ...playerKit.Player,
+      hasImage: !!playerKit.Player.imageData,
+      imageData: undefined,
+      imageMimeType: undefined,
+    } : null,
+    Kit: playerKit.Kit ? {
+      ...playerKit.Kit,
+      hasImage: !!playerKit.Kit.imageData,
+      hasLogo: !!playerKit.Kit.logoData,
+      hasModel3D: !!playerKit.Kit.model3DData,
+      hasDetail1: !!playerKit.Kit.detail1Data,
+      hasDetail2: !!playerKit.Kit.detail2Data,
+      hasDetail3: !!playerKit.Kit.detail3Data,
+      hasDetail4: !!playerKit.Kit.detail4Data,
+      hasDetail5: !!playerKit.Kit.detail5Data,
+      hasDetail6: !!playerKit.Kit.detail6Data,
+      imageData: undefined,
+      imageMimeType: undefined,
+      logoData: undefined,
+      logoMimeType: undefined,
+      model3DData: undefined,
+      model3DName: undefined,
+      detail1Data: undefined,
+      detail1MimeType: undefined,
+      detail2Data: undefined,
+      detail2MimeType: undefined,
+      detail3Data: undefined,
+      detail3MimeType: undefined,
+      detail4Data: undefined,
+      detail4MimeType: undefined,
+      detail5Data: undefined,
+      detail5MimeType: undefined,
+      detail6Data: undefined,
+      detail6MimeType: undefined,
+    } : null,
+  };
+};
+
 // GET /api/player-kits - Ottieni tutte le associazioni player-kit
 export async function GET() {
   try {
     const playerKits = await db.playerKit.findMany({
-      select: {
-        id: true,
-        playerId: true,
-        kitId: true,
-        createdAt: true,
+      include: {
         Player: {
-          select: {
-            id: true,
-            name: true,
-            surname: true,
-            nationId: true,
+          include: {
             Nation: true,
           },
         },
-        Kit: {
-          select: {
-            id: true,
-            name: true,
-            team: true,
-            type: true,
-            likes: true,
-            dislikes: true,
-            detail1Label: true,
-            detail2Label: true,
-            detail3Label: true,
-            detail4Label: true,
-            detail5Label: true,
-            detail6Label: true,
-          },
-        },
+        Kit: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    // Aggiungi flag per le immagini (non verifichiamo per performance)
-    const result = playerKits.map(pk => ({
-      ...pk,
-      Player: {
-        ...pk.Player,
-        hasImage: false,
-      },
-      Kit: {
-        ...pk.Kit,
-        hasImage: false,
-        hasLogo: false,
-        hasModel3D: false,
-      },
-    }));
-
-    return NextResponse.json(result);
+    // Rimuovi i dati binari prima di inviare la risposta
+    const sanitizedPlayerKits = playerKits.map(sanitizePlayerKit);
+    return NextResponse.json(sanitizedPlayerKits);
   } catch (error) {
     console.error('Error fetching player kits:', error);
     return NextResponse.json(
@@ -110,46 +117,17 @@ export async function POST(request: NextRequest) {
         kitId,
         updatedAt: new Date(),
       },
-      select: {
-        id: true,
-        playerId: true,
-        kitId: true,
-        createdAt: true,
+      include: {
         Player: {
-          select: {
-            id: true,
-            name: true,
-            surname: true,
-            nationId: true,
+          include: {
             Nation: true,
           },
         },
-        Kit: {
-          select: {
-            id: true,
-            name: true,
-            team: true,
-            type: true,
-            likes: true,
-            dislikes: true,
-          },
-        },
+        Kit: true,
       },
     });
 
-    return NextResponse.json({
-      ...playerKit,
-      Player: {
-        ...playerKit.Player,
-        hasImage: false,
-      },
-      Kit: {
-        ...playerKit.Kit,
-        hasImage: false,
-        hasLogo: false,
-        hasModel3D: false,
-      },
-    }, { status: 201 });
+    return NextResponse.json(sanitizePlayerKit(playerKit), { status: 201 });
   } catch (error: any) {
     console.error('Error creating player kit:', error);
     console.error('Error details:', {

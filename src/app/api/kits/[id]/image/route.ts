@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// GET /api/kits/[id]/image - Ottieni l'immagine principale del kit
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    
     const kit = await db.kit.findUnique({
       where: { id },
       select: {
@@ -17,12 +17,14 @@ export async function GET(
     });
 
     if (!kit || !kit.imageData) {
-      return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Image not found' },
+        { status: 404 }
+      );
     }
 
-    const buffer = Buffer.from(kit.imageData);
-    
-    return new NextResponse(buffer, {
+    return new NextResponse(kit.imageData, {
+      status: 200,
       headers: {
         'Content-Type': kit.imageMimeType || 'image/png',
         'Cache-Control': 'public, max-age=31536000, immutable',

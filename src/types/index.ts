@@ -22,7 +22,7 @@ export interface Kit {
   name: string;
   team: string;
   type: string;
-  // Indicatori per la presenza di immagini
+  // Flag per la presenza di file
   hasImage?: boolean;
   hasLogo?: boolean;
   hasModel3D?: boolean;
@@ -32,7 +32,7 @@ export interface Kit {
   hasDetail4?: boolean;
   hasDetail5?: boolean;
   hasDetail6?: boolean;
-  // Labels for detail images
+  // Labels dei dettagli
   detail1Label?: string;
   detail2Label?: string;
   detail3Label?: string;
@@ -40,9 +40,8 @@ export interface Kit {
   detail5Label?: string;
   detail6Label?: string;
   // Voti
-  likes?: number;
-  dislikes?: number;
-  // Timestamp per cache busting
+  likes: number;
+  dislikes: number;
   updatedAt?: string | Date;
 }
 

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// GET /api/kits/[id]/model3d - Ottieni il modello 3D del kit
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    
     const kit = await db.kit.findUnique({
       where: { id },
       select: {
@@ -17,23 +17,24 @@ export async function GET(
     });
 
     if (!kit || !kit.model3DData) {
-      return NextResponse.json({ error: 'Model 3D not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: '3D model not found' },
+        { status: 404 }
+      );
     }
 
-    const buffer = Buffer.from(kit.model3DData);
-    const fileName = kit.model3DName || 'model.glb';
-    
-    return new NextResponse(buffer, {
+    return new NextResponse(kit.model3DData, {
+      status: 200,
       headers: {
         'Content-Type': 'model/gltf-binary',
-        'Content-Disposition': `inline; filename="${fileName}"`,
+        'Content-Disposition': `inline; filename="${kit.model3DName || 'model.glb'}"`,
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
   } catch (error) {
-    console.error('Error fetching kit model 3D:', error);
+    console.error('Error fetching kit 3D model:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch kit model 3D' },
+      { error: 'Failed to fetch kit 3D model' },
       { status: 500 }
     );
   }

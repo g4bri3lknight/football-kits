@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { Player } from '@/types';
+import { getImageUrl } from '@/lib/image-url';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,9 +41,9 @@ export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDi
           {/* Colonna sinistra: Immagine */}
           <div className="flex-shrink-0 flex sm:block justify-center">
             <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-xl overflow-hidden bg-muted border-2 border-primary/20 shadow-xl biography-img-custom-border">
-              {selectedPlayer?.hasImage ? (
+              {selectedPlayer?.image ? (
                 <img
-                  src={`/api/players/${selectedPlayer.id}/image?t=${selectedPlayer.updatedAt ? new Date(selectedPlayer.updatedAt).getTime() : Date.now()}`}
+                  src={getImageUrl(selectedPlayer.image)}
                   alt={getPlayerDisplayName(selectedPlayer)}
                   className="w-full h-full object-cover"
                 />

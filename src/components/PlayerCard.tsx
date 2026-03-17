@@ -25,6 +25,18 @@ interface PlayerCardProps {
   onKitClick: (kit: Player['PlayerKit'][0]['Kit'], player: Player) => void;
 }
 
+// Helper per ottenere l'URL dell'immagine del giocatore
+const getPlayerImageUrl = (playerId: string, updatedAt?: string | Date) => {
+  const cacheBuster = updatedAt ? `?t=${new Date(updatedAt).getTime()}` : '';
+  return `/api/players/${playerId}/image${cacheBuster}`;
+};
+
+// Helper per ottenere l'URL del kit
+const getKitImageUrl = (kitId: string, type: 'image' | 'logo', updatedAt?: string | Date) => {
+  const cacheBuster = updatedAt ? `?t=${new Date(updatedAt).getTime()}` : '';
+  return `/api/kits/${kitId}/${type}${cacheBuster}`;
+};
+
 export function PlayerCard({ 
   player, 
   kitSeasonFilter, 
@@ -45,7 +57,7 @@ export function PlayerCard({
           <div className="flex items-center gap-3">
             <Avatar className="w-10 h-10 sm:w-12 sm:h-12 ring-1 avatar-custom-color">
               <AvatarImage 
-                src={player.hasImage ? `/api/players/${player.id}/image?t=${player.updatedAt ? new Date(player.updatedAt).getTime() : Date.now()}` : undefined} 
+                src={player.hasImage ? getPlayerImageUrl(player.id, player.updatedAt) : undefined} 
                 alt={player.name} 
               />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
@@ -94,7 +106,7 @@ export function PlayerCard({
                     {playerKit.Kit.hasLogo ? (
                       <div className="w-10 h-10 overflow-hidden flex-shrink-0">
                         <img
-                          src={`/api/kits/${playerKit.Kit.id}/logo`}
+                          src={getKitImageUrl(playerKit.Kit.id, 'logo', playerKit.Kit.updatedAt)}
                           alt={`Logo ${playerKit.Kit.team}`}
                           className="w-full h-full object-contain p-1"
                         />
@@ -102,7 +114,7 @@ export function PlayerCard({
                     ) : playerKit.Kit.hasImage ? (
                       <div className="w-10 h-10 overflow-hidden flex-shrink-0">
                         <img
-                          src={`/api/kits/${playerKit.Kit.id}/image`}
+                          src={getKitImageUrl(playerKit.Kit.id, 'image', playerKit.Kit.updatedAt)}
                           alt={playerKit.Kit.name}
                           className="w-full h-full object-cover"
                         />

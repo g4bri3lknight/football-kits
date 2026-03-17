@@ -52,10 +52,10 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
         nationsRes.json(),
       ]);
 
-      setPlayers(playersData);
-      setKits(kitsData);
-      setPlayerKits(playerKitsData);
-      setNations(nationsData);
+      setPlayers(Array.isArray(playersData) ? playersData : []);
+      setKits(Array.isArray(kitsData) ? kitsData : []);
+      setPlayerKits(Array.isArray(playerKitsData) ? playerKitsData : []);
+      setNations(Array.isArray(nationsData) ? nationsData : []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -226,7 +226,7 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
 
   const handleUpdateKit = async (kitId: string, kitData: any) => {
     try {
-      const response = await fetch(`/api/kits/${kitId}`, {
+      const response = await fetch(`/api/kit/${kitId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(kitData),
@@ -242,9 +242,11 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
       setKits(kits.map((k) => (k.id === kitId ? updatedKit : k)));
 
       // Aggiorna anche le associazioni che contengono questo kit
-      setPlayerKits(playerKits.map((pk) =>
-        pk.kitId === kitId ? { ...pk, Kit: updatedKit } : pk
-      ));
+      if (Array.isArray(playerKits)) {
+        setPlayerKits(playerKits.map((pk) =>
+          pk.kitId === kitId ? { ...pk, Kit: updatedKit } : pk
+        ));
+      }
 
       toast({
         title: 'Successo',
@@ -259,7 +261,7 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
 
   const handleDeleteKit = async (kitId: string) => {
     try {
-      await fetch(`/api/kits/${kitId}`, { method: 'DELETE' });
+      await fetch(`/api/kit/${kitId}`, { method: 'DELETE' });
       setKits(kits.filter((k) => k.id !== kitId));
 
       toast({

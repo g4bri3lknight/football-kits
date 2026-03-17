@@ -8,24 +8,25 @@ const generateId = () => {
   return `${timestamp}${randomStr}`;
 };
 
+// Funzione helper per rimuovere i dati binari dalla risposta
+const sanitizeKit = (kit: any) => {
+  const { imageData, logoData, model3DData, detail1Data, detail2Data, detail3Data, detail4Data, detail5Data, detail6Data, ...rest } = kit;
+  return rest;
+};
+
 // GET /api/kits - Ottieni tutti i kit
 export async function GET() {
   try {
     console.log('GET /api/kits - Starting');
     const kits = await db.kit.findMany({
-      orderBy: [
-        { team: 'asc' },
-        { type: 'asc' },
-      ],
       select: {
         id: true,
         name: true,
         team: true,
         type: true,
-        createdAt: true,
-        updatedAt: true,
         likes: true,
         dislikes: true,
+        updatedAt: true,
         // Flag per la presenza di file
         hasImage: true,
         hasLogo: true,
@@ -44,8 +45,11 @@ export async function GET() {
         detail5Label: true,
         detail6Label: true,
       },
+      orderBy: [
+        { team: 'asc' },
+        { type: 'asc' },
+      ],
     });
-
     console.log('GET /api/kits - Success, found', kits.length, 'kits');
     return NextResponse.json(kits);
   } catch (error) {
@@ -98,45 +102,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Converte base64 in Buffer se presente
     const kit = await db.kit.create({
       data: {
         id: generateId(),
         name,
         team,
         type,
-        // Imposta i flag in base alla presenza dei dati
+        // Immagine principale
         hasImage: !!imageData,
-        hasLogo: !!logoData,
-        hasModel3D: !!model3DData,
-        hasDetail1: !!detail1Data,
-        hasDetail2: !!detail2Data,
-        hasDetail3: !!detail3Data,
-        hasDetail4: !!detail4Data,
-        hasDetail5: !!detail5Data,
-        hasDetail6: !!detail6Data,
-        // Dati binari
         imageData: imageData ? Buffer.from(imageData, 'base64') : null,
         imageMimeType: imageMimeType || null,
+        // Logo
+        hasLogo: !!logoData,
         logoData: logoData ? Buffer.from(logoData, 'base64') : null,
         logoMimeType: logoMimeType || null,
+        // Modello 3D
+        hasModel3D: !!model3DData,
         model3DData: model3DData ? Buffer.from(model3DData, 'base64') : null,
         model3DName: model3DName || null,
+        // Dettagli
+        hasDetail1: !!detail1Data,
         detail1Data: detail1Data ? Buffer.from(detail1Data, 'base64') : null,
         detail1MimeType: detail1MimeType || null,
         detail1Label: detail1Label || null,
+        hasDetail2: !!detail2Data,
         detail2Data: detail2Data ? Buffer.from(detail2Data, 'base64') : null,
         detail2MimeType: detail2MimeType || null,
         detail2Label: detail2Label || null,
+        hasDetail3: !!detail3Data,
         detail3Data: detail3Data ? Buffer.from(detail3Data, 'base64') : null,
         detail3MimeType: detail3MimeType || null,
         detail3Label: detail3Label || null,
+        hasDetail4: !!detail4Data,
         detail4Data: detail4Data ? Buffer.from(detail4Data, 'base64') : null,
         detail4MimeType: detail4MimeType || null,
         detail4Label: detail4Label || null,
+        hasDetail5: !!detail5Data,
         detail5Data: detail5Data ? Buffer.from(detail5Data, 'base64') : null,
         detail5MimeType: detail5MimeType || null,
         detail5Label: detail5Label || null,
+        hasDetail6: !!detail6Data,
         detail6Data: detail6Data ? Buffer.from(detail6Data, 'base64') : null,
         detail6MimeType: detail6MimeType || null,
         detail6Label: detail6Label || null,
@@ -144,14 +149,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Restituisci il kit senza i dati binari
-    const { imageData: _, logoData: __, model3DData: ___, detail1Data: d1, detail2Data: d2, detail3Data: d3, detail4Data: d4, detail5Data: d5, detail6Data: d6, ...kitWithoutBinary } = kit;
-
-    return NextResponse.json(kitWithoutBinary, { status: 201 });
+    return NextResponse.json(sanitizeKit(kit), { status: 201 });
   } catch (error) {
     console.error('Error creating kit:', error);
     return NextResponse.json(
-      { error: 'Failed to create kit', details: error instanceof Error ? error.message : String(error) },
+      { error: 'Failed to create kit' },
       { status: 500 }
     );
   }

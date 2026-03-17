@@ -121,7 +121,7 @@ export default function KitsTab({
   const [form, setForm] = useState<KitForm>({
     name: '',
     team: '',
-    type: 'home',
+    type: 'goalkeeper',
     imageData: null,
     imageMimeType: null,
     logoData: null,
@@ -159,7 +159,7 @@ export default function KitsTab({
     setForm({
       name: '',
       team: '',
-      type: 'home',
+      type: 'goalkeeper',
       imageData: null,
       imageMimeType: null,
       logoData: null,
@@ -229,7 +229,7 @@ export default function KitsTab({
     setForm({
       name: '',
       team: '',
-      type: 'home',
+      type: 'goalkeeper',
       imageData: null,
       imageMimeType: null,
       logoData: null,
