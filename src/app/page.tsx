@@ -267,7 +267,24 @@ export default function Home() {
       
       return matchesSearch && matchesNation && hasMatchingKit;
     });
-    setFilteredPlayers(filtered);
+    
+    // Sort by status: NUOVO and AGGIORNATO first
+    const sorted = filtered.sort((a, b) => {
+      const statusOrder: Record<string, number> = {
+        'NUOVO': 0,
+        'AGGIORNATO': 1,
+        'NON_IMPOSTATO': 2,
+      };
+      const orderA = statusOrder[a.status || 'NON_IMPOSTATO'] ?? 2;
+      const orderB = statusOrder[b.status || 'NON_IMPOSTATO'] ?? 2;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      // Then sort by name
+      return `${a.name} ${a.surname || ''}`.localeCompare(`${b.name} ${b.surname || ''}`);
+    });
+    
+    setFilteredPlayers(sorted);
   }, [searchQuery, playerNationFilter, kitSeasonFilter, kitTeamFilter, players]);
 
   const fetchData = async () => {
@@ -280,9 +297,21 @@ export default function Home() {
         playersRes.json(),
         nationsRes.json(),
       ]);
-      setPlayers(playersData);
-      setFilteredPlayers(playersData);
-      setNations(nationsData);
+      // Ensure we have arrays, not error objects
+      if (Array.isArray(playersData)) {
+        setPlayers(playersData);
+        setFilteredPlayers(playersData);
+      } else {
+        console.error('Players data is not an array:', playersData);
+        setPlayers([]);
+        setFilteredPlayers([]);
+      }
+      if (Array.isArray(nationsData)) {
+        setNations(nationsData);
+      } else {
+        console.error('Nations data is not an array:', nationsData);
+        setNations([]);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

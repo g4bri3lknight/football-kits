@@ -24,6 +24,7 @@ export async function GET(
         likes: true,
         dislikes: true,
         updatedAt: true,
+        status: true,
         // Flag per la presenza di file
         hasImage: true,
         hasLogo: true,
@@ -53,6 +54,7 @@ export async function GET(
                 surname: true,
                 nationId: true,
                 hasImage: true,
+                status: true,
                 Nation: true,
               },
             },
@@ -119,6 +121,7 @@ export async function PUT(
       detail6Data,
       detail6MimeType,
       detail6Label,
+      status,
     } = body;
 
     // Build update data object
@@ -128,6 +131,11 @@ export async function PUT(
       type,
       updatedAt: new Date(),
     };
+
+    // Status can be updated
+    if (status !== undefined) {
+      updateData.status = status;
+    }
 
     // Aggiungi solo i campi che sono stati forniti (per non sovrascrivere i dati esistenti)
     if (imageData !== undefined) {

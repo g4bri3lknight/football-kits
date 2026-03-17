@@ -1,3 +1,12 @@
+// Enum per lo stato dei contenuti
+export type ContentStatus = 'NON_IMPOSTATO' | 'NUOVO' | 'AGGIORNATO';
+
+export const CONTENT_STATUS_LABELS: Record<ContentStatus, string> = {
+  NON_IMPOSTATO: 'Non Impostato',
+  NUOVO: 'Nuovo',
+  AGGIORNATO: 'Aggiornato',
+};
+
 export interface Player {
   id: string;
   name: string;
@@ -7,6 +16,7 @@ export interface Player {
   hasImage?: boolean;
   biography?: string;
   updatedAt?: string | Date;
+  status?: ContentStatus;
 }
 
 export interface Nation {
@@ -24,6 +34,7 @@ export interface Kit {
   likes: number;
   dislikes: number;
   updatedAt?: string | Date;
+  status?: ContentStatus;
   // Flag per la presenza di file
   hasImage?: boolean;
   hasLogo?: boolean;

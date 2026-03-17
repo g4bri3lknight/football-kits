@@ -30,6 +30,7 @@ export async function GET() {
         biography: true,
         updatedAt: true,
         hasImage: true,
+        status: true,
         Nation: true,
         PlayerKit: {
           select: {
@@ -45,6 +46,7 @@ export async function GET() {
                 likes: true,
                 dislikes: true,
                 updatedAt: true,
+                status: true,
                 // Flag per la presenza di file
                 hasImage: true,
                 hasLogo: true,
@@ -91,7 +93,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, surname, nationId, imageData, imageMimeType, biography } = body;
+    const { name, surname, nationId, imageData, imageMimeType, biography, status } = body;
 
     if (!name || !surname) {
       return NextResponse.json(
@@ -126,6 +128,7 @@ export async function POST(request: NextRequest) {
         imageData: imageData ? Buffer.from(imageData, 'base64') : null,
         imageMimeType: imageMimeType || null,
         biography: biography || null,
+        status: status || 'NON_IMPOSTATO',
         updatedAt: new Date(),
       },
       include: {

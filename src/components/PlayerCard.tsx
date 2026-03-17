@@ -1,6 +1,6 @@
 'use client';
 
-import { Player } from '@/types';
+import { Player, ContentStatus, CONTENT_STATUS_LABELS } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,18 @@ const getKitImageUrl = (kitId: string, type: 'image' | 'logo', updatedAt?: strin
   return `/api/kits/${kitId}/${type}${cacheBuster}`;
 };
 
+// Status badge colors
+const getStatusBadgeStyle = (status: ContentStatus) => {
+  switch (status) {
+    case 'NUOVO':
+      return 'bg-green-500 text-white hover:bg-green-600';
+    case 'AGGIORNATO':
+      return 'bg-amber-500 text-white hover:bg-amber-600';
+    default:
+      return '';
+  }
+};
+
 export function PlayerCard({ 
   player, 
   kitSeasonFilter, 
@@ -46,12 +58,23 @@ export function PlayerCard({
 }: PlayerCardProps) {
   const filteredKits = filterPlayerKits(player, kitSeasonFilter, kitTeamFilter);
   const sortedKits = sortKitsBySeason(filteredKits);
+  
+  // Check if player has a visible status
+  const hasVisibleStatus = player.status && player.status !== 'NON_IMPOSTATO';
 
   return (
     <Card
-      className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer border-2 transition-custom-color hover:transition-custom-color backdrop-blur-sm card-custom-color"
+      className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer border-2 transition-custom-color hover:transition-custom-color backdrop-blur-sm card-custom-color relative"
       onClick={() => onPlayerClick(player)}
     >
+      {/* Status Badge - Top Right */}
+      {hasVisibleStatus && (
+        <Badge 
+          className={`absolute top-2 right-2 z-10 text-xs font-semibold px-2 py-1 ${getStatusBadgeStyle(player.status!)}`}
+        >
+          {CONTENT_STATUS_LABELS[player.status!]}
+        </Badge>
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -124,10 +147,18 @@ export function PlayerCard({
                       <p className="text-sm font-medium text-foreground truncate">
                         {playerKit.Kit.name} - {playerKit.Kit.team}
                       </p>
-                      <div className="flex items-center gap-1 mt-1">
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
                         <Badge className={getKitTypeColor(playerKit.Kit.type)} variant="secondary">
                           {translateKitType(playerKit.Kit.type)}
                         </Badge>
+                        {/* Kit Status Badge */}
+                        {playerKit.Kit.status && playerKit.Kit.status !== 'NON_IMPOSTATO' && (
+                          <Badge 
+                            className={`text-xs font-semibold ${getStatusBadgeStyle(playerKit.Kit.status)}`}
+                          >
+                            {CONTENT_STATUS_LABELS[playerKit.Kit.status]}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -7,24 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enum per lo stato dei contenuti
+enum ContentStatus {
+  NON_IMPOSTATO
+  NUOVO
+  AGGIORNATO
+}
+
 model Kit {
-  id              String      @id
+  id              String        @id
   name            String
   team            String
   type            String
-  createdAt       DateTime    @default(now())
+  createdAt       DateTime      @default(now())
   updatedAt       DateTime
+  status          ContentStatus @default(NON_IMPOSTATO)
 
   // Flag per indicare la presenza di file (per performance)
-  hasImage        Boolean     @default(false)
-  hasLogo         Boolean     @default(false)
-  hasModel3D      Boolean     @default(false)
-  hasDetail1      Boolean     @default(false)
-  hasDetail2      Boolean     @default(false)
-  hasDetail3      Boolean     @default(false)
-  hasDetail4      Boolean     @default(false)
-  hasDetail5      Boolean     @default(false)
-  hasDetail6      Boolean     @default(false)
+  hasImage        Boolean       @default(false)
+  hasLogo         Boolean       @default(false)
+  hasModel3D      Boolean       @default(false)
+  hasDetail1      Boolean       @default(false)
+  hasDetail2      Boolean       @default(false)
+  hasDetail3      Boolean       @default(false)
+  hasDetail4      Boolean       @default(false)
+  hasDetail5      Boolean       @default(false)
+  hasDetail6      Boolean       @default(false)
 
   // Immagine principale del kit (BLOB)
   imageData       Bytes?
@@ -64,8 +72,8 @@ model Kit {
   detail6MimeType String?
 
   // Voti
-  likes           Int         @default(0)
-  dislikes        Int         @default(0)
+  likes           Int           @default(0)
+  dislikes        Int           @default(0)
 
   PlayerKit       PlayerKit[]
   KitVote         KitVote[]
@@ -82,22 +90,23 @@ model Nation {
 }
 
 model Player {
-  id            String      @id
+  id            String        @id
   name          String
   surname       String?
   nationId      String?
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime      @default(now())
   updatedAt     DateTime
   biography     String?
+  status        ContentStatus @default(NON_IMPOSTATO)
 
   // Flag per indicare la presenza di immagine (per performance)
-  hasImage      Boolean     @default(false)
+  hasImage      Boolean       @default(false)
 
   // Immagine del giocatore (BLOB)
   imageData     Bytes?
   imageMimeType String?
 
-  Nation        Nation?     @relation(fields: [nationId], references: [id])
+  Nation        Nation?       @relation(fields: [nationId], references: [id])
   PlayerKit     PlayerKit[]
 }
 

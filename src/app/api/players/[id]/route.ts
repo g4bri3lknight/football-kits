@@ -43,6 +43,7 @@ export async function PUT(
       ...(body.biography !== undefined && {
         biography: body.biography === '' ? null : body.biography,
       }),
+      ...(body.status !== undefined && { status: body.status }),
       updatedAt: new Date(),
     };
 

@@ -27,6 +27,7 @@ export async function GET() {
         likes: true,
         dislikes: true,
         updatedAt: true,
+        status: true,
         // Flag per la presenza di file
         hasImage: true,
         hasLogo: true,
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
       detail6Data,
       detail6MimeType,
       detail6Label,
+      status,
     } = body;
 
     if (!name || !team || !type) {
@@ -145,6 +147,7 @@ export async function POST(request: NextRequest) {
         detail6Data: detail6Data ? Buffer.from(detail6Data, 'base64') : null,
         detail6MimeType: detail6MimeType || null,
         detail6Label: detail6Label || null,
+        status: status || 'NON_IMPOSTATO',
         updatedAt: new Date(),
       },
     });

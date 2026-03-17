@@ -4,7 +4,7 @@ import { Kit, Player } from './types';
 export const translateKitType = (type: string): string => {
   const translations: Record<string, string> = {
     home: 'Casa',
-    away: 'Trasfetta',
+    away: 'Trasferta',
     third: 'Terza',
     goalkeeper: 'Portiere',
   };
@@ -15,7 +15,7 @@ export const translateKitType = (type: string): string => {
 export const reverseTranslateKitType = (italianType: string): string => {
   const reverseTranslations: Record<string, string> = {
     casa: 'home',
-    trasfetta: 'away',
+    trasferta: 'away',
     terza: 'third',
     portiere: 'goalkeeper',
   };

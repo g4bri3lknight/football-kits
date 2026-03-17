@@ -19,6 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -39,7 +47,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Player, Nation } from './types';
+import { Player, Nation, ContentStatus, CONTENT_STATUS_LABELS } from './types';
 import Flag from 'react-world-flags';
 import { convertAlpha3ToAlpha2 } from '@/lib/country-codes';
 
@@ -59,7 +67,20 @@ interface PlayerForm {
   nationId: string;
   image: string;
   biography: string;
+  status: ContentStatus;
 }
+
+// Status badge colors for table display
+const getStatusBadgeStyle = (status?: ContentStatus) => {
+  switch (status) {
+    case 'NUOVO':
+      return 'bg-green-500 text-white';
+    case 'AGGIORNATO':
+      return 'bg-amber-500 text-white';
+    default:
+      return '';
+  }
+};
 
 export default function PlayersTab({
   players,
@@ -81,6 +102,7 @@ export default function PlayersTab({
     nationId: '',
     image: '',
     biography: '',
+    status: 'NON_IMPOSTATO',
   });
   const [nationSearch, setNationSearch] = useState('');
 
@@ -94,7 +116,7 @@ export default function PlayersTab({
 
   const handleOpenNewDialog = () => {
     setEditingPlayer(null);
-    setForm({ name: '', surname: '', nationId: '', image: '', biography: '' });
+    setForm({ name: '', surname: '', nationId: '', image: '', biography: '', status: 'NON_IMPOSTATO' });
     setNationSearch('');
     setDialogOpen(true);
   };
@@ -107,6 +129,7 @@ export default function PlayersTab({
       nationId: player.nationId || '',
       image: player.image || '',
       biography: player.biography || '',
+      status: player.status || 'NON_IMPOSTATO',
     });
     setNationSearch('');
     setDialogOpen(true);
@@ -114,7 +137,7 @@ export default function PlayersTab({
 
   const handleCloseDialog = () => {
     setEditingPlayer(null);
-    setForm({ name: '', surname: '', nationId: '', image: '', biography: '' });
+    setForm({ name: '', surname: '', nationId: '', image: '', biography: '', status: 'NON_IMPOSTATO' });
     setNationSearch('');
     setDialogOpen(false);
   };
@@ -137,6 +160,7 @@ export default function PlayersTab({
           nationId: form.nationId || null,
           image: form.image,
           biography: form.biography || null,
+          status: form.status,
         });
       } else {
         await onCreatePlayer({
@@ -145,6 +169,7 @@ export default function PlayersTab({
           nationId: form.nationId || null,
           image: form.image,
           biography: form.biography || null,
+          status: form.status,
         });
       }
       handleCloseDialog();
@@ -210,6 +235,7 @@ export default function PlayersTab({
                   <TableHead>Nome</TableHead>
                   <TableHead>Cognome</TableHead>
                   <TableHead>Nazione</TableHead>
+                  <TableHead>Stato</TableHead>
                   <TableHead>Immagine</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -217,7 +243,7 @@ export default function PlayersTab({
               <TableBody>
               {filteredPlayers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-gray-500 py-8">
+                  <TableCell colSpan={6} className="text-center text-gray-500 py-8">
                     {search || nationFilter ? 'Nessun risultato trovato' : 'Nessun giocatore presente'}
                   </TableCell>
                 </TableRow>
@@ -237,8 +263,19 @@ export default function PlayersTab({
                       )}
                     </TableCell>
                     <TableCell>
+                      {player.status && player.status !== 'NON_IMPOSTATO' ? (
+                        <Badge className={getStatusBadgeStyle(player.status)}>
+                          {CONTENT_STATUS_LABELS[player.status]}
+                        </Badge>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {player.image ? (
                         <img src={getImageUrl(player.image)} alt={player.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover ring-1 ring-border/50" />
+                      ) : player.hasImage ? (
+                        <Badge variant="outline">Presente</Badge>
                       ) : (
                         <span className="text-gray-400 text-sm">-</span>
                       )}
@@ -353,6 +390,28 @@ export default function PlayersTab({
                   ))}
               </div>
             </div>
+            
+            {/* Status Select */}
+            <div className="space-y-2">
+              <Label htmlFor="status">Stato</Label>
+              <Select 
+                value={form.status} 
+                onValueChange={(value: ContentStatus) => setForm({ ...form, status: value })}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Seleziona stato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NON_IMPOSTATO">Non Impostato</SelectItem>
+                  <SelectItem value="NUOVO">Nuovo</SelectItem>
+                  <SelectItem value="AGGIORNATO">Aggiornato</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                I giocatori con stato "Nuovo" o "Aggiornato" verranno mostrati in cima alla lista e avranno un badge visibile.
+              </p>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="image">URL Immagine</Label>
               <Input

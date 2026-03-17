@@ -45,7 +45,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Kit } from './types';
+import { Kit, ContentStatus, CONTENT_STATUS_LABELS } from './types';
 import { translateKitType, getKitTypeColor } from './utils';
 
 interface KitsTabProps {
@@ -61,6 +61,7 @@ interface KitForm {
   name: string;
   team: string;
   type: string;
+  status: ContentStatus;
   // Dati immagine in base64
   imageData: string | null;
   imageMimeType: string | null;
@@ -122,6 +123,7 @@ export default function KitsTab({
     name: '',
     team: '',
     type: 'goalkeeper',
+    status: 'NON_IMPOSTATO',
     imageData: null,
     imageMimeType: null,
     logoData: null,
@@ -160,6 +162,7 @@ export default function KitsTab({
       name: '',
       team: '',
       type: 'goalkeeper',
+      status: 'NON_IMPOSTATO',
       imageData: null,
       imageMimeType: null,
       logoData: null,
@@ -194,6 +197,7 @@ export default function KitsTab({
       name: kit.name,
       team: kit.team,
       type: kit.type,
+      status: kit.status || 'NON_IMPOSTATO',
       // Quando modifichi, non carichiamo i dati binari esistenti
       // L'utente può caricare un nuovo file se vuole sostituire
       imageData: null,
@@ -230,6 +234,7 @@ export default function KitsTab({
       name: '',
       team: '',
       type: 'goalkeeper',
+      status: 'NON_IMPOSTATO',
       imageData: null,
       imageMimeType: null,
       logoData: null,
@@ -277,6 +282,7 @@ export default function KitsTab({
           name: form.name,
           team: form.team,
           type: form.type,
+          status: form.status,
           detail1Label: form.detail1Label,
           detail2Label: form.detail2Label,
           detail3Label: form.detail3Label,
@@ -435,6 +441,7 @@ export default function KitsTab({
                   <TableHead>Stagione</TableHead>
                   <TableHead>Squadra/Nazionale</TableHead>
                   <TableHead>Tipo</TableHead>
+                  <TableHead>Stato</TableHead>
                   <TableHead>Immagine</TableHead>
                   <TableHead>Logo</TableHead>
                   <TableHead>Modello 3D</TableHead>
@@ -444,7 +451,7 @@ export default function KitsTab({
               <TableBody>
                 {filteredKits.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={8} className="text-center text-gray-500 py-8">
                       {(search.season || search.team || search.type) ? 'Nessun risultato trovato' : 'Nessun kit presente'}
                     </TableCell>
                   </TableRow>
@@ -457,6 +464,15 @@ export default function KitsTab({
                         <Badge className={getKitTypeColor(kit.type)}>
                           {translateKitType(kit.type)}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {kit.status && kit.status !== 'NON_IMPOSTATO' ? (
+                          <Badge className={kit.status === 'NUOVO' ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'}>
+                            {CONTENT_STATUS_LABELS[kit.status]}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {kit.hasImage ? (
@@ -568,6 +584,27 @@ export default function KitsTab({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            
+            {/* Status Select */}
+            <div className="space-y-2 max-w-xs">
+              <Label htmlFor="kit-status">Stato</Label>
+              <Select 
+                value={form.status} 
+                onValueChange={(value: ContentStatus) => setForm({ ...form, status: value })}
+              >
+                <SelectTrigger id="kit-status">
+                  <SelectValue placeholder="Seleziona stato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NON_IMPOSTATO">Non Impostato</SelectItem>
+                  <SelectItem value="NUOVO">Nuovo</SelectItem>
+                  <SelectItem value="AGGIORNATO">Aggiornato</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                I kit con stato "Nuovo" o "Aggiornato" verranno mostrati in cima alla lista.
+              </p>
             </div>
             
             {/* File upload - 3 colonne */}

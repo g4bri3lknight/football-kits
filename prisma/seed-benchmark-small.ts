@@ -99,12 +99,26 @@ async function main() {
 
   console.log('💾 Inserimento nel database...');
   
+  // Status values to cycle through for testing
+  const statusValues: ('NON_IMPOSTATO' | 'NUOVO' | 'AGGIORNATO')[] = ['NUOVO', 'AGGIORNATO', 'NON_IMPOSTATO'];
+  
   for (let i = 0; i < CONFIG.numPlayers; i++) {
     const firstName = firstNames[i % firstNames.length];
     const lastName = lastNames[i % lastNames.length];
     const team = teams[i % teams.length];
     const type = kitTypes[i % kitTypes.length];
     const year = 2020 + Math.floor(i / teams.length);
+    
+    // Assign status: first 10 are NUOVO, next 10 are AGGIORNATO, rest are NON_IMPOSTATO
+    let playerStatus: 'NON_IMPOSTATO' | 'NUOVO' | 'AGGIORNATO' = 'NON_IMPOSTATO';
+    let kitStatus: 'NON_IMPOSTATO' | 'NUOVO' | 'AGGIORNATO' = 'NON_IMPOSTATO';
+    if (i < 10) {
+      playerStatus = 'NUOVO';
+      kitStatus = 'NUOVO';
+    } else if (i < 20) {
+      playerStatus = 'AGGIORNATO';
+      kitStatus = 'AGGIORNATO';
+    }
     
     // Crea giocatore
     await prisma.player.create({
@@ -116,6 +130,7 @@ async function main() {
         imageMimeType: 'image/png',
         hasImage: true,
         updatedAt: new Date(),
+        status: playerStatus,
       }
     });
     
@@ -160,6 +175,7 @@ async function main() {
         detail6Label: 'Dettaglio',
         hasDetail6: true,
         updatedAt: new Date(),
+        status: kitStatus,
       }
     });
     

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Kit, Player, PlayerKit } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Shirt, ThumbsUp, ThumbsDown } from 'lucide-react';
 import KitViewer3D from '@/components/KitViewer3D';
 import { getPlayerDisplayName } from '@/lib/player-utils';
