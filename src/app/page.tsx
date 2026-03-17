@@ -254,10 +254,21 @@ export default function Home() {
         player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (player.surname && player.surname.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesNation = playerNationFilter === 'all' || player.nationId === playerNationFilter;
-      return matchesSearch && matchesNation;
+      
+      // Se ci sono filtri kit attivi, verifica che il giocatore abbia almeno un kit che rispetta i filtri
+      const hasMatchingKit = !kitSeasonFilter && !kitTeamFilter || 
+        player.PlayerKit.some(pk => {
+          const matchesSeason = !kitSeasonFilter || 
+            pk.Kit.name.toLowerCase().includes(kitSeasonFilter.toLowerCase());
+          const matchesTeam = !kitTeamFilter || 
+            pk.Kit.team.toLowerCase().includes(kitTeamFilter.toLowerCase());
+          return matchesSeason && matchesTeam;
+        });
+      
+      return matchesSearch && matchesNation && hasMatchingKit;
     });
     setFilteredPlayers(filtered);
-  }, [searchQuery, playerNationFilter, players]);
+  }, [searchQuery, playerNationFilter, kitSeasonFilter, kitTeamFilter, players]);
 
   const fetchData = async () => {
     try {
