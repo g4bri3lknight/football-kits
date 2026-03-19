@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Kit, Player, PlayerKit } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Shirt, ThumbsUp, ThumbsDown } from 'lucide-react';
 import KitViewer3D from '@/components/KitViewer3D';
 import { getPlayerDisplayName } from '@/lib/player-utils';
@@ -26,6 +25,12 @@ interface SelectedDetail {
   label: string | null;
   index: number;
   side: 'left' | 'right';
+}
+
+// Stato per l'hover (solo evidenziazione)
+interface HoverDetail {
+  url: string;
+  label: string | null;
 }
 
 const truncateName = (name: string, maxLength: number = 8) => {
@@ -68,8 +73,11 @@ export function KitDialog({
   onNavigatePrevious,
   onNavigateNext,
 }: KitDialogProps) {
+  // Dettaglio selezionato per l'animazione (click)
   const [selectedDetail, setSelectedDetail] = useState<SelectedDetail | null>(null);
-  const clearDetailTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Dettaglio in hover per l'evidenziazione
+  const [hoveredDetail, setHoveredDetail] = useState<HoverDetail | null>(null);
+  
   const [likes, setLikes] = useState(0);
   const [dislikes, setDislikes] = useState(0);
   const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null);
@@ -118,22 +126,18 @@ export function KitDialog({
     : null;
 
   const handleVote = async (voteType: 'like' | 'dislike') => {
-    console.log('handleVote called:', voteType, 'userId:', userId, 'selectedKit:', selectedKit?.id);
     if (!selectedKit?.id || isVoting || !userId) {
-      console.log('Early return - missing data');
       return;
     }
     
     setIsVoting(true);
     try {
-      console.log('Sending vote request...');
       const res = await fetch(`/api/kits/${selectedKit.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ voteType, userId }),
       });
       const data = await res.json();
-      console.log('Vote response:', data);
       if (data.success) {
         setLikes(data.likes);
         setDislikes(data.dislikes);
@@ -146,35 +150,32 @@ export function KitDialog({
     }
   };
 
-  const handleDetailMouseEnter = useCallback((detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
+  // Hover: solo evidenziazione visiva
+  const handleDetailMouseEnter = useCallback((detail: { url: string; label: string | null }) => {
     if (detail.url && !isMouseDown) {
-      if (clearDetailTimeoutRef.current) {
-        clearTimeout(clearDetailTimeoutRef.current);
-        clearDetailTimeoutRef.current = null;
-      }
-      
-      const newDetail: SelectedDetail = { url: detail.url, label: detail.label, index, side };
-      setSelectedDetail(newDetail);
+      setHoveredDetail(detail);
     }
   }, [isMouseDown]);
 
-  const handleColumnMouseLeave = useCallback(() => {
-    clearDetailTimeoutRef.current = setTimeout(() => {
-      setSelectedDetail(null);
-      clearDetailTimeoutRef.current = null;
-    }, 100);
+  const handleDetailMouseLeave = useCallback(() => {
+    setHoveredDetail(null);
   }, []);
 
+  // Click: attiva l'animazione
   const handleDetailClick = useCallback((detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
     if (detail.url) {
-      if (clearDetailTimeoutRef.current) {
-        clearTimeout(clearDetailTimeoutRef.current);
-        clearDetailTimeoutRef.current = null;
+      // Se è già selezionato, deseleziona
+      if (selectedDetail?.url === detail.url) {
+        setSelectedDetail(null);
+      } else {
+        setSelectedDetail({ url: detail.url, label: detail.label, index, side });
       }
-      
-      const newDetail: SelectedDetail = { url: detail.url, label: detail.label, index, side };
-      setSelectedDetail(newDetail);
     }
+  }, [selectedDetail]);
+
+  // Chiudi il dettaglio cliccando sull'area centrale
+  const handleCentralAreaClick = useCallback(() => {
+    setSelectedDetail(null);
   }, []);
 
   // Build detail arrays using API URLs
@@ -280,30 +281,33 @@ export function KitDialog({
         <div className="rounded-lg p-2 sm:p-4 flex-1 min-h-0">
           <div className="grid grid-cols-5 gap-2 sm:gap-3 lg:gap-5 h-full">
             {/* Left detail images */}
-            <div 
-              className="col-span-1 flex flex-col gap-2 sm:gap-3"
-              onMouseLeave={() => handleColumnMouseLeave()}
-            >
+            <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
               {leftDetails.map((detail, index) => (
                 <div key={index} className="flex-1 min-h-0 relative group">
                   <div 
                     className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
                       detail.url 
-                        ? `hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0` 
+                        ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' 
                         : 'border-transparent'
                     }`}
                     style={{
                       transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
-                      borderColor: selectedDetail?.url === detail.url ? '#cd2127' : '#002f42',
-                      transform: selectedDetail?.url === detail.url ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
+                      // Hover state: evidenziazione bordo e scale
+                      borderColor: hoveredDetail?.url === detail.url 
+                        ? '#cd2127' 
+                        : (selectedDetail?.url === detail.url ? '#cd2127' : '#002f42'),
+                      transform: hoveredDetail?.url === detail.url 
+                        ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` 
+                        : 'scale(1)',
                       cursor: isMouseDown ? 'none' : 'pointer',
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={() => {
                       if (detail.url) {
-                        e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
-                        e.currentTarget.style.borderColor = '#cd2127';
-                        handleDetailMouseEnter(detail, index, 'left');
+                        handleDetailMouseEnter(detail);
                       }
+                    }}
+                    onMouseLeave={() => {
+                      handleDetailMouseLeave();
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -318,6 +322,7 @@ export function KitDialog({
                           alt={detail.label || `Dettaglio ${index + 1}`}
                           className="max-w-full max-h-full object-contain p-1"
                           style={{ 
+                            // Nascondi l'immagine nella thumbnail quando è selezionata
                             opacity: selectedDetail?.url === detail.url ? 0 : 1 
                           }}
                           transition={{ 
@@ -358,17 +363,11 @@ export function KitDialog({
             
             {/* Central 3D Model */}
             <div 
-              className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2 relative"
+              className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2 relative cursor-pointer"
               style={{ borderColor: '#002f42' }}
-              onMouseEnter={() => {
-                if (clearDetailTimeoutRef.current) {
-                  clearTimeout(clearDetailTimeoutRef.current);
-                  clearDetailTimeoutRef.current = null;
-                }
-                setSelectedDetail(null);
-              }}
+              onClick={handleCentralAreaClick}
             >
-              {/* Selected detail overlay */}
+              {/* Selected detail overlay - animazione solo al click */}
               <AnimatePresence>
                 {selectedDetail ? (
                   <>
@@ -378,9 +377,9 @@ export function KitDialog({
                       src={selectedDetail.url}
                       alt={selectedDetail.label || 'Dettaglio selezionato'}
                       className="absolute inset-0 m-auto max-w-full max-h-full object-contain p-4 z-10"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ 
                         type: 'spring', 
                         stiffness: 350, 
@@ -411,30 +410,33 @@ export function KitDialog({
             </div>
             
             {/* Right detail images */}
-            <div 
-              className="col-span-1 flex flex-col gap-2 sm:gap-3"
-              onMouseLeave={() => handleColumnMouseLeave()}
-            >
+            <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
               {rightDetails.map((detail, index) => (
                 <div key={index} className="flex-1 min-h-0 relative group">
                   <div 
                     className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
                       detail.url 
-                        ? `hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0` 
+                        ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' 
                         : 'border-transparent'
                     }`}
                     style={{
                       transitionDuration: `${KIT_DETAIL_IMAGE_CONFIG.hover.transitionDuration}ms`,
-                      borderColor: selectedDetail?.url === detail.url ? '#cd2127' : '#002f42',
-                      transform: selectedDetail?.url === detail.url ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` : 'scale(1)',
+                      // Hover state: evidenziazione bordo e scale
+                      borderColor: hoveredDetail?.url === detail.url 
+                        ? '#cd2127' 
+                        : (selectedDetail?.url === detail.url ? '#cd2127' : '#002f42'),
+                      transform: hoveredDetail?.url === detail.url 
+                        ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` 
+                        : 'scale(1)',
                       cursor: isMouseDown ? 'none' : 'pointer',
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={() => {
                       if (detail.url) {
-                        e.currentTarget.style.transform = `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})`;
-                        e.currentTarget.style.borderColor = '#cd2127';
-                        handleDetailMouseEnter(detail, index, 'right');
+                        handleDetailMouseEnter(detail);
                       }
+                    }}
+                    onMouseLeave={() => {
+                      handleDetailMouseLeave();
                     }}
                     onClick={(e) => {
                       e.stopPropagation();

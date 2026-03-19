@@ -43,6 +43,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Kit, ContentStatus, CONTENT_STATUS_LABELS } from './types';
@@ -119,6 +120,8 @@ export default function KitsTab({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingKit, setEditingKit] = useState<Kit | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('');
   const [form, setForm] = useState<KitForm>({
     name: '',
     team: '',
@@ -274,8 +277,34 @@ export default function KitsTab({
     }
 
     setSaving(true);
+    setUploadProgress(0);
+    setUploadStatus('Preparazione dati...');
+    
+    // Conta i file da caricare per simulare l'avanzamento
+    const filesToUpload = [
+      form.imageData,
+      form.logoData,
+      form.model3DData,
+      form.detail1Data,
+      form.detail2Data,
+      form.detail3Data,
+      form.detail4Data,
+      form.detail5Data,
+      form.detail6Data,
+    ].filter(Boolean).length;
+    
+    // Simula avanzamento iniziale
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 10;
+      });
+    }, 200);
+    
     try {
       if (editingKit) {
+        setUploadStatus('Aggiornamento kit in corso...');
+        
         // Quando modifichi, includi solo i campi binary che hanno nuovi valori
         // per NON sovrascrivere i dati esistenti
         const updateData: any = {
@@ -283,12 +312,12 @@ export default function KitsTab({
           team: form.team,
           type: form.type,
           status: form.status,
-          detail1Label: form.detail1Label,
-          detail2Label: form.detail2Label,
-          detail3Label: form.detail3Label,
-          detail4Label: form.detail4Label,
-          detail5Label: form.detail5Label,
-          detail6Label: form.detail6Label,
+          detail1Label: form.detail1Label || null,
+          detail2Label: form.detail2Label || null,
+          detail3Label: form.detail3Label || null,
+          detail4Label: form.detail4Label || null,
+          detail5Label: form.detail5Label || null,
+          detail6Label: form.detail6Label || null,
         };
         
         // Aggiungi solo i file che sono stati caricati (non null)
@@ -331,13 +360,81 @@ export default function KitsTab({
         
         await onUpdateKit(editingKit.id, updateData);
       } else {
-        await onCreateKit(form);
+        setUploadStatus(`Creazione kit (${filesToUpload} file da salvare)...`);
+        
+        // Per nuovo kit, invia solo i campi necessari
+        const createData: any = {
+          name: form.name,
+          team: form.team,
+          type: form.type,
+          status: form.status,
+        };
+        
+        // Aggiungi file solo se presenti
+        if (form.imageData) {
+          createData.imageData = form.imageData;
+          createData.imageMimeType = form.imageMimeType;
+        }
+        if (form.logoData) {
+          createData.logoData = form.logoData;
+          createData.logoMimeType = form.logoMimeType;
+        }
+        if (form.model3DData) {
+          createData.model3DData = form.model3DData;
+          createData.model3DName = form.model3DName;
+        }
+        if (form.detail1Data) {
+          createData.detail1Data = form.detail1Data;
+          createData.detail1MimeType = form.detail1MimeType;
+          createData.detail1Label = form.detail1Label || null;
+        }
+        if (form.detail2Data) {
+          createData.detail2Data = form.detail2Data;
+          createData.detail2MimeType = form.detail2MimeType;
+          createData.detail2Label = form.detail2Label || null;
+        }
+        if (form.detail3Data) {
+          createData.detail3Data = form.detail3Data;
+          createData.detail3MimeType = form.detail3MimeType;
+          createData.detail3Label = form.detail3Label || null;
+        }
+        if (form.detail4Data) {
+          createData.detail4Data = form.detail4Data;
+          createData.detail4MimeType = form.detail4MimeType;
+          createData.detail4Label = form.detail4Label || null;
+        }
+        if (form.detail5Data) {
+          createData.detail5Data = form.detail5Data;
+          createData.detail5MimeType = form.detail5MimeType;
+          createData.detail5Label = form.detail5Label || null;
+        }
+        if (form.detail6Data) {
+          createData.detail6Data = form.detail6Data;
+          createData.detail6MimeType = form.detail6MimeType;
+          createData.detail6Label = form.detail6Label || null;
+        }
+        
+        await onCreateKit(createData);
       }
-      handleCloseDialog();
-    } catch (error) {
+      
+      setUploadProgress(100);
+      setUploadStatus('Completato!');
+      
+      setTimeout(() => {
+        handleCloseDialog();
+      }, 500);
+    } catch (error: any) {
       console.error('Error saving kit:', error);
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile salvare il kit',
+        variant: 'destructive',
+      });
     } finally {
+      clearInterval(progressInterval);
       setSaving(false);
+      setUploadProgress(0);
+      setUploadStatus('');
     }
   };
 
@@ -879,20 +976,32 @@ export default function KitsTab({
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog} disabled={saving}>
-              Annulla
-            </Button>
-            <Button onClick={handleSubmit} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Salvataggio...
-                </>
-              ) : (
-                editingKit ? 'Aggiorna' : 'Crea'
-              )}
-            </Button>
+          <DialogFooter className="flex-col sm:flex-row gap-3">
+            {/* Progress bar during save */}
+            {saving && (
+              <div className="w-full sm:flex-1 space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{uploadStatus}</span>
+                  <span>{Math.round(uploadProgress)}%</span>
+                </div>
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleCloseDialog} disabled={saving}>
+                Annulla
+              </Button>
+              <Button onClick={handleSubmit} disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Salvataggio...
+                  </>
+                ) : (
+                  editingKit ? 'Aggiorna' : 'Crea'
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

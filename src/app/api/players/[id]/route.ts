@@ -26,45 +26,41 @@ export async function PUT(
     });
 
     if (!existingPlayer) {
-      console.log('Player not found with id:', id);
       return NextResponse.json(
         { error: 'Player not found' },
         { status: 404 }
       );
     }
 
-    // Update player - build data object explicitly
-    const data: any = {
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.surname !== undefined && { surname: body.surname }),
-      ...(body.nationId !== undefined && {
-        nationId: body.nationId === '' ? null : body.nationId,
-      }),
-      ...(body.biography !== undefined && {
-        biography: body.biography === '' ? null : body.biography,
-      }),
-      ...(body.status !== undefined && { status: body.status }),
+    // Build update data
+    const updateData: any = {
       updatedAt: new Date(),
     };
 
-    // Handle image data (BLOB)
-    if (body.imageData !== undefined) {
-      data.hasImage = !!body.imageData;
-      data.imageData = body.imageData ? Buffer.from(body.imageData, 'base64') : null;
-      data.imageMimeType = body.imageMimeType || null;
-    }
+    // Update basic fields if provided
+    if (body.name !== undefined) updateData.name = body.name.trim();
+    if (body.surname !== undefined) updateData.surname = body.surname.trim();
+    if (body.nationId !== undefined) updateData.nationId = body.nationId || null;
+    if (body.biography !== undefined) updateData.biography = body.biography || null;
+    if (body.status !== undefined) updateData.status = body.status;
 
-    console.log('Updating player with data keys:', Object.keys(data));
+    // Update image if provided
+    if (body.imageData !== undefined) {
+      updateData.imageData = body.imageData ? Buffer.from(body.imageData, 'base64') : null;
+      updateData.imageMimeType = body.imageMimeType || null;
+      updateData.hasImage = !!body.imageData;
+    }
 
     const updatedPlayer = await db.player.update({
       where: { id },
-      data,
+      data: updateData,
       include: {
         Nation: true,
       },
     });
 
     console.log('Player updated successfully:', updatedPlayer.id);
+
     return NextResponse.json(sanitizePlayer(updatedPlayer));
   } catch (error) {
     console.error('Error updating player:', error);

@@ -66,6 +66,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('POST /api/kits - Request body keys:', Object.keys(body));
+    console.log('POST /api/kits - name:', body.name, 'team:', body.team, 'type:', body.type);
+    
     const {
       name,
       team,
@@ -98,8 +101,9 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!name || !team || !type) {
+      console.error('POST /api/kits - Validation failed:', { name, team, type });
       return NextResponse.json(
-        { error: 'Name, team, and type are required' },
+        { error: 'Name, team, and type are required', received: { name, team, type } },
         { status: 400 }
       );
     }

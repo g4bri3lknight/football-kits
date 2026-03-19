@@ -429,7 +429,7 @@ export default function Home() {
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="overflow-hidden flex-shrink-0 flex items-center justify-center">
                 <img
-                  src="upload/GK-retro-Kits.png"
+                  src="upload/logo.png"
                   alt="GK retro Kits"
                   className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto object-contain"
                   onLoad={() => setLogoLoaded(true)}

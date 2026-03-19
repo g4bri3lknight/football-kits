@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { Player } from '@/types';
-import { getImageUrl } from '@/lib/image-url';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +18,12 @@ interface BiographyDialogProps {
   onClose: () => void;
   onOpen?: () => void;
 }
+
+// Helper per ottenere l'URL dell'immagine del giocatore
+const getPlayerImageUrl = (playerId: string, updatedAt?: string | Date) => {
+  const cacheBuster = updatedAt ? `?t=${new Date(updatedAt).getTime()}` : '';
+  return `/api/players/${playerId}/image${cacheBuster}`;
+};
 
 export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDialogProps) {
   // Track when dialog opens
@@ -41,9 +46,9 @@ export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDi
           {/* Colonna sinistra: Immagine */}
           <div className="flex-shrink-0 flex sm:block justify-center">
             <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-xl overflow-hidden bg-muted border-2 border-primary/20 shadow-xl biography-img-custom-border">
-              {selectedPlayer?.image ? (
+              {selectedPlayer?.hasImage ? (
                 <img
-                  src={getImageUrl(selectedPlayer.image)}
+                  src={getPlayerImageUrl(selectedPlayer.id, selectedPlayer.updatedAt)}
                   alt={getPlayerDisplayName(selectedPlayer)}
                   className="w-full h-full object-cover"
                 />

@@ -208,7 +208,11 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
         body: JSON.stringify(kitData),
       });
 
-      if (!response.ok) throw new Error('Failed to create kit');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Create kit error:', errorData);
+        throw new Error(errorData.error || errorData.details || 'Failed to create kit');
+      }
 
       const newKit = await response.json();
       setKits([...kits, newKit]);
