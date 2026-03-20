@@ -151,8 +151,15 @@
   border-color: #002f42;
 }
 
-:hover.transition-custom-color {
+:hover.transition-custom-color,
+:active.transition-custom-color {
   border-color: #cd2127;
+}
+
+/* Shadow effect for cards */
+.card-glow:hover,
+.card-glow:active {
+  box-shadow: 0 15px 35px 5px rgba(0, 0, 0, 0.8);
 }
 
 .gk-badge {
@@ -217,6 +224,7 @@ body {
   overflow-x: hidden;
   /* opzionale: padding interno */
   padding: 24px;
+  padding-bottom: 40px;
 }
 
 .card-custom-color {
