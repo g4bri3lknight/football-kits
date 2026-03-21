@@ -3,6 +3,21 @@ import { db } from '@/lib/db';
 
 export async function GET() {
   try {
+    // Ottieni statistiche generali
+    const totalKits = await db.kit.count();
+    
+    const likesSum = await db.kit.aggregate({
+      _sum: {
+        likes: true,
+      },
+    });
+    
+    const dislikesSum = await db.kit.aggregate({
+      _sum: {
+        dislikes: true,
+      },
+    });
+
     // Ottieni i kit ordinati per likes (top 5)
     const topLiked = await db.kit.findMany({
       where: {
@@ -19,8 +34,6 @@ export async function GET() {
         type: true,
         likes: true,
         dislikes: true,
-        imageUrl: true,
-        logoUrl: true,
       },
     });
 
@@ -40,25 +53,10 @@ export async function GET() {
         type: true,
         likes: true,
         dislikes: true,
-        imageUrl: true,
-        logoUrl: true,
       },
     });
 
-    // Ottieni statistiche generali
-    const totalKits = await db.kit.count();
-    const totalLikes = await db.kit.aggregate({
-      _sum: {
-        likes: true,
-      },
-    });
-    const totalDislikes = await db.kit.aggregate({
-      _sum: {
-        dislikes: true,
-      },
-    });
-
-    // Kit più controversi (più votati in assoluto)
+    // Ottieni tutti i kit per calcolare i più votati
     const allKits = await db.kit.findMany({
       select: {
         id: true,
@@ -67,8 +65,6 @@ export async function GET() {
         type: true,
         likes: true,
         dislikes: true,
-        imageUrl: true,
-        logoUrl: true,
       },
     });
 
@@ -83,14 +79,14 @@ export async function GET() {
       mostVoted,
       summary: {
         totalKits,
-        totalLikes: totalLikes._sum.likes || 0,
-        totalDislikes: totalDislikes._sum.dislikes || 0,
+        totalLikes: likesSum._sum.likes || 0,
+        totalDislikes: dislikesSum._sum.dislikes || 0,
       },
     });
   } catch (error) {
     console.error('Error fetching kit stats:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch kit stats' },
+      { error: 'Failed to fetch kit stats', details: String(error) },
       { status: 500 }
     );
   }

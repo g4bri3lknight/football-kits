@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, LogOut, ShieldCheck } from 'lucide-react';
@@ -9,20 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 
 const AUTH_TOKEN_KEY = 'admin-auth-token';
 
-// Verifica se il token è valido
-function verifyToken(token: string): boolean {
+// Verifica il token tramite API
+async function verifyTokenViaAPI(token: string): Promise<boolean> {
   try {
-    const decoded = atob(token);
-    const [timestamp, secret] = decoded.split(':');
-
-    if (secret !== 'football-kits-admin') {
-      return false;
-    }
-
-    const tokenAge = Date.now() - parseInt(timestamp);
-    const maxAge = 24 * 60 * 60 * 1000; // 24 ore
-
-    return tokenAge < maxAge;
+    const response = await fetch(`/api/admin/login?token=${encodeURIComponent(token)}`);
+    const data = await response.json();
+    return data.authenticated === true;
   } catch {
     return false;
   }
@@ -85,43 +77,53 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  const urlToken = searchParams.get('t') || '';
-  const storedToken = useMemo(() => getStoredToken(), []);
-  
-  const token = urlToken || storedToken;
-  
-  const isAuthenticated = useMemo(() => {
-    if (!token) return false;
-    return verifyToken(token);
-  }, [token]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
 
-  // Salva il token dall'URL
+  // Verifica il token tramite API
   useEffect(() => {
-    if (urlToken && verifyToken(urlToken)) {
-      saveToken(urlToken);
-    }
-  }, [urlToken]);
+    const verifyAuth = async () => {
+      const urlToken = searchParams.get('t');
+      
+      // Priorità al token dell'URL
+      if (urlToken) {
+        const isValid = await verifyTokenViaAPI(urlToken);
+        if (isValid) {
+          saveToken(urlToken);
+          setToken(urlToken);
+          setIsAuthenticated(true);
+          setChecking(false);
+          return;
+        }
+      }
 
-  // Se autenticato con token salvato ma non nell'URL, reindirizza con token
-  useEffect(() => {
-    if (storedToken && !urlToken && verifyToken(storedToken)) {
-      router.replace(`/admin/dashboard?t=${encodeURIComponent(storedToken)}`);
-    }
-  }, [storedToken, urlToken, router]);
+      // Controlla il token salvato
+      const storedToken = getStoredToken();
+      if (storedToken) {
+        const isValid = await verifyTokenViaAPI(storedToken);
+        if (isValid) {
+          setToken(storedToken);
+          setIsAuthenticated(true);
+          // Assicurati che l'URL abbia il token
+          if (!urlToken) {
+            router.replace(`/admin/dashboard?t=${encodeURIComponent(storedToken)}`);
+          }
+          setChecking(false);
+          return;
+        }
+      }
 
-  // Redirect se non autenticato
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: 'Accesso negato',
-        description: 'Token non valido o scaduto. Effettua nuovamente il login.',
-        variant: 'destructive',
-      });
+      // Token non valido, redirect alla login
+      setChecking(false);
       router.push('/admin/login');
-    }
-  }, [isAuthenticated, router, toast]);
+    };
 
-  if (!isAuthenticated) {
+    verifyAuth();
+  }, [searchParams, router]);
+
+  // Mostra loading mentre verifica
+  if (checking || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
         <div className="text-center">

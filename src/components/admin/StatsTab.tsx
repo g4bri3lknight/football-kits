@@ -79,13 +79,39 @@ export default function StatsTab() {
     try {
       const res = await fetch('/api/stats/kits');
       const data = await res.json();
-      setKitStats(data);
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      // Ensure summary exists with defaults
+      setKitStats({
+        topLiked: data.topLiked || [],
+        topDisliked: data.topDisliked || [],
+        mostVoted: data.mostVoted || [],
+        summary: {
+          totalKits: data.summary?.totalKits || 0,
+          totalLikes: data.summary?.totalLikes || 0,
+          totalDislikes: data.summary?.totalDislikes || 0,
+        },
+      });
     } catch (error) {
       console.error('Error fetching kit stats:', error);
       toast({
         title: 'Errore',
         description: 'Impossibile caricare le statistiche kit',
         variant: 'destructive',
+      });
+      // Set default values on error
+      setKitStats({
+        topLiked: [],
+        topDisliked: [],
+        mostVoted: [],
+        summary: {
+          totalKits: 0,
+          totalLikes: 0,
+          totalDislikes: 0,
+        },
       });
     } finally {
       setKitLoading(false);

@@ -143,12 +143,16 @@ model KitVote {
 }
 
 model Comment {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   author    String
   content   String
-  kitId     String?  // Opzionale: per contestualizzare il commento a un kit
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  Kit       Kit?     @relation(fields: [kitId], references: [id], onDelete: SetNull)
+  userId    String    @default("legacy-user") // Identificatore univoco dell'autore (cookie-based)
+  kitId     String?   // Opzionale: per contestualizzare il commento a un kit
+  parentId  String?   // Opzionale: per le risposte ad altri commenti
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  Kit       Kit?      @relation(fields: [kitId], references: [id], onDelete: SetNull)
+  Parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  Replies   Comment[] @relation("CommentReplies")
 }

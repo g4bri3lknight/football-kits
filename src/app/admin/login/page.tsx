@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,20 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Pulisci vecchi token quando si accede alla pagina di login
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    } catch {
+      // Ignora errori
+    }
+    try {
+      document.cookie = `${AUTH_TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    } catch {
+      // Ignora errori
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -63,8 +77,8 @@ export default function AdminLoginPage() {
         throw new Error(data.error || 'Login fallito');
       }
 
-      // Genera un token locale
-      const token = generateToken();
+      // Usa il token restituito dall'API (o genera uno locale come fallback)
+      const token = data.token || generateToken();
       
       // Salva il token in sessionStorage per persistenza
       saveToken(token);
@@ -74,8 +88,8 @@ export default function AdminLoginPage() {
         description: 'Login effettuato con successo',
       });
 
-      // Redirect alla dashboard con il token nell'URL
-      router.push(`/admin/dashboard?t=${encodeURIComponent(token)}`);
+      // Redirect alla dashboard usando window.location per un reload completo
+      window.location.href = `/admin/dashboard?t=${encodeURIComponent(token)}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login fallito');
       toast({

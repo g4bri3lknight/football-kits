@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 // Token semplice basato su timestamp + secret
 function generateAuthToken(): string {
   const timestamp = Date.now();
-  const secret = process.env.ADMIN_SECRET || 'default-secret-change-this';
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) {
+    throw new Error('ADMIN_SECRET non configurato');
+  }
   return Buffer.from(`${timestamp}:${secret}`).toString('base64');
 }
 
@@ -11,10 +14,15 @@ function generateAuthToken(): string {
 export function verifyAuthToken(token: string): boolean {
   try {
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
-    const [timestamp, secret] = decoded.split(':');
+    const parts = decoded.split(':');
+    if (parts.length !== 2) return false;
+    
+    const timestamp = parts[0];
+    const secret = parts[1];
 
-    // Verifica secret
-    if (secret !== (process.env.ADMIN_SECRET || 'default-secret-change-this')) {
+    // Verifica secret - deve corrispondere esattamente a ADMIN_SECRET
+    const validSecret = process.env.ADMIN_SECRET;
+    if (!validSecret || secret !== validSecret) {
       return false;
     }
 
@@ -66,9 +74,9 @@ export async function POST(request: NextRequest) {
 // GET /api/admin/login - Verifica stato login
 export async function GET(request: NextRequest) {
   try {
-    // Leggi il token dall'header Authorization
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
+    // Leggi il token dall'URL query parameter
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get('token');
 
     if (!token || !verifyAuthToken(token)) {
       return NextResponse.json({ authenticated: false }, { status: 401 });
