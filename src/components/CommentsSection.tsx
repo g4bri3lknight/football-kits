@@ -691,8 +691,8 @@ export function CommentsSection() {
               Tutti i commenti ({totalComments})
             </CardTitle>
             <Button onClick={() => setDialogOpen(true)} size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Lascia un commento
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Lascia un commento</span>
             </Button>
           </div>
         </CardHeader>
