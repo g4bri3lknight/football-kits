@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Search, User as UserIcon, Settings, Menu } from 'lucide-react';
+import { Search, User as UserIcon, Settings, Menu, MessageCircle } from 'lucide-react';
 import Flag from 'react-world-flags';
 
 import { Nation, Player, Kit, PlayerKit } from '@/types';
@@ -448,8 +449,18 @@ export default function Home() {
               <Menu className="w-5 h-5" />
             </Button>
 
-            {/* Desktop: Admin Button */}
+            {/* Desktop: Admin and Comments Buttons */}
             <div className="hidden lg:flex items-center gap-3">
+              <Link href="/comments">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  title="Commenti"
+                  className="flex-shrink-0 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                </Button>
+              </Link>
               <Button
                 variant="outline"
                 size="icon"
@@ -543,6 +554,17 @@ export default function Home() {
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
           <div className="mt-6 flex flex-col gap-4 px-2">
+            {/* Comments Link */}
+            <Link href="/comments" onClick={() => setMobileMenuOpen(false)}>
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Commenti
+              </Button>
+            </Link>
+
             {/* Admin Button */}
             <Button
               variant="outline"

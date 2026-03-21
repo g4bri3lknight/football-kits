@@ -77,6 +77,7 @@ model Kit {
 
   PlayerKit       PlayerKit[]
   KitVote         KitVote[]
+  Comment         Comment[]
 }
 
 model Nation {
@@ -139,4 +140,15 @@ model KitVote {
   Kit       Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
 
   @@unique([kitId, userId]) // Un utente può votare solo una volta per kit
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  author    String
+  content   String
+  kitId     String?  // Opzionale: per contestualizzare il commento a un kit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  Kit       Kit?     @relation(fields: [kitId], references: [id], onDelete: SetNull)
 }

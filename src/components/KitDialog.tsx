@@ -104,6 +104,12 @@ export function KitDialog({
     };
   }, []);
 
+  // Reset del dettaglio selezionato quando cambia il kit
+  useEffect(() => {
+    setSelectedDetail(null);
+    setHoveredDetail(null);
+  }, [selectedKit?.id]);
+
   // Carica i voti quando cambia il kit selezionato
   useEffect(() => {
     if (selectedKit?.id && userId) {
