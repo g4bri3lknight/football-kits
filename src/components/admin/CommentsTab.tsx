@@ -35,13 +35,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Pencil, Trash2, Search, Loader2, MessageCircle } from 'lucide-react';
+import { Pencil, Trash2, Search, Loader2, MessageCircle, Reply } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Comment } from './types';
 import { translateKitType, getKitTypeColor } from './utils';
 
 interface CommentsTabProps {
   adminToken: string;
+  adminNickname: string;
 }
 
 interface FlattenedComment extends Comment {
@@ -49,7 +50,7 @@ interface FlattenedComment extends Comment {
   parentAuthor?: string;
 }
 
-export default function CommentsTab({ adminToken }: CommentsTabProps) {
+export default function CommentsTab({ adminToken, adminNickname }: CommentsTabProps) {
   const { toast } = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +66,12 @@ export default function CommentsTab({ adminToken }: CommentsTabProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null);
   const [deleting, setDeleting] = useState(false);
+  
+  // Reply dialog state
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [replying, setReplying] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -213,6 +220,89 @@ export default function CommentsTab({ adminToken }: CommentsTabProps) {
     }
   };
 
+  // Reply functions
+  const handleOpenReplyDialog = (comment: Comment) => {
+    setReplyingTo(comment);
+    setReplyContent('');
+    setReplyDialogOpen(true);
+  };
+
+  const handleCloseReplyDialog = () => {
+    setReplyingTo(null);
+    setReplyContent('');
+    setReplyDialogOpen(false);
+  };
+
+  const handleReplyComment = async () => {
+    if (!replyingTo || !replyContent.trim()) {
+      toast({
+        title: 'Errore',
+        description: 'Il contenuto della risposta non può essere vuoto',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!adminNickname) {
+      toast({
+        title: 'Errore',
+        description: 'Devi impostare un nickname prima di rispondere ai commenti',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setReplying(true);
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          author: adminNickname,
+          content: replyContent.trim(),
+          userId: 'admin',
+          parentId: replyingTo.id,
+          kitId: replyingTo.kitId,
+          adminToken: adminToken,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create reply');
+      }
+
+      const newReply = await response.json();
+
+      // Aggiungi la risposta al commento padre
+      setComments(comments.map(comment => {
+        if (comment.id === replyingTo.id) {
+          return {
+            ...comment,
+            Replies: [...(comment.Replies || []), newReply]
+          };
+        }
+        return comment;
+      }));
+
+      handleCloseReplyDialog();
+
+      toast({
+        title: 'Successo',
+        description: 'Risposta pubblicata con successo',
+      });
+    } catch (error) {
+      console.error('Error creating reply:', error);
+      toast({
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Impossibile pubblicare la risposta',
+        variant: 'destructive',
+      });
+    } finally {
+      setReplying(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('it-IT', {
@@ -350,6 +440,17 @@ export default function CommentsTab({ adminToken }: CommentsTabProps) {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
+                            {!comment.isReply && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenReplyDialog(comment)}
+                                className="h-8 w-8 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                                title="Rispondi"
+                              >
+                                <Reply className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -468,6 +569,82 @@ export default function CommentsTab({ adminToken }: CommentsTabProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reply Dialog */}
+      <Dialog open={replyDialogOpen} onOpenChange={handleCloseReplyDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Rispondi al Commento</DialogTitle>
+            <DialogDescription>
+              Rispondi come <span className="font-semibold text-foreground">{adminNickname || 'Admin'}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Commento originale */}
+            {replyingTo && (
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{replyingTo.author}</span>
+                  <span className="text-xs text-muted-foreground">ha scritto:</span>
+                </div>
+                <p className="text-sm text-muted-foreground italic">
+                  "{replyingTo.content}"
+                </p>
+                {replyingTo.Kit && (
+                  <div className="text-xs text-muted-foreground">
+                    Su: {replyingTo.Kit.team} - {replyingTo.Kit.name}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {!adminNickname && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  ⚠️ Non hai impostato un nickname. Imposta un nickname nell'header della dashboard per rispondere ai commenti.
+                </p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">La tua risposta</label>
+              <Textarea
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                rows={4}
+                maxLength={500}
+                placeholder="Scrivi la tua risposta..."
+                disabled={!adminNickname || replying}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {replyContent.length}/500
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseReplyDialog} disabled={replying}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleReplyComment} 
+              disabled={!adminNickname || replying || !replyContent.trim()}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {replying ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Pubblicazione...
+                </>
+              ) : (
+                <>
+                  <Reply className="w-4 h-4 mr-2" />
+                  Pubblica Risposta
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

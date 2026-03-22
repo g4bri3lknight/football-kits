@@ -172,3 +172,10 @@ model CommentVote {
 
   @@unique([commentId, userId]) // Un utente può votare solo una volta per commento
 }
+
+model Admin {
+  id        String   @id @default("admin")
+  nickname  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -153,7 +153,7 @@ function DashboardContent() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-40">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
                 <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -194,7 +194,7 @@ function DashboardContent() {
 
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <AdminPanel />
+        <AdminPanel adminToken={token || ''} />
       </main>
 
       {/* Footer */}

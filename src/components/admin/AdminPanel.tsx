@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -15,7 +14,9 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { User as UserIcon, Shirt, Link2, Globe, BarChart3, MessageCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { User as UserIcon, Shirt, Link2, Globe, BarChart3, MessageCircle, Loader2, Pencil, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Player, Kit, PlayerKit, Nation, AdminPanelProps } from './types';
 import PlayersTab from './PlayersTab';
@@ -25,10 +26,12 @@ import NationsTab from './NationsTab';
 import StatsTab from './StatsTab';
 import CommentsTab from './CommentsTab';
 
-function AdminPanelContent({ onClose, onUpdate }: AdminPanelProps) {
+interface ExtendedAdminPanelProps extends AdminPanelProps {
+  adminToken: string;
+}
+
+function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanelProps) {
   const { toast } = useToast();
-  const searchParams = useSearchParams();
-  const adminToken = searchParams.get('t') || '';
   
   const [players, setPlayers] = useState<Player[]>([]);
   const [kits, setKits] = useState<Kit[]>([]);
@@ -36,10 +39,94 @@ function AdminPanelContent({ onClose, onUpdate }: AdminPanelProps) {
   const [nations, setNations] = useState<Nation[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  
+  // Nickname state
+  const [nickname, setNickname] = useState<string>('');
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [editNickname, setEditNickname] = useState('');
+  const [savingNickname, setSavingNickname] = useState(false);
 
   useEffect(() => {
     fetchData();
+    fetchNickname();
   }, []);
+
+  const fetchNickname = async () => {
+    try {
+      const response = await fetch('/api/admin/nickname');
+      const data = await response.json();
+      setNickname(data.nickname || '');
+    } catch (error) {
+      console.error('Error fetching nickname:', error);
+    }
+  };
+
+  const handleSaveNickname = async () => {
+    if (!adminToken) {
+      toast({
+        title: 'Errore',
+        description: 'Token di autenticazione non trovato. Prova a rifare il login.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setSavingNickname(true);
+    try {
+      const response = await fetch('/api/admin/nickname', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nickname: editNickname.trim() || null,
+          adminToken: adminToken
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        
+        // Se la sessione è scaduta, mostra messaggio specifico
+        if (response.status === 401) {
+          toast({
+            title: 'Sessione scaduta',
+            description: error.details || 'Effettua nuovamente il login.',
+            variant: 'destructive',
+          });
+          setSavingNickname(false);
+          return;
+        }
+        
+        throw new Error(error.details || error.error || 'Failed to update nickname');
+      }
+
+      setNickname(editNickname.trim());
+      setIsEditingNickname(false);
+      
+      toast({
+        title: 'Successo',
+        description: 'Nickname aggiornato con successo',
+      });
+    } catch (error) {
+      console.error('Error saving nickname:', error);
+      toast({
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Impossibile aggiornare il nickname',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingNickname(false);
+    }
+  };
+
+  const handleStartEditNickname = () => {
+    setEditNickname(nickname);
+    setIsEditingNickname(true);
+  };
+
+  const handleCancelEditNickname = () => {
+    setEditNickname('');
+    setIsEditingNickname(false);
+  };
 
   const fetchData = async () => {
     try {
@@ -376,12 +463,14 @@ function AdminPanelContent({ onClose, onUpdate }: AdminPanelProps) {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Caricamento...</p>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Caricamento...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -390,10 +479,67 @@ function AdminPanelContent({ onClose, onUpdate }: AdminPanelProps) {
     <div className="max-w-7xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Pannello di Amministrazione</CardTitle>
-          <CardDescription>
-            Gestisci giocatori, kit e le loro associazioni
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl">Pannello di Amministrazione</CardTitle>
+              <CardDescription>
+                Gestisci giocatori, kit e le loro associazioni
+              </CardDescription>
+            </div>
+            
+            {/* Nickname Section */}
+            <div className="flex-shrink-0">
+              <div className="text-sm text-muted-foreground mb-1">Nickname</div>
+              {isEditingNickname ? (
+                <div className="flex items-center gap-1">
+                  <Input
+                    value={editNickname}
+                    onChange={(e) => setEditNickname(e.target.value)}
+                    className="h-8 w-36 text-sm"
+                    placeholder="Il tuo nickname"
+                    maxLength={50}
+                    disabled={savingNickname}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={handleSaveNickname}
+                    disabled={savingNickname || !editNickname.trim()}
+                  >
+                    {savingNickname ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    )}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={handleCancelEditNickname}
+                    disabled={savingNickname}
+                  >
+                    <X className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <span className={`text-sm font-medium ${!nickname && 'text-muted-foreground italic'}`}>
+                    {nickname || 'Non impostato'}
+                  </span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={handleStartEditNickname}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="stats" className="w-full">
@@ -477,7 +623,7 @@ function AdminPanelContent({ onClose, onUpdate }: AdminPanelProps) {
 
             {/* Comments Tab */}
             <TabsContent value="comments" className="mt-0">
-              <CommentsTab adminToken={adminToken} />
+              <CommentsTab adminToken={adminToken} adminNickname={nickname} />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -490,12 +636,14 @@ export default function AdminPanel(props: AdminPanelProps) {
   return (
     <Suspense fallback={
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-emerald-500" />
-            <p className="text-gray-600 dark:text-gray-400">Caricamento...</p>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-emerald-500" />
+              <p className="text-gray-600 dark:text-gray-400">Caricamento...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     }>
       <AdminPanelContent {...props} />
