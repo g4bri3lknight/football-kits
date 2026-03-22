@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Shirt, ThumbsUp, ThumbsDown } from 'lucide-react';
 import KitViewer3D from '@/components/KitViewer3D';
+import { KitComments } from '@/components/KitComments';
 import { getPlayerDisplayName } from '@/lib/player-utils';
 import { KIT_DETAIL_IMAGE_CONFIG } from '@/config/kit-viewer.config';
 
@@ -200,7 +201,8 @@ export function KitDialog({
   return (
     <Dialog open={!!selectedKit} onOpenChange={() => onClose()}>
       <DialogContent 
-        className="w-[95vw] sm:w-[700px] md:w-[900px] lg:w-[1050px] h-[65vh] sm:h-[700px] md:h-[800px] lg:h-[850px] overflow-hidden dialog-custom-color flex flex-col"
+        key={selectedKit?.id || 'no-kit'}
+        className="w-[95vw] sm:w-[700px] md:w-[900px] lg:w-[1050px] max-h-[90vh] overflow-y-auto overflow-x-hidden dialog-custom-color flex flex-col"
         style={{ cursor: isMouseDown ? 'none' : 'default' }}
       >
         <DialogHeader>
@@ -284,8 +286,7 @@ export function KitDialog({
         </DialogHeader>
 
         {/* Content principale */}
-        <div className="rounded-lg p-2 sm:p-4 flex-1 min-h-0">
-          <div className="grid grid-cols-5 gap-2 sm:gap-3 lg:gap-5 h-full">
+        <div className="kit-dialog-grid grid grid-cols-5 gap-2 sm:gap-3 lg:gap-5 rounded-lg p-2 sm:p-4">
             {/* Left detail images */}
             <div className="col-span-1 flex flex-col gap-2 sm:gap-3">
               {leftDetails.map((detail, index) => (
@@ -494,7 +495,6 @@ export function KitDialog({
                 </div>
               ))}
             </div>
-          </div>
         </div>
 
         {/* Footer con player e voti */}
@@ -562,6 +562,11 @@ export function KitDialog({
             </button>
           </div>
         </div>
+
+        {/* Sezione Commenti */}
+        {selectedKit && (
+          <KitComments kitId={selectedKit.id} />
+        )}
       </DialogContent>
     </Dialog>
   );

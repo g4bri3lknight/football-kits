@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Search, User as UserIcon, Settings, Menu, MessageCircle, Home as HomeIcon } from 'lucide-react';
+import { Search, User as UserIcon, Settings, Menu } from 'lucide-react';
 import Flag from 'react-world-flags';
 
 import { Nation, Player, Kit, PlayerKit } from '@/types';
@@ -17,7 +17,6 @@ import { BackToTop } from '@/components/back-to-top';
 import { PlayerCard } from '@/components/PlayerCard';
 import { KitDialog } from '@/components/KitDialog';
 import { BiographyDialog } from '@/components/BiographyDialog';
-import { CommentsSection } from '@/components/CommentsSection';
 import { HEADER_CONFIG } from '@/config/kit-viewer.config';
 
 const AUTH_TOKEN_KEY = 'admin-auth-token';
@@ -98,9 +97,6 @@ export default function Home() {
   const [selectedKitPlayer, setSelectedKitPlayer] = useState<Player | null>(null);
   const [currentKitIndex, setCurrentKitIndex] = useState<number>(0);
   const [playerKitsList, setPlayerKitsList] = useState<PlayerKit[]>([]);
-  
-  // Comments view state
-  const [showComments, setShowComments] = useState(false);
 
   // Dynamic header height calculation
   useEffect(() => {
@@ -452,18 +448,8 @@ export default function Home() {
               <Menu className="w-5 h-5" />
             </Button>
 
-            {/* Desktop: Admin and Comments Buttons */}
+            {/* Desktop: Admin Button */}
             <div className="hidden lg:flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="default"
-                title={showComments ? "Torna alla home" : "Vedi commenti"}
-                onClick={() => setShowComments(!showComments)}
-                className={`flex-shrink-0 backdrop-blur-md border-white/20 hover:bg-black/50 gap-2 ${showComments ? 'bg-primary text-white hover:bg-primary/90' : 'bg-black/30 text-white'}`}
-              >
-                {showComments ? <HomeIcon className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
-                {showComments ? 'Home' : 'Commenti'}
-              </Button>
               <Button
                 variant="outline"
                 size="icon"
@@ -477,7 +463,7 @@ export default function Home() {
           </div>
 
           {/* Filters - Desktop */}
-          <div className={`hidden lg:block mt-6 ${showComments ? 'invisible' : ''}`}>
+          <div className="hidden lg:block mt-6">
             <div className="flex flex-wrap items-start gap-3 backdrop-blur-md bg-black/20 rounded-lg p-3 -mx-3">
               {/* Search player */}
               <div className="relative flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
@@ -557,19 +543,6 @@ export default function Home() {
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
           <div className="mt-6 flex flex-col gap-4 px-2">
-            {/* Comments Toggle Button */}
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2"
-              onClick={() => {
-                setShowComments(!showComments);
-                setMobileMenuOpen(false);
-              }}
-            >
-              {showComments ? <HomeIcon className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />}
-              {showComments ? 'Home' : 'Commenti'}
-            </Button>
-
             {/* Admin Button */}
             <Button
               variant="outline"
@@ -664,9 +637,7 @@ export default function Home() {
       >
         <div ref={containerRef} className="content">
           <main className="flex-1 container mx-auto px-4 py-6">
-            {showComments ? (
-              <CommentsSection />
-            ) : loading ? (
+            {loading ? (
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                   <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>

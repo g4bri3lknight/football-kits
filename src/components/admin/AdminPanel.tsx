@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -14,7 +15,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { User as UserIcon, Shirt, Link2, Globe, BarChart3 } from 'lucide-react';
+import { User as UserIcon, Shirt, Link2, Globe, BarChart3, MessageCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Player, Kit, PlayerKit, Nation, AdminPanelProps } from './types';
 import PlayersTab from './PlayersTab';
@@ -22,9 +23,13 @@ import KitsTab from './KitsTab';
 import AssociationsTab from './AssociationsTab';
 import NationsTab from './NationsTab';
 import StatsTab from './StatsTab';
+import CommentsTab from './CommentsTab';
 
-export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
+function AdminPanelContent({ onClose, onUpdate }: AdminPanelProps) {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const adminToken = searchParams.get('t') || '';
+  
   const [players, setPlayers] = useState<Player[]>([]);
   const [kits, setKits] = useState<Kit[]>([]);
   const [playerKits, setPlayerKits] = useState<PlayerKit[]>([]);
@@ -392,7 +397,7 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="stats" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-2 h-auto">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 gap-1 sm:gap-2 h-auto">
               <TabsTrigger value="stats" className="flex items-center justify-center gap-2 sm:gap-2 text-sm sm:text-base py-2.5 sm:py-3 h-12 sm:h-auto min-w-[80px] sm:min-w-0">
                 <BarChart3 className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>Statistiche</span>
@@ -408,6 +413,10 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
               <TabsTrigger value="associations" className="flex items-center justify-center gap-2 sm:gap-2 text-sm sm:text-base py-2.5 sm:py-3 h-12 sm:h-auto min-w-[80px] sm:min-w-0">
                 <Link2 className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>Associazioni</span>
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="flex items-center justify-center gap-2 sm:gap-2 text-sm sm:text-base py-2.5 sm:py-3 h-12 sm:h-auto min-w-[80px] sm:min-w-0">
+                <MessageCircle className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span>Commenti</span>
               </TabsTrigger>
               {nations.length === 0 && (
                 <TabsTrigger value="nations" className="flex items-center justify-center gap-2 sm:gap-2 text-sm sm:text-base py-2.5 sm:py-3 h-12 sm:h-auto min-w-[80px] sm:min-w-0">
@@ -465,9 +474,31 @@ export default function AdminPanel({ onClose, onUpdate }: AdminPanelProps) {
                 <NationsTab />
               </TabsContent>
             )}
+
+            {/* Comments Tab */}
+            <TabsContent value="comments" className="mt-0">
+              <CommentsTab adminToken={adminToken} />
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AdminPanel(props: AdminPanelProps) {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-emerald-500" />
+            <p className="text-gray-600 dark:text-gray-400">Caricamento...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <AdminPanelContent {...props} />
+    </Suspense>
   );
 }

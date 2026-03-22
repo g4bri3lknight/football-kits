@@ -27,14 +27,25 @@ function verifyAuthToken(token: string): boolean {
   }
 }
 
-// GET - Ottieni tutti i commenti con risposte
-export async function GET() {
+// GET - Ottieni commenti con risposte, filtrabili per kitId
+export async function GET(request: NextRequest) {
   try {
-    // Prendi solo i commenti principali (senza parentId)
+    const { searchParams } = new URL(request.url);
+    const kitId = searchParams.get('kitId');
+    const userId = searchParams.get('userId');
+
+    // Costruisci il where clause
+    const where: { parentId: null; kitId?: string } = {
+      parentId: null, // Solo commenti principali
+    };
+
+    // Se è specificato un kitId, filtra per quel kit
+    if (kitId) {
+      where.kitId = kitId;
+    }
+
     const comments = await db.comment.findMany({
-      where: {
-        parentId: null, // Solo commenti principali
-      },
+      where,
       include: {
         Kit: {
           select: {
@@ -65,7 +76,37 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(comments);
+    // Se userId è fornito, ottieni i voti dell'utente per tutti i commenti
+    let userVotes: Record<string, string> = {};
+    if (userId) {
+      const allCommentIds = comments.flatMap(c => [c.id, ...(c.Replies?.map(r => r.id) || [])]);
+      const votes = await db.commentVote.findMany({
+        where: {
+          commentId: { in: allCommentIds },
+          userId: userId,
+        },
+        select: {
+          commentId: true,
+          voteType: true,
+        }
+      });
+      userVotes = votes.reduce((acc, v) => {
+        acc[v.commentId] = v.voteType;
+        return acc;
+      }, {} as Record<string, string>);
+    }
+
+    // Aggiungi userVote a ogni commento e risposta
+    const commentsWithVotes = comments.map(comment => ({
+      ...comment,
+      userVote: userVotes[comment.id] || null,
+      Replies: comment.Replies?.map(reply => ({
+        ...reply,
+        userVote: userVotes[reply.id] || null,
+      }))
+    }));
+
+    return NextResponse.json(commentsWithVotes);
   } catch (error) {
     console.error('Error fetching comments:', error);
     return NextResponse.json({ error: 'Failed to fetch comments' }, { status: 500 });
@@ -130,17 +171,17 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Modifica un commento esistente (solo l'autore)
+// PUT - Modifica un commento esistente (solo l'autore o admin)
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, content, userId } = body;
+    const { id, content, userId, adminToken } = body;
 
-    if (!id || !content || !userId) {
-      return NextResponse.json({ error: 'ID, content and userId are required' }, { status: 400 });
+    if (!id || !content) {
+      return NextResponse.json({ error: 'ID and content are required' }, { status: 400 });
     }
 
-    // Verifica che il commento esista e appartenga all'utente
+    // Verifica che il commento esista
     const existingComment = await db.comment.findUnique({
       where: { id }
     });
@@ -149,8 +190,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
     }
 
-    if (existingComment.userId !== userId) {
-      return NextResponse.json({ error: 'You can only edit your own comments' }, { status: 403 });
+    // Verifica autorizzazione: admin OPPURE proprietario del commento
+    const isAdmin = adminToken && verifyAuthToken(adminToken);
+    const isOwner = userId && existingComment.userId === userId;
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json({ error: 'Unauthorized - You can only edit your own comments' }, { status: 403 });
     }
 
     const updatedComment = await db.comment.update({
@@ -178,23 +223,16 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Cancella un commento (solo admin)
+// DELETE - Cancella un commento (admin o proprietario)
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const adminToken = searchParams.get('adminToken');
-
-    console.log('DELETE comment request:', { id, adminToken: adminToken ? adminToken.substring(0, 20) + '...' : 'null' });
+    const userId = searchParams.get('userId');
 
     if (!id) {
       return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
-    }
-
-    // Verifica admin token usando la stessa logica del login
-    if (!adminToken || !verifyAuthToken(adminToken)) {
-      console.log('Token verification failed for token:', adminToken ? adminToken.substring(0, 20) + '...' : 'null');
-      return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
     // Verifica che il commento esista
@@ -204,6 +242,14 @@ export async function DELETE(request: NextRequest) {
 
     if (!existingComment) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+    }
+
+    // Verifica autorizzazione: admin OPPURE proprietario del commento
+    const isAdmin = adminToken && verifyAuthToken(adminToken);
+    const isOwner = userId && existingComment.userId === userId;
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json({ error: 'Unauthorized - You can only delete your own comments' }, { status: 403 });
     }
 
     // Cancella il commento (le risposte vengono cancellate in cascade)

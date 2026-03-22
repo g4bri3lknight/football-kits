@@ -66,3 +66,21 @@ export interface AdminPanelProps {
   onClose?: () => void;
   onUpdate?: () => void;
 }
+
+export interface Comment {
+  id: string;
+  author: string;
+  content: string;
+  userId: string;
+  kitId?: string | null;
+  parentId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  Kit?: {
+    id: string;
+    name: string;
+    team: string;
+    type: string;
+  } | null;
+  Replies?: Comment[];
+}

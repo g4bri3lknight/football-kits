@@ -152,7 +152,23 @@ model Comment {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  // Voti
+  likes     Int       @default(0)
+  dislikes  Int       @default(0)
+
   Kit       Kit?      @relation(fields: [kitId], references: [id], onDelete: SetNull)
   Parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   Replies   Comment[] @relation("CommentReplies")
+  CommentVote CommentVote[]
+}
+
+model CommentVote {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String   // Identificatore univoco dell'utente (cookie-based)
+  voteType  String   // 'like' o 'dislike'
+  createdAt DateTime @default(now())
+  Comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId]) // Un utente può votare solo una volta per commento
 }

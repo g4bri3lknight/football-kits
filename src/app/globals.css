@@ -231,3 +231,30 @@ body {
   /*background: rgba(0, 47, 66, 0.9);*/
   background: rgba(0, 0, 0, 0.9);
 }
+
+/* Kit Dialog Grid - altezza fissa */
+.kit-dialog-grid {
+  height: 450px !important;
+  min-height: 450px !important;
+}
+
+@media (min-width: 640px) {
+  .kit-dialog-grid {
+    height: 520px !important;
+    min-height: 520px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .kit-dialog-grid {
+    height: 600px !important;
+    min-height: 600px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kit-dialog-grid {
+    height: 650px !important;
+    min-height: 650px !important;
+  }
+}
