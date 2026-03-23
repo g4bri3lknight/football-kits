@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enum per lo stato dei contenuti
+enum ContentStatus {
+  NON_IMPOSTATO
+  NUOVO
+  AGGIORNATO
+}
+
+model Kit {
+  id              String        @id
+  name            String
+  team            String
+  type            String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime
+  status          ContentStatus @default(NON_IMPOSTATO)
+
+  // Flag per indicare la presenza di file (per performance)
+  hasImage        Boolean       @default(false)
+  hasLogo         Boolean       @default(false)
+  hasModel3D      Boolean       @default(false)
+  hasDetail1      Boolean       @default(false)
+  hasDetail2      Boolean       @default(false)
+  hasDetail3      Boolean       @default(false)
+  hasDetail4      Boolean       @default(false)
+  hasDetail5      Boolean       @default(false)
+  hasDetail6      Boolean       @default(false)
+
+  // Immagine principale del kit (BLOB)
+  imageData       Bytes?
+  imageMimeType   String?
+
+  // Logo della squadra (BLOB)
+  logoData        Bytes?
+  logoMimeType    String?
+
+  // Modello 3D (BLOB)
+  model3DData     Bytes?
+  model3DName     String?     // Nome originale del file
+
+  // Dettagli del kit (BLOB)
+  detail1Label    String?
+  detail1Data     Bytes?
+  detail1MimeType String?
+
+  detail2Label    String?
+  detail2Data     Bytes?
+  detail2MimeType String?
+
+  detail3Label    String?
+  detail3Data     Bytes?
+  detail3MimeType String?
+
+  detail4Label    String?
+  detail4Data     Bytes?
+  detail4MimeType String?
+
+  detail5Label    String?
+  detail5Data     Bytes?
+  detail5MimeType String?
+
+  detail6Label    String?
+  detail6Data     Bytes?
+  detail6MimeType String?
+
+  // Voti
+  likes           Int           @default(0)
+  dislikes        Int           @default(0)
+
+  PlayerKit       PlayerKit[]
+  KitVote         KitVote[]
+  Comment         Comment[]
+}
+
+model Nation {
+  id        String   @id
+  name      String   @unique
+  code      String   @unique
+  flag      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Player    Player[]
+}
+
+model Player {
+  id            String        @id
+  name          String
+  surname       String?
+  nationId      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  biography     String?
+  status        ContentStatus @default(NON_IMPOSTATO)
+
+  // Flag per indicare la presenza di immagine (per performance)
+  hasImage      Boolean       @default(false)
+
+  // Immagine del giocatore (BLOB)
+  imageData     Bytes?
+  imageMimeType String?
+
+  Nation        Nation?       @relation(fields: [nationId], references: [id])
+  PlayerKit     PlayerKit[]
+}
+
+model PlayerKit {
+  id        String   @id
+  playerId  String
+  kitId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  Kit       Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, kitId])
+}
+
+model PageView {
+  id        String   @id @default(uuid())
+  page      String
+  createdAt DateTime @default(now())
+  userAgent String?
+  ip        String?
+}
+
+model KitVote {
+  id        String   @id @default(uuid())
+  kitId     String
+  userId    String   // Identificatore univoco dell'utente (cookie-based)
+  voteType  String   // 'like' o 'dislike'
+  createdAt DateTime @default(now())
+  Kit       Kit      @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
+  @@unique([kitId, userId]) // Un utente può votare solo una volta per kit
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  author    String
+  content   String
+  userId    String    @default("legacy-user") // Identificatore univoco dell'autore (cookie-based)
+  kitId     String?   // Opzionale: per contestualizzare il commento a un kit
+  parentId  String?   // Opzionale: per le risposte ad altri commenti
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Voti
+  likes     Int       @default(0)
+  dislikes  Int       @default(0)
+
+  Kit       Kit?      @relation(fields: [kitId], references: [id], onDelete: SetNull)
+  Parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  Replies   Comment[] @relation("CommentReplies")
+  CommentVote CommentVote[]
+}
+
+model CommentVote {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String   // Identificatore univoco dell'utente (cookie-based)
+  voteType  String   // 'like' o 'dislike'
+  createdAt DateTime @default(now())
+  Comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId]) // Un utente può votare solo una volta per commento
+}
+
+model Admin {
+  id        String   @id @default("admin")
+  nickname  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
