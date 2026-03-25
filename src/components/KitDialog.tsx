@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Kit, Player, PlayerKit } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Shirt, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Shirt, ThumbsUp, ThumbsDown, Share2, Facebook, Twitter, MessageCircle, Link2, Check } from 'lucide-react';
 import KitViewer3D from '@/components/KitViewer3D';
 import { KitComments } from '@/components/KitComments';
 import { getPlayerDisplayName } from '@/lib/player-utils';
@@ -85,6 +85,8 @@ export function KitDialog({
   const [isVoting, setIsVoting] = useState(false);
   const [userId, setUserId] = useState('');
   const [isMouseDown, setIsMouseDown] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Inizializza userId
   useEffect(() => {
@@ -154,6 +156,65 @@ export function KitDialog({
       console.error('Error voting:', error);
     } finally {
       setIsVoting(false);
+    }
+  };
+
+  // Funzioni per la condivisione social
+  const getShareUrl = () => {
+    if (typeof window !== 'undefined' && selectedKit?.id) {
+      const baseUrl = window.location.origin;
+      // Usa l'URL /share/[kitId] per i meta tag OG
+      return `${baseUrl}/share/${selectedKit.id}`;
+    }
+    return '';
+  };
+
+  // URL diretto per il browser (apre il kit)
+  const getDirectUrl = () => {
+    if (typeof window !== 'undefined' && selectedKit?.id) {
+      const baseUrl = window.location.origin;
+      return `${baseUrl}?kit=${selectedKit.id}`;
+    }
+    return '';
+  };
+
+  const getShareTitle = () => {
+    const playerName = selectedKitPlayer ? getPlayerDisplayName(selectedKitPlayer) : '';
+    const kitName = selectedKit?.name || '';
+    const team = selectedKit?.team || '';
+    return `${playerName} - ${kitName} ${team} | GK Retro Kits`.trim();
+  };
+
+  const shareOnFacebook = () => {
+    const url = encodeURIComponent(getShareUrl());
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
+    setShowShareMenu(false);
+  };
+
+  const shareOnTwitter = () => {
+    const url = encodeURIComponent(getShareUrl());
+    const text = encodeURIComponent(getShareTitle());
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank', 'width=600,height=400');
+    setShowShareMenu(false);
+  };
+
+  const shareOnWhatsApp = () => {
+    const url = encodeURIComponent(getShareUrl());
+    const text = encodeURIComponent(getShareTitle());
+    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+    setShowShareMenu(false);
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getDirectUrl());
+      setCopiedLink(true);
+      setTimeout(() => {
+        setCopiedLink(false);
+        setShowShareMenu(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Errore copia link:', err);
     }
   };
 
@@ -516,8 +577,8 @@ export function KitDialog({
             )}
           </div>
           
-          {/* Voti */}
-          <div className="flex items-center gap-3">
+          {/* Voti e Condivisione */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={(e) => {
@@ -526,18 +587,18 @@ export function KitDialog({
                 handleVote('like');
               }}
               disabled={isVoting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 h-10 rounded-lg border-2 transition-all cursor-pointer disabled:opacity-50"
               style={{
                 backgroundColor: userVote === 'like' ? '#002f42' : 'rgba(0, 47, 66, 0.15)',
                 borderColor: userVote === 'like' ? '#004d6d' : 'rgba(0, 47, 66, 0.5)',
               }}
             >
-              <ThumbsUp 
-                className="w-5 h-5 transition-colors" 
+              <ThumbsUp
+                className="w-4 h-4 sm:w-5 sm:h-5 transition-colors"
                 style={{ color: userVote === 'like' ? '#ffffff' : '#002f42' }}
                 fill={userVote === 'like' ? '#ffffff' : 'transparent'}
               />
-              <span className="font-semibold" style={{ color: userVote === 'like' ? '#ffffff' : '#002f42' }}>{likes}</span>
+              <span className="font-semibold text-sm sm:text-base" style={{ color: userVote === 'like' ? '#ffffff' : '#002f42' }}>{likes}</span>
             </button>
             <button
               type="button"
@@ -547,19 +608,102 @@ export function KitDialog({
                 handleVote('dislike');
               }}
               disabled={isVoting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 h-10 rounded-lg border-2 transition-all cursor-pointer disabled:opacity-50"
               style={{
                 backgroundColor: userVote === 'dislike' ? '#cd2127' : 'rgba(205, 33, 39, 0.15)',
                 borderColor: userVote === 'dislike' ? '#e04046' : 'rgba(205, 33, 39, 0.5)',
               }}
             >
-              <ThumbsDown 
-                className="w-5 h-5 transition-colors" 
+              <ThumbsDown
+                className="w-4 h-4 sm:w-5 sm:h-5 transition-colors"
                 style={{ color: userVote === 'dislike' ? '#ffffff' : '#cd2127' }}
                 fill={userVote === 'dislike' ? '#ffffff' : 'transparent'}
               />
-              <span className="font-semibold" style={{ color: userVote === 'dislike' ? '#ffffff' : '#cd2127' }}>{dislikes}</span>
+              <span className="font-semibold text-sm sm:text-base" style={{ color: userVote === 'dislike' ? '#ffffff' : '#cd2127' }}>{dislikes}</span>
             </button>
+
+            {/* Pulsante Condivisione */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowShareMenu(!showShareMenu);
+                }}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 h-10 rounded-lg border-2 transition-all cursor-pointer bg-muted/50 hover:bg-muted border-muted-foreground/30 hover:border-muted-foreground/50"
+                title="Condividi"
+              >
+                <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                <span className="hidden sm:inline text-sm font-medium text-muted-foreground">Condividi</span>
+              </button>
+
+              {/* Dropdown Menu - apre verso l'alto */}
+              {showShareMenu && (
+                <>
+                  {/* Overlay per chiudere il menu cliccando fuori */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowShareMenu(false);
+                    }}
+                  />
+                  <div className="absolute right-0 bottom-full mb-2 bg-card border border-border rounded-lg shadow-lg p-2 min-w-[160px] z-50">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        shareOnFacebook();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      <Facebook className="w-5 h-5 text-[#1877F2]" />
+                      <span className="text-sm font-medium">Facebook</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        shareOnTwitter();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      <Twitter className="w-5 h-5 text-[#1DA1F2]" />
+                      <span className="text-sm font-medium">Twitter / X</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        shareOnWhatsApp();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                      <span className="text-sm font-medium">WhatsApp</span>
+                    </button>
+                    <div className="border-t border-border my-1" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyLink();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      {copiedLink ? (
+                        <>
+                          <Check className="w-5 h-5 text-emerald-500" />
+                          <span className="text-sm font-medium text-emerald-500">Copiato!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Link2 className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-sm font-medium">Copia link</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 

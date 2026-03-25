@@ -228,6 +228,26 @@ export default function Home() {
     }
   }, []);
 
+  // Controlla se c'è un parametro kit nell'URL (per condivisione)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && players.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const kitId = params.get('kit');
+      if (kitId) {
+        // Trova il kit e il giocatore associato
+        const playerKit = players.find(p => p.PlayerKit.some(pk => pk.Kit.id === kitId));
+        if (playerKit) {
+          const pk = playerKit.PlayerKit.find(pk => pk.Kit.id === kitId);
+          if (pk) {
+            handleKitClick(pk.Kit, playerKit);
+            // Rimuovi il parametro dall'URL
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        }
+      }
+    }
+  }, [players]);
+
   // Track home page view
   const trackHomePageView = async () => {
     await trackPageView('home');
