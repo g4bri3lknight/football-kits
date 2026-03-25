@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Search, User as UserIcon, Settings, Menu } from 'lucide-react';
+import { Search, User as UserIcon, Settings, Menu, Clock } from 'lucide-react';
 import Flag from 'react-world-flags';
 
 import { Nation, Player, Kit, PlayerKit } from '@/types';
@@ -17,6 +17,7 @@ import { BackToTop } from '@/components/back-to-top';
 import { PlayerCard } from '@/components/PlayerCard';
 import { KitDialog } from '@/components/KitDialog';
 import { BiographyDialog } from '@/components/BiographyDialog';
+import { TimelineDialog } from '@/components/TimelineDialog';
 import { HEADER_CONFIG } from '@/config/kit-viewer.config';
 
 const AUTH_TOKEN_KEY = 'admin-auth-token';
@@ -97,6 +98,7 @@ export default function Home() {
   const [selectedKitPlayer, setSelectedKitPlayer] = useState<Player | null>(null);
   const [currentKitIndex, setCurrentKitIndex] = useState<number>(0);
   const [playerKitsList, setPlayerKitsList] = useState<PlayerKit[]>([]);
+  const [timelineOpen, setTimelineOpen] = useState(false);
 
   // Dynamic header height calculation
   useEffect(() => {
@@ -468,8 +470,17 @@ export default function Home() {
               <Menu className="w-5 h-5" />
             </Button>
 
-            {/* Desktop: Admin Button */}
+            {/* Desktop: Timeline and Admin Buttons */}
             <div className="hidden lg:flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setTimelineOpen(true)}
+                title="Timeline Storica"
+                className="flex-shrink-0 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
+              >
+                <Clock className="w-5 h-5" />
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
@@ -563,6 +574,19 @@ export default function Home() {
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
           <div className="mt-6 flex flex-col gap-4 px-2">
+            {/* Timeline Button */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setTimelineOpen(true);
+              }}
+              className="w-full justify-start gap-2"
+            >
+              <Clock className="w-4 h-4" />
+              Timeline Storica
+            </Button>
+
             {/* Admin Button */}
             <Button
               variant="outline"
@@ -723,6 +747,13 @@ export default function Home() {
         selectedPlayer={selectedPlayer}
         onClose={() => setSelectedPlayer(null)}
         onOpen={() => trackPageView('player-biography')}
+      />
+
+      {/* Timeline Dialog */}
+      <TimelineDialog
+        open={timelineOpen}
+        onClose={() => setTimelineOpen(false)}
+        onKitClick={handleKitClick}
       />
 
       {/* Footer */}
