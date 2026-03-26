@@ -481,37 +481,34 @@ export default function Home() {
             <div className="hidden lg:flex items-center gap-3">
               <Button
                 variant="outline"
-                size="icon"
                 onClick={() => setTimelineOpen(true)}
-                title="Timeline Storica"
-                className="flex-shrink-0 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
+                className="flex-shrink-0 gap-2 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
               >
                 <Clock className="w-5 h-5" />
+                <span>Timeline</span>
               </Button>
               <Button
                 variant="outline"
-                size="icon"
                 onClick={handleAdminClick}
-                title="Pannello Admin"
-                className="flex-shrink-0 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
+                className="flex-shrink-0 gap-2 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
               >
                 <Settings className="w-5 h-5" />
+                <span>Admin</span>
               </Button>
             </div>
           </div>
 
           {/* Filters - Desktop */}
-          <div className="hidden lg:block mt-6">
-            <div className="flex flex-wrap items-start gap-3 backdrop-blur-md bg-black/20 rounded-lg p-3 -mx-3">
+          <div className="hidden lg:flex flex-wrap items-start gap-3 mt-6">
               {/* Search player */}
               <div className="relative flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                 <Input
                   type="text"
                   placeholder="Cerca giocatore..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 backdrop-blur-md bg-black/30 border-white/20"
                   suppressHydrationWarning
                 />
               </div>
@@ -519,8 +516,10 @@ export default function Home() {
               {/* Nationality filter */}
               <div className="flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
                 <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Filtra per nazionalità" />
+                  <SelectTrigger className="w-full backdrop-blur-md bg-black/30 border-white/20">
+                    <span className={playerNationFilter === 'all' ? 'text-white/70' : 'text-white'}>
+                      {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutte le nazionalità</SelectItem>
@@ -538,26 +537,26 @@ export default function Home() {
 
               {/* Season filter */}
               <div className="relative flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                 <Input
                   type="text"
                   placeholder="Filtra per stagione..."
                   value={kitSeasonFilter}
                   onChange={(e) => setKitSeasonFilter(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 backdrop-blur-md bg-black/30 border-white/20"
                   suppressHydrationWarning
                 />
               </div>
 
               {/* Team filter */}
               <div className="relative flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                 <Input
                   type="text"
                   placeholder="Filtra per squadra/nazionale..."
                   value={kitTeamFilter}
                   onChange={(e) => setKitTeamFilter(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 backdrop-blur-md bg-black/30 border-white/20"
                   suppressHydrationWarning
                 />
               </div>
@@ -568,7 +567,6 @@ export default function Home() {
                   Resetta filtri
                 </Button>
               )}
-            </div>
           </div>
         </div>
         </div>
@@ -629,7 +627,9 @@ export default function Home() {
               {/* Nationality filter */}
               <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filtra per nazionalità" />
+                  <span className={playerNationFilter === 'all' ? 'text-muted-foreground' : ''}>
+                    {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le nazionalità</SelectItem>
