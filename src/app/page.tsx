@@ -472,7 +472,7 @@ export default function Home() {
               variant="outline"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden flex-shrink-0 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
+              className="lg:hidden flex-shrink-0 backdrop-blur-md bg-black/50 border-white/20 hover:bg-black/70"
             >
               <Menu className="w-5 h-5" />
             </Button>
@@ -482,7 +482,7 @@ export default function Home() {
               <Button
                 variant="outline"
                 onClick={() => setTimelineOpen(true)}
-                className="flex-shrink-0 gap-2 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
+                className="flex-shrink-0 gap-2 backdrop-blur-md bg-black/50 border-white/20 hover:bg-black/70"
               >
                 <Clock className="w-5 h-5" />
                 <span>Timeline</span>
@@ -490,7 +490,7 @@ export default function Home() {
               <Button
                 variant="outline"
                 onClick={handleAdminClick}
-                className="flex-shrink-0 gap-2 backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50"
+                className="flex-shrink-0 gap-2 backdrop-blur-md bg-black/50 border-white/20 hover:bg-black/70"
               >
                 <Settings className="w-5 h-5" />
                 <span>Admin</span>
@@ -508,7 +508,7 @@ export default function Home() {
                   placeholder="Cerca giocatore..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 backdrop-blur-md bg-black/30 border-white/20"
+                  className={`pl-10 backdrop-blur-md bg-black/50 focus-visible:border-white focus-visible:ring-0 ${searchQuery ? '!border-white' : 'border-white/20'}`}
                   suppressHydrationWarning
                 />
               </div>
@@ -516,7 +516,7 @@ export default function Home() {
               {/* Nationality filter */}
               <div className="flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
                 <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
-                  <SelectTrigger className="w-full backdrop-blur-md bg-black/30 border-white/20">
+                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/50 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== 'all' ? '!border-white' : 'border-white/20'}`}>
                     <span className={playerNationFilter === 'all' ? 'text-white/70' : 'text-white'}>
                       {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
                     </span>
@@ -543,7 +543,7 @@ export default function Home() {
                   placeholder="Filtra per stagione..."
                   value={kitSeasonFilter}
                   onChange={(e) => setKitSeasonFilter(e.target.value)}
-                  className="pl-10 backdrop-blur-md bg-black/30 border-white/20"
+                  className={`pl-10 backdrop-blur-md bg-black/50 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
                   suppressHydrationWarning
                 />
               </div>
@@ -556,14 +556,14 @@ export default function Home() {
                   placeholder="Filtra per squadra/nazionale..."
                   value={kitTeamFilter}
                   onChange={(e) => setKitTeamFilter(e.target.value)}
-                  className="pl-10 backdrop-blur-md bg-black/30 border-white/20"
+                  className={`pl-10 backdrop-blur-md bg-black/50 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
                   suppressHydrationWarning
                 />
               </div>
 
               {/* Reset button */}
               {hasActiveFilters && (
-                <Button variant="outline" size="default" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/30 border-white/20 hover:bg-black/50">
+                <Button variant="outline" size="default" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/50 border-white/20 hover:bg-black/70">
                   Resetta filtri
                 </Button>
               )}
