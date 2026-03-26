@@ -1,141 +1,185 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# GK Retro Kits
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+Galleria di maglie da portiere storiche con visualizzatore 3D, sistema di votazione, commenti e pannello amministrativo.
 
-## ✨ Technology Stack
+## Funzionalità
 
-This scaffold provides a robust foundation built with:
+### Pubbliche
+- 🏠 **Home** - Galleria giocatori con filtri per nazionalità, stagione e squadra
+- 🎮 **Visualizzatore 3D** - Modelli interattivi delle maglie (GLB/GLTF)
+- 🖼️ **Dettagli Multipli** - Fino a 6 immagini dettagliate per kit
+- 📅 **Timeline** - Vista cronologica di tutti i kit per anno
+- 📖 **Biografie** - Profili giocatori con foto
+- 👍👎 **Votazione** - Sistema like/dislike per kit
+- 💬 **Commenti** - Sistema commenti annidati con votazione
+- 🔗 **Condivisione** - Share su Facebook, Twitter, WhatsApp
+- 📱 **Responsive** - Ottimizzato per mobile e desktop
 
-### 🎯 Core Framework
-- **⚡ Next.js 16** - The React framework for production with App Router
-- **📘 TypeScript 5** - Type-safe JavaScript for better developer experience
-- **🎨 Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
+### Admin
+- 🔐 **Autenticazione** - Login con token di sessione
+- 📊 **Statistiche** - Visualizzazioni pagina e voti kit
+- 👥 **Gestione Giocatori** - CRUD completo con upload immagini
+- 👕 **Gestione Kit** - CRUD con upload immagine, logo, modello 3D e dettagli
+- 🔗 **Associazioni** - Collegamento giocatori-kit
+- 🌍 **Nazionalità** - Gestione nazioni con bandiere
+- 💬 **Moderazione Commenti** - Gestione e rimozione commenti
 
-### 🧩 UI Components & Styling
-- **🧩 shadcn/ui** - High-quality, accessible components built on Radix UI
-- **🎯 Lucide React** - Beautiful & consistent icon library
-- **🌈 Framer Motion** - Production-ready motion library for React
-- **🎨 Next Themes** - Perfect dark mode in 2 lines of code
+## Stack Tecnologico
 
-### 📋 Forms & Validation
-- **🎣 React Hook Form** - Performant forms with easy validation
-- **✅ Zod** - TypeScript-first schema validation
+| Categoria | Tecnologia |
+|-----------|------------|
+| Framework | Next.js 16 (App Router) |
+| Linguaggio | TypeScript 5 |
+| Styling | Tailwind CSS 4 + shadcn/ui |
+| Database | Prisma ORM + SQLite |
+| Animazioni | Framer Motion |
+| 3D | React Three Fiber + Drei |
+| State | Zustand + TanStack Query |
+| Icone | Lucide React |
 
-### 🔄 State Management & Data Fetching
-- **🐻 Zustand** - Simple, scalable state management
-- **🔄 TanStack Query** - Powerful data synchronization for React
-- **🌐 Fetch** - Promise-based HTTP request
+## Requisiti
 
-### 🗄️ Database & Backend
-- **🗄️ Prisma** - Next-generation TypeScript ORM
-- **🔐 NextAuth.js** - Complete open-source authentication solution
+- Node.js 18+ o Bun
+- npm, yarn, pnpm o bun
 
-### 🎨 Advanced UI Features
-- **📊 TanStack Table** - Headless UI for building tables and datagrids
-- **🖱️ DND Kit** - Modern drag and drop toolkit for React
-- **📊 Recharts** - Redefined chart library built with React and D3
-- **🖼️ Sharp** - High performance image processing
-
-### 🌍 Internationalization & Utilities
-- **🌍 Next Intl** - Internationalization library for Next.js
-- **📅 Date-fns** - Modern JavaScript date utility library
-- **🪝 ReactUse** - Collection of essential React hooks for modern development
-
-## 🎯 Why This Scaffold?
-
-- **🏎️ Fast Development** - Pre-configured tooling and best practices
-- **🎨 Beautiful UI** - Complete shadcn/ui component library with advanced interactions
-- **🔒 Type Safety** - Full TypeScript configuration with Zod validation
-- **📱 Responsive** - Mobile-first design principles with smooth animations
-- **🗄️ Database Ready** - Prisma ORM configured for rapid backend development
-- **🔐 Auth Included** - NextAuth.js for secure authentication flows
-- **📊 Data Visualization** - Charts, tables, and drag-and-drop functionality
-- **🌍 i18n Ready** - Multi-language support with Next Intl
-- **🚀 Production Ready** - Optimized build and deployment settings
-- **🤖 AI-Friendly** - Structured codebase perfect for AI assistance
-
-## 🚀 Quick Start
+## Installazione
 
 ```bash
-# Install dependencies
+# Clona il repository
+git clone <repository-url>
+cd football-kits
+
+# Installa le dipendenze
 bun install
+# oppure
+npm install
 
-# Start development server
+# Copia il file delle variabili d'ambiente
+cp .env.example .env
+
+# Configura le variabili d'ambiente (vedi sezione seguente)
+
+# Genera il client Prisma
+bun run db:generate
+
+# Crea il database
+bun run db:push
+
+# Avvia il server di sviluppo
 bun run dev
-
-# Build for production
-bun run build
-
-# Start production server
-bun start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
+Il sito sarà disponibile su `http://localhost:3000`
 
-## 🤖 Powered by Z.ai
+## Variabili d'Ambiente
 
-This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:
+Copia `.env.example` in `.env` e configura le seguenti variabili:
 
-- **💻 Code Generation** - Generate components, pages, and features instantly
-- **🎨 UI Development** - Create beautiful interfaces with AI assistance  
-- **🔧 Bug Fixing** - Identify and resolve issues with intelligent suggestions
-- **📝 Documentation** - Auto-generate comprehensive documentation
-- **🚀 Optimization** - Performance improvements and best practices
+```env
+# Database
+DATABASE_URL=file:./db/custom.db
 
-Ready to build something amazing? Start chatting with Z.ai at [chat.z.ai](https://chat.z.ai) and experience the future of AI-powered development!
+# URL del sito (per SEO e condivisione)
+NEXT_PUBLIC_BASE_URL="https://your-domain.com"
+NEXT_PUBLIC_SITE_URL="https://your-domain.com"
 
-## 📁 Project Structure
-
-```
-src/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable React components
-│   └── ui/             # shadcn/ui components
-├── hooks/              # Custom React hooks
-└── lib/                # Utility functions and configurations
+# Credenziali Admin
+ADMIN_SECRET="your-secret-key-here"
+ADMIN_USERNAME="admin"
+ADMIN_PASSWORD="your-password-here"
 ```
 
-## 🎨 Available Features & Components
+### Descrizione Variabili
 
-This scaffold includes a comprehensive set of modern web development tools:
+| Variabile | Descrizione |
+|-----------|-------------|
+| `DATABASE_URL` | Percorso del database SQLite |
+| `NEXT_PUBLIC_BASE_URL` | URL base del sito (per sitemap e SEO) |
+| `NEXT_PUBLIC_SITE_URL` | URL del sito (per Open Graph) |
+| `ADMIN_SECRET` | Chiave segreta per la sessione admin |
+| `ADMIN_USERNAME` | Username per l'accesso admin |
+| `ADMIN_PASSWORD` | Password per l'accesso admin |
 
-### 🧩 UI Components (shadcn/ui)
-- **Layout**: Card, Separator, Aspect Ratio, Resizable Panels
-- **Forms**: Input, Textarea, Select, Checkbox, Radio Group, Switch
-- **Feedback**: Alert, Toast (Sonner), Progress, Skeleton
-- **Navigation**: Breadcrumb, Menubar, Navigation Menu, Pagination
-- **Overlay**: Dialog, Sheet, Popover, Tooltip, Hover Card
-- **Data Display**: Badge, Avatar, Calendar
+⚠️ **Importante**: Cambia `ADMIN_PASSWORD` in produzione!
 
-### 📊 Advanced Data Features
-- **Tables**: Powerful data tables with sorting, filtering, pagination (TanStack Table)
-- **Charts**: Beautiful visualizations with Recharts
-- **Forms**: Type-safe forms with React Hook Form + Zod validation
+## Script Disponibili
 
-### 🎨 Interactive Features
-- **Animations**: Smooth micro-interactions with Framer Motion
-- **Drag & Drop**: Modern drag-and-drop functionality with DND Kit
-- **Theme Switching**: Built-in dark/light mode support
+```bash
+# Sviluppo
+bun run dev          # Avvia server di sviluppo su porta 3000
 
-### 🔐 Backend Integration
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Fetch + TanStack Query
-- **State Management**: Simple and scalable with Zustand
+# Build
+bun run build        # Build di produzione
+bun run start        # Avvia server di produzione
 
-### 🌍 Production Features
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
+# Database
+bun run db:push      # Sincronizza schema con database
+bun run db:generate  # Genera client Prisma
+bun run db:migrate   # Crea e applica migrazione
+bun run db:reset     # Reset completo del database
 
-## 🤝 Get Started with Z.ai
+# Qualità
+bun run lint         # Esegue ESLint
+```
 
-1. **Clone this scaffold** to jumpstart your project
-2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
-3. **Start building** with intelligent code generation and assistance
-4. **Deploy with confidence** using the production-ready setup
+## Struttura Progetto
 
----
+```
+├── prisma/
+│   ├── schema.prisma        # Schema database
+│   └── seed-*.ts            # Script di seed
+├── public/
+│   ├── background/          # Immagini di sfondo
+│   └── logo/                # Logo del sito
+├── src/
+│   ├── app/
+│   │   ├── api/             # API Routes
+│   │   ├── admin/           # Pagine admin
+│   │   ├── share/           # Pagina condivisibile
+│   │   ├── page.tsx         # Home page
+│   │   ├── layout.tsx       # Layout principale
+│   │   ├── robots.ts        # Robots.txt dinamico
+│   │   └── sitemap.ts       # Sitemap dinamica
+│   ├── components/
+│   │   ├── ui/              # Componenti shadcn/ui
+│   │   ├── admin/           # Componenti admin
+│   │   ├── KitDialog.tsx    # Dialog principale kit
+│   │   ├── KitViewer3D.tsx  # Visualizzatore 3D
+│   │   ├── PlayerCard.tsx   # Card giocatore
+│   │   └── ...
+│   ├── lib/                 # Utility e helpers
+│   ├── hooks/               # Custom hooks
+│   ├── config/              # Configurazioni
+│   └── types/               # Tipi TypeScript
+├── .env                     # Variabili d'ambiente
+├── .env.example             # Template variabili
+└── package.json
+```
 
-Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+## API Endpoints
+
+### Pubblici
+- `GET /api/players` - Lista giocatori
+- `GET /api/kits` - Lista kit
+- `GET /api/nations` - Lista nazioni
+- `GET /api/timeline` - Dati timeline
+- `POST /api/kits/[id]/vote` - Vota kit
+- `GET/POST /api/comments` - Commenti
+
+### Admin
+- `POST /api/admin/login` - Login
+- `POST /api/admin/logout` - Logout
+- `CRUD /api/players/[id]` - Gestione giocatori
+- `CRUD /api/kit/[id]` - Gestione kit
+- `CRUD /api/player-kits` - Associazioni
+
+## SEO
+
+Il sito include automaticamente:
+- **Sitemap dinamica** (`/sitemap.xml`) - Aggiornata con tutti i kit
+- **Robots.txt** (`/robots.txt`) - Configurato per bloccare /admin e /api
+- **Open Graph** - Immagini di anteprima per condivisioni social
+
+## Licenza
+
+MIT
