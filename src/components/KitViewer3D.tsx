@@ -7,7 +7,7 @@ import { BlendFunction } from 'postprocessing';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Shirt, Sparkles } from 'lucide-react';
+import { Shirt, Sparkles, Maximize2, Minimize2, RotateCw } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
 
 const CFG = KIT_VIEWER_CONFIG;
@@ -334,10 +334,13 @@ export default function KitViewer3D({
 }: KitViewer3DProps) {
   const [resetKey, setResetKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [autoRotate, setAutoRotate] = useState<boolean>(CFG.autoRotate.enabled);
+  const [autoRotateEnabled, setAutoRotateEnabled] = useState<boolean>(CFG.autoRotate.enabled); // Preferenza utente
+  const [autoRotate, setAutoRotate] = useState<boolean>(CFG.autoRotate.enabled); // Stato attuale (può essere in pausa)
   const [effectsEnabled, setEffectsEnabled] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInteractingRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const pauseAutoRotate = () => {
     isInteractingRef.current = true;
@@ -361,12 +364,49 @@ export default function KitViewer3D({
     // Imposta nuovo timeout solo se non c'è già un'interazione in corso
     resumeTimeoutRef.current = setTimeout(() => {
       // Verifica che non ci sia una nuova interazione iniziata mentre aspettavamo
-      if (!isInteractingRef.current) {
-        setAutoRotate(CFG.autoRotate.enabled);
+      // Riprende solo se l'utente ha lasciato attiva la rotazione automatica
+      if (!isInteractingRef.current && autoRotateEnabled) {
+        setAutoRotate(true);
       }
       resumeTimeoutRef.current = null;
     }, CFG.autoRotate.resumeDelay);
   };
+
+  // Quando l'utente cambia la preferenza, aggiorna lo stato attuale
+  const toggleAutoRotate = () => {
+    const newValue = !autoRotateEnabled;
+    setAutoRotateEnabled(newValue);
+    setAutoRotate(newValue);
+  };
+
+  // Fullscreen handling
+  const toggleFullscreen = async () => {
+    if (!containerRef.current) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (err) {
+      console.error('Errore fullscreen:', err);
+    }
+  };
+
+  // Listen for fullscreen changes (es. quando l'utente preme ESC)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   if (!modelUrl) {
     return (
@@ -381,7 +421,8 @@ export default function KitViewer3D({
 
   return (
     <div 
-      className={`w-full h-full relative ${className}`}
+      ref={containerRef}
+      className={`w-full h-full relative ${className} ${isFullscreen ? 'bg-black' : ''}`}
       onDoubleClick={() => setResetKey(k => k + 1)}
       style={{ cursor: isDragging ? 'none' : 'grab' }}
     >
@@ -403,16 +444,43 @@ export default function KitViewer3D({
         />
       </Canvas>
       
-      {/* Toggle Effects Button */}
-      <button
-        onClick={() => setEffectsEnabled(!effectsEnabled)}
-        className="absolute bottom-3 right-3 z-10 p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
-        title={effectsEnabled ? 'Disattiva effetti grafici' : 'Attiva effetti grafici'}
-      >
-        <Sparkles 
-          className={`w-5 h-5 transition-colors ${effectsEnabled ? 'text-yellow-400' : 'text-white/50'}`} 
-        />
-      </button>
+      {/* Controls Buttons */}
+      <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2">
+        {/* Toggle Auto-Rotate Button */}
+        <button
+          onClick={toggleAutoRotate}
+          className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+          title={autoRotateEnabled ? 'Disattiva rotazione automatica' : 'Attiva rotazione automatica'}
+        >
+          <RotateCw 
+            className={`w-5 h-5 transition-colors ${autoRotateEnabled ? 'text-green-400' : 'text-white/50'}`} 
+          />
+        </button>
+        
+        {/* Toggle Effects Button */}
+        <button
+          onClick={() => setEffectsEnabled(!effectsEnabled)}
+          className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+          title={effectsEnabled ? 'Disattiva effetti grafici' : 'Attiva effetti grafici'}
+        >
+          <Sparkles 
+            className={`w-5 h-5 transition-colors ${effectsEnabled ? 'text-yellow-400' : 'text-white/50'}`} 
+          />
+        </button>
+        
+        {/* Fullscreen Button */}
+        <button
+          onClick={toggleFullscreen}
+          className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+          title={isFullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
+        >
+          {isFullscreen ? (
+            <Minimize2 className="w-5 h-5 text-white" />
+          ) : (
+            <Maximize2 className="w-5 h-5 text-white" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }
