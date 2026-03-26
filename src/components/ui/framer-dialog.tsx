@@ -94,7 +94,7 @@ export function FramerDialog({
                 {children}
                 {showCloseButton && (
                   <DialogPrimitive.Close
-                    className="absolute top-4 right-4 rounded-lg p-2 bg-background/80 backdrop-blur-sm border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none cursor-pointer hover:shadow-xl"
+                    className="absolute top-4 right-4 rounded-lg p-1.5 bg-background/80 backdrop-blur-sm border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none cursor-pointer hover:shadow-xl"
                     style={{ 
                       borderColor: '#002f42',
                       transitionDuration: '300ms',
@@ -108,7 +108,7 @@ export function FramerDialog({
                       e.currentTarget.style.borderColor = '#002f42';
                     }}
                   >
-                    <XIcon className="w-6 h-6 text-foreground" />
+                    <XIcon className="w-4 h-4 text-foreground" />
                     <span className="sr-only">Close</span>
                   </DialogPrimitive.Close>
                 )}

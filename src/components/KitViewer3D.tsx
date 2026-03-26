@@ -7,7 +7,7 @@ import { BlendFunction } from 'postprocessing';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Shirt, Sparkles, Maximize2, Minimize2, RotateCw } from 'lucide-react';
+import { Shirt, Sparkles, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, Monitor, X } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
 
 const CFG = KIT_VIEWER_CONFIG;
@@ -338,6 +338,7 @@ export default function KitViewer3D({
   const [autoRotate, setAutoRotate] = useState<boolean>(CFG.autoRotate.enabled); // Stato attuale (può essere in pausa)
   const [effectsEnabled, setEffectsEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInteractingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -480,7 +481,100 @@ export default function KitViewer3D({
             <Maximize2 className="w-5 h-5 text-white" />
           )}
         </button>
+        
+        {/* Help Button */}
+        <button
+          onClick={() => setShowHelp(true)}
+          className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+          title='Controlli'
+        >
+          <HelpCircle className="w-5 h-5 text-white" />
+        </button>
       </div>
+      
+      {/* Help Panel */}
+      {showHelp && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/20 rounded-xl p-5 max-w-xs w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold text-lg">Controlli 3D</h3>
+              <button 
+                onClick={() => setShowHelp(false)}
+                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 text-white/70" />
+              </button>
+            </div>
+            
+            <div className="space-y-3 text-sm">
+              {/* Rotazione */}
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-white/10 rounded-lg shrink-0">
+                  <MousePointer2 className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">Rotazione</p>
+                  <p className="text-white/60">Click sinistro + trascina</p>
+                </div>
+              </div>
+              
+              {/* Zoom */}
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-white/10 rounded-lg shrink-0">
+                  <ZoomIn className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">Zoom</p>
+                  <p className="text-white/60">Scroll del mouse o pinch</p>
+                </div>
+              </div>
+              
+              {/* Pan */}
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-white/10 rounded-lg shrink-0">
+                  <Move className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">Pan</p>
+                  <p className="text-white/60">Click destro + trascina</p>
+                </div>
+              </div>
+              
+              {/* Reset Camera */}
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-white/10 rounded-lg shrink-0">
+                  <RotateCcw className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">Reset camera</p>
+                  <p className="text-white/60">Doppio click sul modello</p>
+                </div>
+              </div>
+              
+              {/* Divider */}
+              <div className="border-t border-white/10 my-3" />
+              
+              {/* Legenda pulsanti */}
+              <p className="text-white/50 text-xs uppercase tracking-wide mb-2">Pulsanti</p>
+              
+              <div className="flex items-center gap-2 text-white/80">
+                <RotateCw className="w-4 h-4 text-green-400" />
+                <span>Attiva/disattiva rotazione automatica</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-white/80">
+                <Sparkles className="w-4 h-4 text-yellow-400" />
+                <span>Attiva/disattiva effetti grafici</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-white/80">
+                <Maximize2 className="w-4 h-4 text-white" />
+                <span>Modalità schermo intero</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
