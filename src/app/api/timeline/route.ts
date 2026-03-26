@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 // Funzione per estrarre e normalizzare la stagione dal nome del kit
-function extractSeason(name: string): string | null {
+function extractSeason(name: string | null | undefined): string | null {
   // Pattern supportati:
   // - "2020/2021" -> "2020/2021"
   // - "2020-21" -> "2020/2021"
   // - "2020 - 21" -> "2020/2021"
   // - "2020 / 21" -> "2020/2021"
+  
+  if (!name || typeof name !== 'string') return null;
   
   const match = name.match(/^(\d{4})\s*[/\-]\s*(\d{2,4})/);
   if (match) {
@@ -32,7 +34,11 @@ export async function GET() {
     const playerKits = await db.playerKit.findMany({
       include: {
         Kit: true,
-        Player: true,
+        Player: {
+          include: {
+            Nation: true,
+          },
+        },
       },
     });
 
@@ -44,18 +50,44 @@ export async function GET() {
       type: string;
       hasImage: boolean;
       hasLogo: boolean;
+      hasModel3D: boolean;
+      hasDetail1: boolean;
+      hasDetail2: boolean;
+      hasDetail3: boolean;
+      hasDetail4: boolean;
+      hasDetail5: boolean;
+      hasDetail6: boolean;
+      detail1Label: string | null;
+      detail2Label: string | null;
+      detail3Label: string | null;
+      detail4Label: string | null;
+      detail5Label: string | null;
+      detail6Label: string | null;
+      status: string;
+      likes: number;
+      dislikes: number;
       updatedAt: Date;
       player: {
         id: string;
         name: string;
         surname: string | null;
+        hasImage: boolean;
+        status: string;
+        biography: string | null;
+        nationId: string | null;
+        Nation: {
+          id: string;
+          name: string;
+          code: string;
+          flag: string | null;
+        } | null;
       };
       playerKitId: string;
     }>> = {};
-    
+
     for (const pk of playerKits) {
       if (!pk.Kit) continue;
-      
+
       const season = extractSeason(pk.Kit.name);
       if (season) {
         if (!yearGroups[season]) {
@@ -68,11 +100,32 @@ export async function GET() {
           type: pk.Kit.type,
           hasImage: pk.Kit.hasImage,
           hasLogo: pk.Kit.hasLogo,
+          hasModel3D: pk.Kit.hasModel3D,
+          hasDetail1: pk.Kit.hasDetail1,
+          hasDetail2: pk.Kit.hasDetail2,
+          hasDetail3: pk.Kit.hasDetail3,
+          hasDetail4: pk.Kit.hasDetail4,
+          hasDetail5: pk.Kit.hasDetail5,
+          hasDetail6: pk.Kit.hasDetail6,
+          detail1Label: pk.Kit.detail1Label,
+          detail2Label: pk.Kit.detail2Label,
+          detail3Label: pk.Kit.detail3Label,
+          detail4Label: pk.Kit.detail4Label,
+          detail5Label: pk.Kit.detail5Label,
+          detail6Label: pk.Kit.detail6Label,
+          status: pk.Kit.status,
+          likes: pk.Kit.likes,
+          dislikes: pk.Kit.dislikes,
           updatedAt: pk.Kit.updatedAt,
           player: {
             id: pk.Player.id,
             name: pk.Player.name,
             surname: pk.Player.surname,
+            hasImage: pk.Player.hasImage,
+            status: pk.Player.status,
+            biography: pk.Player.biography,
+            nationId: pk.Player.nationId,
+            Nation: pk.Player.Nation,
           },
           playerKitId: pk.id,
         });

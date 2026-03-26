@@ -18,7 +18,9 @@ import { PlayerCard } from '@/components/PlayerCard';
 import { KitDialog } from '@/components/KitDialog';
 import { BiographyDialog } from '@/components/BiographyDialog';
 import { TimelineDialog } from '@/components/TimelineDialog';
+import { RippleButton } from '@/components/ui/ripple-button';
 import { HEADER_CONFIG } from '@/config/kit-viewer.config';
+import { PlayerCardSkeletonGrid } from '@/components/ui/skeleton-shimmer';
 
 const AUTH_TOKEN_KEY = 'admin-auth-token';
 
@@ -280,6 +282,7 @@ export default function Home() {
       // Se ci sono filtri kit attivi, verifica che il giocatore abbia almeno un kit che rispetta i filtri
       const hasMatchingKit = !kitSeasonFilter && !kitTeamFilter || 
         player.PlayerKit.some(pk => {
+          if (!pk.Kit?.name || !pk.Kit?.team) return false;
           const matchesSeason = !kitSeasonFilter || 
             pk.Kit.name.toLowerCase().includes(kitSeasonFilter.toLowerCase());
           const matchesTeam = !kitTeamFilter || 
@@ -353,7 +356,7 @@ export default function Home() {
 
   const handleKitClick = (kit: Kit, player: Player) => {
     const kits = sortKitsBySeason(filterPlayerKits(player, kitSeasonFilter, kitTeamFilter));
-    const index = kits.findIndex(pk => pk.Kit.id === kit.id);
+    const index = kits.findIndex(pk => pk.Kit?.id === kit.id);
     setSelectedKit(kit);
     setSelectedKitPlayer(player);
     setPlayerKitsList(kits);
@@ -371,7 +374,9 @@ export default function Home() {
     if (currentKitIndex > 0) {
       const newIndex = currentKitIndex - 1;
       setCurrentKitIndex(newIndex);
-      setSelectedKit(playerKitsList[newIndex].Kit);
+      if (playerKitsList[newIndex]?.Kit) {
+        setSelectedKit(playerKitsList[newIndex].Kit);
+      }
     }
   };
 
@@ -379,7 +384,9 @@ export default function Home() {
     if (currentKitIndex < playerKitsList.length - 1) {
       const newIndex = currentKitIndex + 1;
       setCurrentKitIndex(newIndex);
-      setSelectedKit(playerKitsList[newIndex].Kit);
+      if (playerKitsList[newIndex]?.Kit) {
+        setSelectedKit(playerKitsList[newIndex].Kit);
+      }
     }
   };
 
@@ -575,7 +582,7 @@ export default function Home() {
           </SheetHeader>
           <div className="mt-6 flex flex-col gap-4 px-2">
             {/* Timeline Button */}
-            <Button
+            <RippleButton
               variant="outline"
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -585,10 +592,10 @@ export default function Home() {
             >
               <Clock className="w-4 h-4" />
               Timeline Storica
-            </Button>
+            </RippleButton>
 
             {/* Admin Button */}
-            <Button
+            <RippleButton
               variant="outline"
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -598,7 +605,7 @@ export default function Home() {
             >
               <Settings className="w-4 h-4" />
               Pannello Admin
-            </Button>
+            </RippleButton>
 
             <Separator />
 
@@ -665,9 +672,9 @@ export default function Home() {
 
               {/* Reset button */}
               {hasActiveFilters && (
-                <Button variant="outline" size="default" onClick={resetFilters} className="w-full whitespace-nowrap">
+                <RippleButton variant="outline" size="default" onClick={resetFilters} className="w-full whitespace-nowrap">
                   Resetta filtri
-                </Button>
+                </RippleButton>
               )}
             </div>
           </div>
@@ -682,12 +689,7 @@ export default function Home() {
         <div ref={containerRef} className="content">
           <main className="flex-1 container mx-auto px-4 py-6">
             {loading ? (
-              <div className="flex items-center justify-center h-96">
-                <div className="text-center">
-                  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Caricamento in corso...</p>
-                </div>
-              </div>
+              <PlayerCardSkeletonGrid count={8} />
             ) : filteredPlayers.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-96 text-center">
                 <UserIcon className="w-16 h-16 text-muted-foreground/30 mb-4" />
@@ -700,7 +702,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredPlayers.map((player) => (
+                {filteredPlayers.map((player, index) => (
                   <PlayerCard
                     key={player.id}
                     player={player}
@@ -708,6 +710,7 @@ export default function Home() {
                     kitTeamFilter={kitTeamFilter}
                     onPlayerClick={setSelectedPlayer}
                     onKitClick={handleKitClick}
+                    index={index}
                   />
                 ))}
               </div>

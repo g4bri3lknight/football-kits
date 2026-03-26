@@ -37,6 +37,7 @@ export const isUrl = (text: string) => {
 
 export const sortKitsBySeason = (kits: PlayerKit[]) => {
   return kits.sort((a, b) => {
+    if (!a.Kit?.name || !b.Kit?.name) return 0;
     const seasonA = a.Kit.name.match(/\d{4}/);
     const seasonB = b.Kit.name.match(/\d{4}/);
     if (seasonA && seasonB) {
@@ -48,6 +49,7 @@ export const sortKitsBySeason = (kits: PlayerKit[]) => {
 
 export const filterPlayerKits = (player: Player, kitSeasonFilter: string, kitTeamFilter: string) => {
   return player.PlayerKit.filter(pk => {
+    if (!pk.Kit?.name || !pk.Kit?.team) return false;
     const matchesSeason = !kitSeasonFilter ||
       pk.Kit.name.toLowerCase().includes(kitSeasonFilter.toLowerCase());
     const matchesTeam = !kitTeamFilter ||

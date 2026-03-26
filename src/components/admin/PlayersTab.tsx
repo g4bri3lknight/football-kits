@@ -260,8 +260,9 @@ export default function PlayersTab({
             Nuovo
           </Button>
         </div>
-        <div className="w-full space-y-2">
-          <div className="w-full relative">
+        {/* Filtri: su mobile verticali, su desktop su 2 colonne */}
+        <div className="flex flex-col lg:flex-row gap-2">
+          <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               type="text"
@@ -271,7 +272,7 @@ export default function PlayersTab({
               className="w-full h-9 text-sm pl-10 pr-3"
             />
           </div>
-          <div className="w-full relative">
+          <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               type="text"

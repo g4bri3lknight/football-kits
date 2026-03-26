@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { BookOpen } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Flag from 'react-world-flags';
 import { convertAlpha3ToAlpha2 } from '@/lib/country-codes';
 import { 
@@ -23,6 +24,7 @@ interface PlayerCardProps {
   kitTeamFilter: string;
   onPlayerClick: (player: Player) => void;
   onKitClick: (kit: Player['PlayerKit'][0]['Kit'], player: Player) => void;
+  index?: number;
 }
 
 // Helper per ottenere l'URL dell'immagine del giocatore
@@ -54,7 +56,8 @@ export function PlayerCard({
   kitSeasonFilter, 
   kitTeamFilter, 
   onPlayerClick, 
-  onKitClick 
+  onKitClick,
+  index = 0
 }: PlayerCardProps) {
   const filteredKits = filterPlayerKits(player, kitSeasonFilter, kitTeamFilter);
   const sortedKits = sortKitsBySeason(filteredKits);
@@ -63,10 +66,27 @@ export function PlayerCard({
   const hasVisibleStatus = player.status && player.status !== 'NON_IMPOSTATO';
 
   return (
-    <Card
-      className="overflow-hidden hover:shadow-xl active:shadow-xl transition-all duration-300 hover:scale-105 active:scale-105 cursor-pointer border-2 transition-custom-color hover:transition-custom-color active:transition-custom-color backdrop-blur-sm card-custom-color relative card-glow"
-      onClick={() => onPlayerClick(player)}
+    <motion.div
+      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ 
+        type: 'spring',
+        stiffness: 300,
+        damping: 25,
+        delay: index * 0.08
+      }}
+      whileHover={{ 
+        scale: 1.03, 
+        y: -5,
+        transition: { type: 'spring', stiffness: 400, damping: 20 }
+      }}
+      whileTap={{ scale: 0.98 }}
+      className="h-full"
     >
+      <Card
+        className="overflow-hidden hover:shadow-xl active:shadow-xl transition-all duration-300 cursor-pointer border-2 transition-custom-color hover:transition-custom-color active:transition-custom-color backdrop-blur-sm card-custom-color relative card-glow h-full"
+        onClick={() => onPlayerClick(player)}
+      >
       {/* Status Badge - Top Right */}
       {hasVisibleStatus && (
         <Badge 
@@ -169,5 +189,6 @@ export function PlayerCard({
         </ScrollArea>
       </CardContent>
     </Card>
+    </motion.div>
   );
 }

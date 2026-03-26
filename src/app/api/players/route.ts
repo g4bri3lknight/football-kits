@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Force dynamic rendering to avoid caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Funzione helper per generare un ID
 const generateId = () => {
   const timestamp = Date.now().toString(36);
