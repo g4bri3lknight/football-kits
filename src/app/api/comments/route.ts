@@ -27,24 +27,18 @@ function verifyAuthToken(token: string): boolean {
   }
 }
 
-// GET - Ottieni commenti con risposte, filtrabili per kitId
+// GET - Ottieni commenti con risposte nidificate, filtrabili per kitId
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const kitId = searchParams.get('kitId');
     const userId = searchParams.get('userId');
 
-    // Costruisci il where clause
-    const where: { parentId: null; kitId?: string } = {
-      parentId: null, // Solo commenti principali
-    };
-
     // Se è specificato un kitId, filtra per quel kit
-    if (kitId) {
-      where.kitId = kitId;
-    }
+    const where = kitId ? { kitId } : {};
 
-    const comments = await db.comment.findMany({
+    // Carica tutti i commenti (principali e risposte)
+    const allComments = await db.comment.findMany({
       where,
       include: {
         Kit: {
@@ -55,21 +49,6 @@ export async function GET(request: NextRequest) {
             type: true,
           }
         },
-        Replies: {
-          include: {
-            Kit: {
-              select: {
-                id: true,
-                name: true,
-                team: true,
-                type: true,
-              }
-            }
-          },
-          orderBy: {
-            createdAt: 'asc'
-          }
-        }
       },
       orderBy: {
         createdAt: 'desc'
@@ -79,10 +58,9 @@ export async function GET(request: NextRequest) {
     // Se userId è fornito, ottieni i voti dell'utente per tutti i commenti
     let userVotes: Record<string, string> = {};
     if (userId) {
-      const allCommentIds = comments.flatMap(c => [c.id, ...(c.Replies?.map(r => r.id) || [])]);
       const votes = await db.commentVote.findMany({
         where: {
-          commentId: { in: allCommentIds },
+          commentId: { in: allComments.map(c => c.id) },
           userId: userId,
         },
         select: {
@@ -96,17 +74,44 @@ export async function GET(request: NextRequest) {
       }, {} as Record<string, string>);
     }
 
-    // Aggiungi userVote a ogni commento e risposta
-    const commentsWithVotes = comments.map(comment => ({
-      ...comment,
-      userVote: userVotes[comment.id] || null,
-      Replies: comment.Replies?.map(reply => ({
-        ...reply,
-        userVote: userVotes[reply.id] || null,
-      }))
-    }));
+    // Costruisci l'albero dei commenti
+    const commentMap = new Map<string, any>();
+    const rootComments: any[] = [];
 
-    return NextResponse.json(commentsWithVotes);
+    // Prima passa: crea la mappa con userVote
+    allComments.forEach(comment => {
+      commentMap.set(comment.id, {
+        ...comment,
+        userVote: userVotes[comment.id] || null,
+        Replies: []
+      });
+    });
+
+    // Seconda passa: costruisci l'albero
+    allComments.forEach(comment => {
+      const node = commentMap.get(comment.id);
+      if (comment.parentId) {
+        const parent = commentMap.get(comment.parentId);
+        if (parent) {
+          parent.Replies.push(node);
+        }
+      } else {
+        rootComments.push(node);
+      }
+    });
+
+    // Ordina le risposte per data crescente
+    const sortReplies = (comments: any[]) => {
+      comments.forEach(c => {
+        if (c.Replies && c.Replies.length > 0) {
+          c.Replies.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          sortReplies(c.Replies);
+        }
+      });
+    };
+    sortReplies(rootComments);
+
+    return NextResponse.json(rootComments);
   } catch (error) {
     console.error('Error fetching comments:', error);
     return NextResponse.json({ error: 'Failed to fetch comments' }, { status: 500 });
@@ -135,11 +140,6 @@ export async function POST(request: NextRequest) {
 
       if (!parentComment) {
         return NextResponse.json({ error: 'Parent comment not found' }, { status: 404 });
-      }
-
-      // Le risposte non possono avere risposte (massimo 2 livelli)
-      if (parentComment.parentId) {
-        return NextResponse.json({ error: 'Cannot reply to a reply' }, { status: 400 });
       }
     }
 

@@ -20,18 +20,6 @@ import {
 import { MessageCircle, Send, Loader2, Reply, Plus, Pencil, Trash2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface Reply {
-  id: string;
-  author: string;
-  content: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-  likes: number;
-  dislikes: number;
-  userVote?: string | null;
-}
-
 interface Comment {
   id: string;
   author: string;
@@ -42,7 +30,8 @@ interface Comment {
   likes: number;
   dislikes: number;
   userVote?: string | null;
-  Replies?: Reply[];
+  parentId?: string | null;
+  Replies?: Comment[];
 }
 
 interface KitCommentsProps {
@@ -74,7 +63,7 @@ export function KitComments({ kitId }: KitCommentsProps) {
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
 
-  // Reply state
+  // Reply state - ora supporta qualsiasi livello
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [replyAuthor, setReplyAuthor] = useState('');
@@ -152,8 +141,7 @@ export function KitComments({ kitId }: KitCommentsProps) {
         throw new Error(error.error || 'Failed to create comment');
       }
 
-      const newComment = await response.json();
-      setComments([newComment, ...comments]);
+      await fetchComments(); // Ricarica tutti i commenti
 
       setAuthor('');
       setContent('');
@@ -201,17 +189,7 @@ export function KitComments({ kitId }: KitCommentsProps) {
 
       if (!response.ok) throw new Error('Failed to create reply');
 
-      const newReply = await response.json();
-
-      setComments(comments.map(comment => {
-        if (comment.id === parentId) {
-          return {
-            ...comment,
-            Replies: [...(comment.Replies || []), newReply]
-          };
-        }
-        return comment;
-      }));
+      await fetchComments(); // Ricarica tutti i commenti
 
       setReplyingTo(null);
       setReplyContent('');
@@ -260,24 +238,7 @@ export function KitComments({ kitId }: KitCommentsProps) {
         throw new Error(error.error || 'Failed to update comment');
       }
 
-      const updatedComment = await response.json();
-
-      setComments(comments.map(comment => {
-        if (comment.id === commentId) {
-          return { ...comment, content: updatedComment.content, updatedAt: updatedComment.updatedAt };
-        }
-        if (comment.Replies) {
-          return {
-            ...comment,
-            Replies: comment.Replies.map(reply => 
-              reply.id === commentId 
-                ? { ...reply, content: updatedComment.content, updatedAt: updatedComment.updatedAt }
-                : reply
-            )
-          };
-        }
-        return comment;
-      }));
+      await fetchComments(); // Ricarica tutti i commenti
 
       setEditingComment(null);
       setEditContent('');
@@ -312,15 +273,7 @@ export function KitComments({ kitId }: KitCommentsProps) {
         throw new Error(error.error || 'Failed to delete comment');
       }
 
-      // Rimuovi il commento dalla lista
-      setComments(comments.filter(comment => {
-        if (comment.id === commentToDelete) return false;
-        // Rimuovi anche dalle risposte
-        if (comment.Replies) {
-          comment.Replies = comment.Replies.filter(reply => reply.id !== commentToDelete);
-        }
-        return true;
-      }));
+      await fetchComments(); // Ricarica tutti i commenti
 
       setDeleteDialogOpen(false);
       setCommentToDelete(null);
@@ -357,31 +310,14 @@ export function KitComments({ kitId }: KitCommentsProps) {
         throw new Error(error.error || 'Failed to vote');
       }
 
-      const result = await response.json();
-
       // Aggiorna il commento nella lista
-      setComments(comments.map(comment => {
-        if (comment.id === commentId) {
-          return {
-            ...comment,
-            likes: result.likes,
-            dislikes: result.dislikes,
-            userVote: result.userVote,
-          };
-        }
-        // Aggiorna anche nelle risposte
-        if (comment.Replies) {
-          return {
-            ...comment,
-            Replies: comment.Replies.map(reply =>
-              reply.id === commentId
-                ? { ...reply, likes: result.likes, dislikes: result.dislikes, userVote: result.userVote }
-                : reply
-            )
-          };
-        }
-        return comment;
+      setComments(updateCommentInTree(comments, commentId, (c) => {
+        const result = JSON.parse(JSON.stringify(c));
+        return result;
       }));
+      
+      // Ricarica per avere i dati aggiornati
+      await fetchComments();
     } catch (error) {
       console.error('Error voting for comment:', error);
       toast({
@@ -390,6 +326,26 @@ export function KitComments({ kitId }: KitCommentsProps) {
         variant: 'destructive',
       });
     }
+  };
+
+  // Helper per aggiornare un commento nell'albero
+  const updateCommentInTree = (
+    comments: Comment[],
+    commentId: string,
+    updater: (c: Comment) => Comment
+  ): Comment[] => {
+    return comments.map(comment => {
+      if (comment.id === commentId) {
+        return updater(comment);
+      }
+      if (comment.Replies && comment.Replies.length > 0) {
+        return {
+          ...comment,
+          Replies: updateCommentInTree(comment.Replies, commentId, updater)
+        };
+      }
+      return comment;
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -403,13 +359,18 @@ export function KitComments({ kitId }: KitCommentsProps) {
     });
   };
 
-  const totalComments = comments.reduce((acc, c) => acc + 1 + (c.Replies?.length || 0), 0);
+  // Conta ricorsivamente tutti i commenti
+  const countAllComments = (comments: Comment[]): number => {
+    return comments.reduce((acc, c) => acc + 1 + (c.Replies ? countAllComments(c.Replies) : 0), 0);
+  };
+
+  const totalComments = countAllComments(comments);
 
   const isCommentEdited = (createdAt: string, updatedAt: string) => {
     return new Date(updatedAt).getTime() - new Date(createdAt).getTime() > 1000;
   };
 
-  const renderCommentActions = (comment: Comment | Reply, isReply: boolean = false) => {
+  const renderCommentActions = (comment: Comment, depth: number = 0) => {
     const canModify = comment.userId === userId;
 
     return (
@@ -436,7 +397,8 @@ export function KitComments({ kitId }: KitCommentsProps) {
           </Button>
         </div>
 
-        {!isReply && (
+        {/* Pulsante Rispondi - visibile fino al livello 2 (massimo 3 livelli: commento → risposta → risposta) */}
+        {depth < 3 && (
           <Button
             variant="ghost"
             size="sm"
@@ -479,6 +441,95 @@ export function KitComments({ kitId }: KitCommentsProps) {
               Elimina
             </Button>
           </>
+        )}
+      </div>
+    );
+  };
+
+  // Render ricorsivo dei commenti
+  const renderComment = (comment: Comment, depth: number = 0) => {
+    const isReply = depth > 0;
+    const indentClass = isReply ? 'ml-3 pl-3 border-l-2 border-primary/20' : '';
+    
+    return (
+      <div key={comment.id} className={`${indentClass} py-1`}>
+        {editingComment === comment.id ? (
+          <div className="space-y-2 p-2 rounded bg-muted/30">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={2}
+              maxLength={500}
+              className="text-sm"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => handleEditComment(comment.id)} disabled={submittingEdit}>
+                {submittingEdit ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                Salva
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { setEditingComment(null); setEditContent(''); }}>
+                Annulla
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className={`${isReply ? '' : 'p-2 rounded border bg-muted/30'} text-sm`}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-xs">{comment.author}</span>
+                {isReply && (
+                  <Badge variant="secondary" className="text-[10px] h-4">
+                    {depth === 1 ? 'Risposta' : 'Risposta'}
+                  </Badge>
+                )}
+                {isCommentEdited(comment.createdAt, comment.updatedAt) && (
+                  <span className="text-[10px] text-muted-foreground italic">(modificato)</span>
+                )}
+              </div>
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                {formatDate(comment.createdAt)}
+              </span>
+            </div>
+            <p className="text-xs mt-1 whitespace-pre-wrap">{comment.content}</p>
+            {renderCommentActions(comment, depth)}
+          </div>
+        )}
+
+        {/* Form Risposta */}
+        {replyingTo === comment.id && (
+          <div className="mt-2 p-2 border rounded bg-muted/20 space-y-2">
+            <Input
+              placeholder="Il tuo nome"
+              value={replyAuthor}
+              onChange={(e) => setReplyAuthor(e.target.value)}
+              maxLength={50}
+              className="text-sm h-8"
+            />
+            <Textarea
+              placeholder="Scrivi la tua risposta..."
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              rows={2}
+              maxLength={300}
+              className="text-sm"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => handleReplySubmit(comment.id)} disabled={submittingReply}>
+                {submittingReply ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                Invia
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { setReplyingTo(null); setReplyContent(''); setReplyAuthor(''); }}>
+                Annulla
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Risposte nidificate */}
+        {comment.Replies && comment.Replies.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {comment.Replies.map(reply => renderComment(reply, depth + 1))}
+          </div>
         )}
       </div>
     );
@@ -536,7 +587,7 @@ export function KitComments({ kitId }: KitCommentsProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Elimina commento</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare questo commento? Questa azione non può essere annullata.
+              Sei sicuro di voler eliminare questo commento? Anche tutte le risposte verranno eliminate. Questa azione non può essere annullata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -578,124 +629,8 @@ export function KitComments({ kitId }: KitCommentsProps) {
           </p>
         ) : (
           <div className="space-y-2">
-            {comments.map((comment) => (
-                <div key={comment.id} className="p-2 rounded border bg-muted/30 text-sm">
-                  {editingComment === comment.id ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        rows={2}
-                        maxLength={500}
-                        className="text-sm"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleEditComment(comment.id)} disabled={submittingEdit}>
-                          {submittingEdit ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                          Salva
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => { setEditingComment(null); setEditContent(''); }}>
-                          Annulla
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-xs">{comment.author}</span>
-                          {isCommentEdited(comment.createdAt, comment.updatedAt) && (
-                            <span className="text-[10px] text-muted-foreground italic">(modificato)</span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          {formatDate(comment.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-xs mt-1 whitespace-pre-wrap">{comment.content}</p>
-                      {renderCommentActions(comment)}
-                    </>
-                  )}
-
-                  {/* Form Risposta */}
-                  {replyingTo === comment.id && (
-                    <div className="mt-2 p-2 border rounded bg-muted/20 space-y-2">
-                      <Input
-                        placeholder="Il tuo nome"
-                        value={replyAuthor}
-                        onChange={(e) => setReplyAuthor(e.target.value)}
-                        maxLength={50}
-                        className="text-sm h-8"
-                      />
-                      <Textarea
-                        placeholder="Scrivi la tua risposta..."
-                        value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
-                        rows={2}
-                        maxLength={300}
-                        className="text-sm"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleReplySubmit(comment.id)} disabled={submittingReply}>
-                          {submittingReply ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                          Invia
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => { setReplyingTo(null); setReplyContent(''); setReplyAuthor(''); }}>
-                          Annulla
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Risposte */}
-                  {comment.Replies && comment.Replies.length > 0 && (
-                    <div className="mt-2 pl-3 border-l-2 border-primary/20 space-y-2">
-                      {comment.Replies.map((reply) => (
-                        <div key={reply.id} className="py-1">
-                          {editingComment === reply.id ? (
-                            <div className="space-y-2">
-                              <Textarea
-                                value={editContent}
-                                onChange={(e) => setEditContent(e.target.value)}
-                                rows={2}
-                                maxLength={500}
-                                className="text-sm"
-                              />
-                              <div className="flex gap-2">
-                                <Button size="sm" onClick={() => handleEditComment(reply.id)} disabled={submittingEdit}>
-                                  {submittingEdit ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                                  Salva
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => { setEditingComment(null); setEditContent(''); }}>
-                                  Annulla
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-xs">{reply.author}</span>
-                                  <Badge variant="secondary" className="text-[10px] h-4">Risposta</Badge>
-                                  {isCommentEdited(reply.createdAt, reply.updatedAt) && (
-                                    <span className="text-[10px] text-muted-foreground italic">(modificato)</span>
-                                  )}
-                                </div>
-                                <span className="text-[10px] text-muted-foreground">
-                                  {formatDate(reply.createdAt)}
-                                </span>
-                              </div>
-                              <p className="text-xs mt-1 whitespace-pre-wrap">{reply.content}</p>
-                              {renderCommentActions(reply, true)}
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {comments.map(comment => renderComment(comment))}
+          </div>
         )}
       </div>
     </>
