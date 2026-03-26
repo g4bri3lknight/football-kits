@@ -1,11 +1,13 @@
 'use client';
 
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, ContactShadows } from '@react-three/drei';
+import { OrbitControls, useGLTF, ContactShadows, Environment } from '@react-three/drei';
+import { EffectComposer, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Shirt } from 'lucide-react';
+import { Shirt, Sparkles } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
 
 const CFG = KIT_VIEWER_CONFIG;
@@ -15,8 +17,8 @@ interface KitViewer3DProps {
   className?: string;
 }
 
-// Componente Modello
-function Model({ url }: { url: string }) {
+// Componente Modello con Material Enhancement
+function Model({ url, effectsEnabled }: { url: string; effectsEnabled: boolean }) {
   // L'URL è già completo (es. /api/kits/xxx/model3d), non serve elaborarlo
   const { scene } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
@@ -37,6 +39,43 @@ function Model({ url }: { url: string }) {
       -center.z * scale
     );
   }, [scene]);
+
+  // Material Enhancement - migliora i materiali del modello (solo se effetti attivi)
+  useEffect(() => {
+    if (!effectsEnabled) return;
+    
+    scene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const material = child.material as THREE.MeshStandardMaterial;
+        
+        if (material && material.isMeshStandardMaterial) {
+          // Migliora la risposta all'ambiente HDR
+          material.envMapIntensity = 1.5;
+          
+          // Imposta roughness se non definita (materiali semi-lucidi)
+          if (material.roughness === undefined || material.roughness === 1) {
+            material.roughness = 0.4;
+          }
+          
+          // Imposta metalness per materiali che sembrano metallici
+          if (material.metalness === undefined) {
+            material.metalness = 0.1;
+          }
+          
+          // Migliora il contrasto dei colori
+          if (material.color) {
+            material.color.convertSRGBToLinear();
+          }
+          
+          // Abilita tonemapping sui materiali
+          material.toneMapped = true;
+          
+          // Forza l'aggiornamento
+          material.needsUpdate = true;
+        }
+      }
+    });
+  }, [scene, effectsEnabled]);
 
   return (
     <group ref={groupRef}>
@@ -209,15 +248,20 @@ function Scene({
   autoRotate,
   onResumeAutoRotate,
   onPauseAutoRotate,
+  effectsEnabled,
 }: { 
   modelUrl: string; 
   resetKey: number;
   autoRotate: boolean;
   onResumeAutoRotate: () => void;
   onPauseAutoRotate: () => void;
+  effectsEnabled: boolean;
 }) {
   return (
     <>
+      {/* HDR Environment per riflessi realistici - solo se effetti attivi */}
+      {effectsEnabled && <Environment preset="studio" background={false} />}
+      
       <ambientLight intensity={CFG.lighting.ambientIntensity} />
       <directionalLight
         position={CFG.lighting.mainLight.position as [number, number, number]}
@@ -234,18 +278,21 @@ function Scene({
 
       <group>
         <Suspense fallback={null}>
-          <Model url={modelUrl} />
+          <Model url={modelUrl} effectsEnabled={effectsEnabled} />
         </Suspense>
       </group>
 
-      <ContactShadows
-        position={CFG.shadows.position as [number, number, number]}
-        opacity={CFG.shadows.opacity}
-        scale={CFG.shadows.scale}
-        blur={CFG.shadows.blur}
-        far={CFG.shadows.far}
-        resolution={CFG.shadows.resolution}
-      />
+      {/* Contact Shadows - solo se effetti attivi */}
+      {effectsEnabled && (
+        <ContactShadows
+          position={CFG.shadows.position as [number, number, number]}
+          opacity={CFG.shadows.opacity}
+          scale={CFG.shadows.scale}
+          blur={CFG.shadows.blur}
+          far={CFG.shadows.far}
+          resolution={CFG.shadows.resolution}
+        />
+      )}
 
       <CameraController 
         resetKey={resetKey} 
@@ -253,6 +300,30 @@ function Scene({
         onResumeAutoRotate={onResumeAutoRotate}
         onPauseAutoRotate={onPauseAutoRotate}
       />
+
+      {/* Post-processing effects - solo se abilitati */}
+      {effectsEnabled && (
+        <EffectComposer multisampling={0}>
+          {/* Anti-aliasing */}
+          <SMAA />
+          
+          {/* Tone Mapping - colori cinematografici */}
+          <ToneMapping 
+            mode={THREE.ACESFilmicToneMapping}
+            resolution={256}
+            whitePoint={4.0}
+            middleGrey={0.6}
+            minLuminance={0.01}
+            averageLuminance={1.0}
+          />
+          
+          {/* Vignette - scurisce leggermente i bordi */}
+          <Vignette 
+            offset={0.3}
+            darkness={0.5}
+          />
+        </EffectComposer>
+      )}
     </>
   );
 }
@@ -264,6 +335,7 @@ export default function KitViewer3D({
   const [resetKey, setResetKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [autoRotate, setAutoRotate] = useState<boolean>(CFG.autoRotate.enabled);
+  const [effectsEnabled, setEffectsEnabled] = useState(true);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInteractingRef = useRef(false);
 
@@ -309,7 +381,7 @@ export default function KitViewer3D({
 
   return (
     <div 
-      className={`w-full h-full ${className}`}
+      className={`w-full h-full relative ${className}`}
       onDoubleClick={() => setResetKey(k => k + 1)}
       style={{ cursor: isDragging ? 'none' : 'grab' }}
     >
@@ -327,8 +399,20 @@ export default function KitViewer3D({
           autoRotate={autoRotate}
           onResumeAutoRotate={resumeAutoRotate}
           onPauseAutoRotate={pauseAutoRotate}
+          effectsEnabled={effectsEnabled}
         />
       </Canvas>
+      
+      {/* Toggle Effects Button */}
+      <button
+        onClick={() => setEffectsEnabled(!effectsEnabled)}
+        className="absolute bottom-3 right-3 z-10 p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+        title={effectsEnabled ? 'Disattiva effetti grafici' : 'Attiva effetti grafici'}
+      >
+        <Sparkles 
+          className={`w-5 h-5 transition-colors ${effectsEnabled ? 'text-yellow-400' : 'text-white/50'}`} 
+        />
+      </button>
     </div>
   );
 }
