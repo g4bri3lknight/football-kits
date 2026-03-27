@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FramerDialog, DialogPrimitive } from '@/components/ui/framer-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { MessageCircle, Send, Loader2, Reply, Plus, Pencil, Trash2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { staggerContainer, staggerItem } from '@/components/ui/animated-dialog';
+import { motion } from 'framer-motion';
 
 interface Comment {
   id: string;
@@ -58,6 +60,7 @@ export function KitComments({ kitId }: KitCommentsProps) {
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
 
   // Form state
   const [author, setAuthor] = useState('');
@@ -65,6 +68,7 @@ export function KitComments({ kitId }: KitCommentsProps) {
 
   // Reply state - ora supporta qualsiasi livello
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyingToAuthor, setReplyingToAuthor] = useState<string>('');
   const [replyContent, setReplyContent] = useState('');
   const [replyAuthor, setReplyAuthor] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
@@ -99,12 +103,12 @@ export function KitComments({ kitId }: KitCommentsProps) {
     try {
       const response = await fetch(`/api/comments?kitId=${kitId}&userId=${encodeURIComponent(userId)}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch comments');
+        setComments([]);
+        return;
       }
       const data = await response.json();
       setComments(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error fetching comments:', error);
+    } catch {
       setComments([]);
     } finally {
       setLoading(false);
@@ -191,7 +195,9 @@ export function KitComments({ kitId }: KitCommentsProps) {
 
       await fetchComments(); // Ricarica tutti i commenti
 
+      setReplyDialogOpen(false);
       setReplyingTo(null);
+      setReplyingToAuthor('');
       setReplyContent('');
       setReplyAuthor('');
 
@@ -404,9 +410,11 @@ export function KitComments({ kitId }: KitCommentsProps) {
             size="sm"
             className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
             onClick={() => {
-              setReplyingTo(replyingTo === comment.id ? null : comment.id);
+              setReplyingTo(comment.id);
+              setReplyingToAuthor(comment.author);
               setReplyContent('');
               setReplyAuthor('');
+              setReplyDialogOpen(true);
             }}
           >
             <Reply className="w-3 h-3 mr-1" />
@@ -495,36 +503,6 @@ export function KitComments({ kitId }: KitCommentsProps) {
           </div>
         )}
 
-        {/* Form Risposta */}
-        {replyingTo === comment.id && (
-          <div className="mt-2 p-2 border rounded bg-muted/20 space-y-2">
-            <Input
-              placeholder="Il tuo nome"
-              value={replyAuthor}
-              onChange={(e) => setReplyAuthor(e.target.value)}
-              maxLength={50}
-              className="text-sm h-8"
-            />
-            <Textarea
-              placeholder="Scrivi la tua risposta..."
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              rows={2}
-              maxLength={300}
-              className="text-sm"
-            />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => handleReplySubmit(comment.id)} disabled={submittingReply}>
-                {submittingReply ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                Invia
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => { setReplyingTo(null); setReplyContent(''); setReplyAuthor(''); }}>
-                Annulla
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Risposte nidificate */}
         {comment.Replies && comment.Replies.length > 0 && (
           <div className="mt-2 space-y-2">
@@ -538,13 +516,20 @@ export function KitComments({ kitId }: KitCommentsProps) {
   return (
     <>
       {/* Dialog per nuovo commento */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nuovo Commento</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-3 pt-4">
-            <div className="space-y-1.5">
+      <FramerDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        className="max-w-md"
+      >
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="space-y-4"
+        >
+          <DialogPrimitive.Title className="text-lg font-semibold">Nuovo Commento</DialogPrimitive.Title>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <motion.div variants={staggerItem} className="space-y-1.5">
               <Label htmlFor="comment-author">Nome</Label>
               <Input
                 id="comment-author"
@@ -553,8 +538,8 @@ export function KitComments({ kitId }: KitCommentsProps) {
                 onChange={(e) => setAuthor(e.target.value)}
                 maxLength={50}
               />
-            </div>
-            <div className="space-y-1.5">
+            </motion.div>
+            <motion.div variants={staggerItem} className="space-y-1.5">
               <Label htmlFor="comment-content">Commento</Label>
               <Textarea
                 id="comment-content"
@@ -567,8 +552,8 @@ export function KitComments({ kitId }: KitCommentsProps) {
               <p className="text-xs text-muted-foreground text-right">
                 {content.length}/500
               </p>
-            </div>
-            <div className="flex gap-2 justify-end">
+            </motion.div>
+            <motion.div variants={staggerItem} className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Annulla
               </Button>
@@ -576,10 +561,63 @@ export function KitComments({ kitId }: KitCommentsProps) {
                 {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                 Pubblica
               </Button>
-            </div>
+            </motion.div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </motion.div>
+      </FramerDialog>
+
+      {/* Dialog per risposta */}
+      <FramerDialog
+        open={replyDialogOpen}
+        onOpenChange={setReplyDialogOpen}
+        className="max-w-md"
+      >
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="space-y-4"
+        >
+          <DialogPrimitive.Title className="text-lg font-semibold">
+            Rispondi a {replyingToAuthor}
+          </DialogPrimitive.Title>
+          <form onSubmit={(e) => { e.preventDefault(); if (replyingTo) handleReplySubmit(replyingTo); }} className="space-y-3">
+            <motion.div variants={staggerItem} className="space-y-1.5">
+              <Label htmlFor="reply-author">Nome</Label>
+              <Input
+                id="reply-author"
+                placeholder="Il tuo nome"
+                value={replyAuthor}
+                onChange={(e) => setReplyAuthor(e.target.value)}
+                maxLength={50}
+              />
+            </motion.div>
+            <motion.div variants={staggerItem} className="space-y-1.5">
+              <Label htmlFor="reply-content">Risposta</Label>
+              <Textarea
+                id="reply-content"
+                placeholder="Scrivi la tua risposta..."
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                rows={3}
+                maxLength={300}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {replyContent.length}/300
+              </p>
+            </motion.div>
+            <motion.div variants={staggerItem} className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => { setReplyDialogOpen(false); setReplyingTo(null); }}>
+                Annulla
+              </Button>
+              <Button type="submit" disabled={submittingReply}>
+                {submittingReply ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                Invia
+              </Button>
+            </motion.div>
+          </form>
+        </motion.div>
+      </FramerDialog>
 
       {/* Dialog conferma eliminazione */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

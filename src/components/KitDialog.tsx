@@ -124,13 +124,22 @@ export function KitDialog({
   useEffect(() => {
     if (selectedKit?.id && userId) {
       fetch(`/api/kits/${selectedKit.id}/vote?userId=${userId}`)
-        .then(res => res.json())
-        .then(data => {
-          setLikes(data.likes || 0);
-          setDislikes(data.dislikes || 0);
-          setUserVote(data.userVote || null);
+        .then(res => {
+          if (!res.ok) {
+            return null;
+          }
+          return res.json();
         })
-        .catch(console.error);
+        .then(data => {
+          if (data) {
+            setLikes(data.likes || 0);
+            setDislikes(data.dislikes || 0);
+            setUserVote(data.userVote || null);
+          }
+        })
+        .catch(() => {
+          // Silently ignore errors for vote fetching
+        });
     }
   }, [selectedKit?.id, userId]);
 
@@ -401,7 +410,7 @@ export function KitDialog({
                 
                 {/* Central content */}
                 <div 
-                  className="col-span-3 flex items-center justify-center rounded-lg overflow-hidden bg-muted border-2 relative cursor-pointer"
+                  className="col-span-3 rounded-lg overflow-hidden bg-muted border-2 relative"
                   style={{ borderColor: '#002f42' }}
                   onClick={handleCentralAreaClick}
                 >
@@ -433,7 +442,7 @@ export function KitDialog({
                         )}
                       </>
                     ) : selectedKit?.hasModel3D ? (
-                      <KitViewer3D modelUrl={getKitImageUrl(selectedKit.id, 'model3d', undefined, selectedKit.updatedAt)} className="h-full" />
+                      <KitViewer3D modelUrl={getKitImageUrl(selectedKit.id, 'model3d', undefined, selectedKit.updatedAt)} className="w-full h-full" />
                     ) : selectedKit?.hasImage ? (
                       <motion.img
                         initial={{ opacity: 0, scale: 0.95 }}

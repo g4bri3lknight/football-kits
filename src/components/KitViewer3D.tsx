@@ -4,11 +4,14 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, ContactShadows, Environment } from '@react-three/drei';
 import { EffectComposer, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Shirt, Sparkles, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, Monitor, X } from 'lucide-react';
+import { Shirt, Sparkles, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
+import { FramerDialog, DialogPrimitive } from '@/components/ui/framer-dialog';
+import { staggerContainer, staggerItem } from '@/components/ui/animated-dialog';
+import { motion } from 'framer-motion';
 
 const CFG = KIT_VIEWER_CONFIG;
 
@@ -17,9 +20,10 @@ interface KitViewer3DProps {
   className?: string;
 }
 
+type ModelState = 'checking' | 'loading' | 'ready' | 'not_found';
+
 // Componente Modello con Material Enhancement
 function Model({ url, effectsEnabled }: { url: string; effectsEnabled: boolean }) {
-  // L'URL è già completo (es. /api/kits/xxx/model3d), non serve elaborarlo
   const { scene } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
 
@@ -334,20 +338,42 @@ export default function KitViewer3D({
 }: KitViewer3DProps) {
   const [resetKey, setResetKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [autoRotateEnabled, setAutoRotateEnabled] = useState<boolean>(CFG.autoRotate.enabled); // Preferenza utente
-  const [autoRotate, setAutoRotate] = useState<boolean>(CFG.autoRotate.enabled); // Stato attuale (può essere in pausa)
+  const [autoRotateEnabled, setAutoRotateEnabled] = useState<boolean>(CFG.autoRotate.enabled);
+  const [autoRotate, setAutoRotate] = useState<boolean>(CFG.autoRotate.enabled);
   const [effectsEnabled, setEffectsEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [modelState, setModelState] = useState<ModelState>('checking');
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInteractingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Verifica se il modello esiste
+  useEffect(() => {
+    if (!modelUrl) {
+      setModelState('checking');
+      return;
+    }
+
+    setModelState('checking');
+    
+    fetch(modelUrl, { method: 'HEAD' })
+      .then(response => {
+        if (response.ok) {
+          setModelState('ready');
+        } else {
+          setModelState('not_found');
+        }
+      })
+      .catch(() => {
+        setModelState('not_found');
+      });
+  }, [modelUrl]);
 
   const pauseAutoRotate = () => {
     isInteractingRef.current = true;
     setIsDragging(true);
     setAutoRotate(false);
-    // Cancella qualsiasi timeout pendente
     if (resumeTimeoutRef.current) {
       clearTimeout(resumeTimeoutRef.current);
       resumeTimeoutRef.current = null;
@@ -357,15 +383,11 @@ export default function KitViewer3D({
   const resumeAutoRotate = () => {
     isInteractingRef.current = false;
     setIsDragging(false);
-    // Cancella timeout precedente se esiste
     if (resumeTimeoutRef.current) {
       clearTimeout(resumeTimeoutRef.current);
       resumeTimeoutRef.current = null;
     }
-    // Imposta nuovo timeout solo se non c'è già un'interazione in corso
     resumeTimeoutRef.current = setTimeout(() => {
-      // Verifica che non ci sia una nuova interazione iniziata mentre aspettavamo
-      // Riprende solo se l'utente ha lasciato attiva la rotazione automatica
       if (!isInteractingRef.current && autoRotateEnabled) {
         setAutoRotate(true);
       }
@@ -373,14 +395,12 @@ export default function KitViewer3D({
     }, CFG.autoRotate.resumeDelay);
   };
 
-  // Quando l'utente cambia la preferenza, aggiorna lo stato attuale
   const toggleAutoRotate = () => {
     const newValue = !autoRotateEnabled;
     setAutoRotateEnabled(newValue);
     setAutoRotate(newValue);
   };
 
-  // Fullscreen handling
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
 
@@ -397,7 +417,6 @@ export default function KitViewer3D({
     }
   };
 
-  // Listen for fullscreen changes (es. quando l'utente preme ESC)
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -409,6 +428,18 @@ export default function KitViewer3D({
     };
   }, []);
 
+  // Forza resize quando il modello è pronto (per calcolare correttamente le dimensioni del canvas)
+  useEffect(() => {
+    if (modelState === 'ready') {
+      // Piccolo delay per assicurarsi che il DOM sia aggiornato
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [modelState]);
+
+  // Nessun modello
   if (!modelUrl) {
     return (
       <div className={`w-full h-full flex items-center justify-center ${className}`}>
@@ -420,8 +451,31 @@ export default function KitViewer3D({
     );
   }
 
+  // Loader durante la verifica
+  if (modelState === 'checking') {
+    return (
+      <div className={`w-full h-full flex items-center justify-center ${className}`}>
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Errore - modello non trovato
+  if (modelState === 'not_found') {
+    return (
+      <div className={`w-full h-full flex items-center justify-center ${className}`}>
+        <div className="text-center p-8">
+          <AlertTriangle className="w-16 h-16 text-amber-500/50 mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium mb-2">Modello 3D non disponibile</p>
+          <p className="text-muted-foreground/60 text-sm">Il modello 3D per questo kit non è stato trovato.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Modello pronto - mostra Canvas
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`w-full h-full relative ${className} ${isFullscreen ? 'bg-black' : ''}`}
       onDoubleClick={() => setResetKey(k => k + 1)}
@@ -429,11 +483,12 @@ export default function KitViewer3D({
     >
       <Canvas
         key={modelUrl}
-        camera={{ 
-          position: [0, 0, CFG.camera.initialDistance], 
-          fov: CFG.camera.fov 
+        camera={{
+          position: [0, 0, CFG.camera.initialDistance],
+          fov: CFG.camera.fov
         }}
         gl={{ antialias: true, alpha: true }}
+        style={{ width: '100%', height: '100%', display: 'block' }}
       >
         <Scene 
           modelUrl={modelUrl} 
@@ -492,89 +547,86 @@ export default function KitViewer3D({
         </button>
       </div>
       
-      {/* Help Panel */}
-      {showHelp && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-white/20 rounded-xl p-5 max-w-xs w-full mx-4 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-semibold text-lg">Controlli 3D</h3>
-              <button 
-                onClick={() => setShowHelp(false)}
-                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4 text-white/70" />
-              </button>
+      {/* Help Dialog */}
+      <FramerDialog
+        open={showHelp}
+        onOpenChange={setShowHelp}
+        className="max-w-sm w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto"
+      >
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="space-y-3"
+        >
+          <DialogPrimitive.Title className="text-lg sm:text-xl font-semibold mb-4">Controlli 3D</DialogPrimitive.Title>
+          
+          {/* Rotazione */}
+          <motion.div variants={staggerItem} className="flex items-start gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+              <MousePointer2 className="w-5 h-5 text-primary" />
             </div>
-            
-            <div className="space-y-3 text-sm">
-              {/* Rotazione */}
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-white/10 rounded-lg shrink-0">
-                  <MousePointer2 className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-white font-medium">Rotazione</p>
-                  <p className="text-white/60">Click sinistro + trascina</p>
-                </div>
-              </div>
-              
-              {/* Zoom */}
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-white/10 rounded-lg shrink-0">
-                  <ZoomIn className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-white font-medium">Zoom</p>
-                  <p className="text-white/60">Scroll del mouse o pinch</p>
-                </div>
-              </div>
-              
-              {/* Pan */}
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-white/10 rounded-lg shrink-0">
-                  <Move className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-white font-medium">Pan</p>
-                  <p className="text-white/60">Click destro + trascina</p>
-                </div>
-              </div>
-              
-              {/* Reset Camera */}
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-white/10 rounded-lg shrink-0">
-                  <RotateCcw className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-white font-medium">Reset camera</p>
-                  <p className="text-white/60">Doppio click sul modello</p>
-                </div>
-              </div>
-              
-              {/* Divider */}
-              <div className="border-t border-white/10 my-3" />
-              
-              {/* Legenda pulsanti */}
-              <p className="text-white/50 text-xs uppercase tracking-wide mb-2">Pulsanti</p>
-              
-              <div className="flex items-center gap-2 text-white/80">
-                <RotateCw className="w-4 h-4 text-green-400" />
-                <span>Attiva/disattiva rotazione automatica</span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-white/80">
-                <Sparkles className="w-4 h-4 text-yellow-400" />
-                <span>Attiva/disattiva effetti grafici</span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-white/80">
-                <Maximize2 className="w-4 h-4 text-white" />
-                <span>Modalità schermo intero</span>
-              </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Rotazione</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">Click sinistro + trascina</p>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+          
+          {/* Zoom */}
+          <motion.div variants={staggerItem} className="flex items-start gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+              <ZoomIn className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Zoom</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">Scroll del mouse o pinch</p>
+            </div>
+          </motion.div>
+          
+          {/* Pan */}
+          <motion.div variants={staggerItem} className="flex items-start gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+              <Move className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Pan</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">Click destro + trascina</p>
+            </div>
+          </motion.div>
+          
+          {/* Reset Camera */}
+          <motion.div variants={staggerItem} className="flex items-start gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+              <RotateCcw className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Reset camera</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">Doppio click sul modello</p>
+            </div>
+          </motion.div>
+          
+          {/* Divider */}
+          <div className="border-t my-4" />
+          
+          {/* Legenda pulsanti */}
+          <p className="text-muted-foreground text-xs uppercase tracking-wide mb-3">Pulsanti</p>
+          
+          <motion.div variants={staggerItem} className="flex items-center gap-2.5 py-1">
+            <RotateCw className="w-5 h-5 text-green-500 shrink-0" />
+            <span className="text-sm">Attiva/disattiva rotazione automatica</span>
+          </motion.div>
+          
+          <motion.div variants={staggerItem} className="flex items-center gap-2.5 py-1">
+            <Sparkles className="w-5 h-5 text-yellow-500 shrink-0" />
+            <span className="text-sm">Attiva/disattiva effetti grafici</span>
+          </motion.div>
+          
+          <motion.div variants={staggerItem} className="flex items-center gap-2.5 py-1">
+            <Maximize2 className="w-5 h-5 text-foreground shrink-0" />
+            <span className="text-sm">Modalità schermo intero</span>
+          </motion.div>
+        </motion.div>
+      </FramerDialog>
     </div>
   );
 }

@@ -87,7 +87,7 @@ export function FramerDialog({
                 exit="exit"
                 style={style}
                 className={cn(
-                  "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg",
+                  "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border-2 bg-background p-6 shadow-lg dialog-custom-color",
                   className
                 )}
               >
