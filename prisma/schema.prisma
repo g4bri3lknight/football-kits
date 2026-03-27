@@ -179,3 +179,72 @@ model Admin {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Configurazione del visualizzatore 3D
+model Viewer3DConfig {
+  id        String   @id @default("viewer3d-config")
+  updatedAt DateTime @updatedAt
+
+  // === CAMERA ===
+  cameraInitialDistance Float   @default(6)
+  cameraFov             Float   @default(50)
+  cameraMinDistance     Float   @default(3.5)
+  cameraMaxDistance     Float   @default(6)
+
+  // === ROTAZIONE (angoli in gradi, convertiti in radianti) ===
+  rotationMinPolarAngle Float   @default(90)  // 90 gradi = PI/2 radianti
+  rotationMaxPolarAngle Float   @default(90)
+
+  // === AUTO-ROTATION ===
+  autoRotateEnabled   Boolean @default(true)
+  autoRotateSpeed     Float   @default(1.5)
+  autoRotateResumeDelay Int   @default(2000)
+
+  // === CONTROLLI ===
+  controlsEnablePan          Boolean @default(true)
+  controlsEnablePanHorizontal Boolean @default(false)
+  controlsEnablePanVertical  Boolean @default(true)
+  controlsRotateSpeed        Float   @default(0.5)
+  controlsZoomSpeed          Float   @default(1.2)
+  controlsPanSpeed           Float   @default(1)
+  controlsEnableDamping      Boolean @default(true)
+  controlsDampingFactor      Float   @default(0.05)
+
+  // === MODELLO ===
+  modelTargetSize Float @default(5)
+
+  // === ILLUMINAZIONE ===
+  lightingAmbientIntensity Float @default(0.7)
+  lightingMainLightPositionX Float @default(5)
+  lightingMainLightPositionY Float @default(10)
+  lightingMainLightPositionZ Float @default(7.5)
+  lightingMainLightIntensity Float @default(1.5)
+  lightingSecondaryLightPositionX Float @default(-5)
+  lightingSecondaryLightPositionY Float @default(5)
+  lightingSecondaryLightPositionZ Float @default(-7.5)
+  lightingSecondaryLightIntensity Float @default(0.8)
+
+  // === OMBRE ===
+  shadowsEnabled  Boolean @default(true)
+  shadowsPositionX Float   @default(0)
+  shadowsPositionY Float   @default(-2.45)
+  shadowsPositionZ Float   @default(0)
+  shadowsOpacity   Float   @default(0.5)
+  shadowsScale     Float   @default(10)
+  shadowsBlur      Float   @default(2)
+  shadowsFar       Float   @default(10)
+  shadowsResolution Int    @default(1024)
+
+  // === EFFETTI POST-PROCESSING ===
+  effectsEnabled       Boolean @default(true)
+  effectsEnvMapIntensity Float @default(1.5)
+  effectsRoughness     Float   @default(0.4)
+  effectsMetalness     Float   @default(0.1)
+  effectsToneMappingWhitePoint Float @default(4.0)
+  effectsToneMappingMiddleGrey Float @default(0.6)
+  effectsVignetteOffset Float  @default(0.3)
+  effectsVignetteDarkness Float @default(0.5)
+
+  // === BACKGROUND ===
+  backgroundColor String @default("#1a1a1a")  // Colore esadecimale
+}

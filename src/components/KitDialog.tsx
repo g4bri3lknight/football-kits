@@ -12,6 +12,7 @@ import { KitComments } from '@/components/KitComments';
 import { getPlayerDisplayName } from '@/lib/player-utils';
 import { KIT_DETAIL_IMAGE_CONFIG } from '@/config/kit-viewer.config';
 import { AnimatedCounter, dropdownVariants } from '@/components/ui/animated-dialog';
+import { useViewerConfig } from '@/hooks/useViewer3DConfig';
 
 interface KitDialogProps {
   selectedKit: Kit | null;
@@ -92,6 +93,9 @@ export function KitDialog({
   onNavigatePrevious,
   onNavigateNext,
 }: KitDialogProps) {
+  // Ottieni la configurazione del viewer 3D
+  const { config: viewerConfig } = useViewerConfig();
+  
   const [selectedDetail, setSelectedDetail] = useState<SelectedDetail | null>(null);
   const [hoveredDetail, setHoveredDetail] = useState<HoverDetail | null>(null);
   const [likes, setLikes] = useState(0);
@@ -357,7 +361,7 @@ export function KitDialog({
                       className="flex-1 min-h-0 relative group"
                     >
                       <div 
-                        className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
+                        className={`absolute inset-0 rounded-lg border-2 flex items-center justify-center transition-all overflow-hidden ${
                           detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'
                         }`}
                         style={{
@@ -369,6 +373,7 @@ export function KitDialog({
                             ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` 
                             : 'scale(1)',
                           cursor: isMouseDown ? 'none' : 'pointer',
+                          backgroundColor: viewerConfig.backgroundColor,
                         }}
                         onMouseEnter={() => { if (detail.url) handleDetailMouseEnter(detail); }}
                         onMouseLeave={() => handleDetailMouseLeave()}
@@ -410,8 +415,11 @@ export function KitDialog({
                 
                 {/* Central content */}
                 <div 
-                  className="col-span-3 rounded-lg overflow-hidden bg-muted border-2 relative"
-                  style={{ borderColor: '#002f42' }}
+                  className="col-span-3 rounded-lg overflow-hidden border-2 relative"
+                  style={{ 
+                    borderColor: '#002f42',
+                    backgroundColor: viewerConfig.backgroundColor 
+                  }}
                   onClick={handleCentralAreaClick}
                 >
                   <AnimatePresence>
@@ -442,7 +450,11 @@ export function KitDialog({
                         )}
                       </>
                     ) : selectedKit?.hasModel3D ? (
-                      <KitViewer3D modelUrl={getKitImageUrl(selectedKit.id, 'model3d', undefined, selectedKit.updatedAt)} className="w-full h-full" />
+                      <KitViewer3D 
+                        modelUrl={getKitImageUrl(selectedKit.id, 'model3d', undefined, selectedKit.updatedAt)} 
+                        config={viewerConfig}
+                        className="w-full h-full" 
+                      />
                     ) : selectedKit?.hasImage ? (
                       <motion.img
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -465,7 +477,7 @@ export function KitDialog({
                       className="flex-1 min-h-0 relative group"
                     >
                       <div 
-                        className={`absolute inset-0 rounded-lg bg-muted border-2 flex items-center justify-center transition-all overflow-hidden ${
+                        className={`absolute inset-0 rounded-lg border-2 flex items-center justify-center transition-all overflow-hidden ${
                           detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'
                         }`}
                         style={{
@@ -477,6 +489,7 @@ export function KitDialog({
                             ? `scale(${KIT_DETAIL_IMAGE_CONFIG.hover.scale})` 
                             : 'scale(1)',
                           cursor: isMouseDown ? 'none' : 'pointer',
+                          backgroundColor: viewerConfig.backgroundColor,
                         }}
                         onMouseEnter={() => { if (detail.url) handleDetailMouseEnter(detail); }}
                         onMouseLeave={() => handleDetailMouseLeave()}

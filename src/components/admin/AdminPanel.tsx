@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,6 +29,9 @@ import {
   Settings,
   ChevronLeft,
   Menu,
+  Box,
+  Save,
+  RotateCcw,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Player, Kit, PlayerKit, Nation, AdminPanelProps } from './types';
@@ -39,6 +42,7 @@ import NationsTab from './NationsTab';
 import CommentsTab from './CommentsTab';
 import VisiteStats from './VisiteStats';
 import VotiKitStats from './VotiKitStats';
+import Viewer3DTab, { Viewer3DTabRef } from './Viewer3DTab';
 import { cn } from '@/lib/utils';
 
 interface ExtendedAdminPanelProps extends AdminPanelProps {
@@ -75,6 +79,11 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
+    id: 'viewer3d',
+    label: 'Viewer 3D',
+    icon: <Box className="w-5 h-5" />,
+  },
+  {
     id: 'comments',
     label: 'Commenti',
     icon: <MessageSquare className="w-5 h-5" />,
@@ -103,10 +112,29 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Viewer3D Tab state
+  const viewer3DRef = useRef<Viewer3DTabRef>(null);
+  const [viewer3DHasChanges, setViewer3DHasChanges] = useState(false);
+  const [viewer3DSaving, setViewer3DSaving] = useState(false);
+
   useEffect(() => {
     fetchData();
     fetchNickname();
   }, []);
+
+  // Poll viewer3D state when that tab is active
+  useEffect(() => {
+    if (activeItem !== 'viewer3d') return;
+    
+    const interval = setInterval(() => {
+      if (viewer3DRef.current) {
+        setViewer3DHasChanges(viewer3DRef.current.hasChanges);
+        setViewer3DSaving(viewer3DRef.current.saving);
+      }
+    }, 200);
+    
+    return () => clearInterval(interval);
+  }, [activeItem]);
 
   const fetchNickname = async () => {
     try {
@@ -569,6 +597,8 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         );
       case 'nations':
         return <NationsTab />;
+      case 'viewer3d':
+        return <Viewer3DTab ref={viewer3DRef} adminToken={adminToken} />;
       case 'comments':
         return <CommentsTab adminToken={adminToken} adminNickname={nickname} />;
       default:
@@ -584,6 +614,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       case 'kits': return 'Gestione Kit';
       case 'associations': return 'Gestione Associazioni';
       case 'nations': return 'Gestione Nazionalità';
+      case 'viewer3d': return 'Configurazione Viewer 3D';
       case 'comments': return 'Gestione Commenti';
       default: return 'Dashboard';
     }
@@ -785,26 +816,68 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       <main className="flex-1 flex flex-col min-w-0 w-full overflow-hidden">
         {/* Content Header with Mobile Menu Button */}
         <header className="px-4 py-3 border-b border-border bg-card">
-          <div className="flex items-center gap-3">
-            {/* Mobile Menu Button */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="lg:hidden h-9 w-9 shrink-0">
-                  <Menu className="h-5 w-5" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {/* Mobile Menu Button */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="lg:hidden h-9 w-9 shrink-0">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-72 p-0">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Menu di navigazione</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col h-full bg-muted/50">
+                    {renderSidebarContent(true)}
+                  </div>
+                </SheetContent>
+              </Sheet>
+              <h2 className="text-base font-semibold text-foreground truncate">
+                {getPageTitle()}
+              </h2>
+            </div>
+
+            {/* Viewer3D Action Buttons */}
+            {activeItem === 'viewer3d' && (
+              <div className="flex items-center gap-2">
+                {viewer3DHasChanges && (
+                  <span className="text-xs text-amber-500 animate-pulse">
+                    Modifiche non salvate
+                  </span>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => viewer3DRef.current?.handleReset()}
+                  disabled={!viewer3DHasChanges}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Annulla
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0">
-                <SheetHeader className="sr-only">
-                  <SheetTitle>Menu di navigazione</SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col h-full bg-muted/50">
-                  {renderSidebarContent(true)}
-                </div>
-              </SheetContent>
-            </Sheet>
-            <h2 className="text-base font-semibold text-foreground truncate">
-              {getPageTitle()}
-            </h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => viewer3DRef.current?.handleResetDefault()}
+                >
+                  Default
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => viewer3DRef.current?.handleSave()}
+                  disabled={viewer3DSaving || !viewer3DHasChanges}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {viewer3DSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Salva
+                </Button>
+              </div>
+            )}
           </div>
         </header>
 
