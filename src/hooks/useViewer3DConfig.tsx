@@ -13,6 +13,9 @@ export interface Viewer3DConfigData {
   cameraMinDistance: number;
   cameraMaxDistance: number;
 
+  // Rotazione libera 360°
+  cameraFreeRotation: boolean;
+
   // Rotazione (in gradi)
   rotationMinPolarAngle: number;
   rotationMaxPolarAngle: number;
@@ -79,6 +82,7 @@ export const defaultViewer3DConfig: Viewer3DConfigData = {
   cameraFov: 50,
   cameraMinDistance: 3.5,
   cameraMaxDistance: 6,
+  cameraFreeRotation: false,
   rotationMinPolarAngle: 90,
   rotationMaxPolarAngle: 90,
   autoRotateEnabled: true,
@@ -187,6 +191,7 @@ export function useViewerConfig() {
       maxDistance: config.cameraMaxDistance,
     },
     rotation: {
+      freeRotation: config.cameraFreeRotation,
       minPolarAngle: (config.rotationMinPolarAngle * Math.PI) / 180, // Converti in radianti
       maxPolarAngle: (config.rotationMaxPolarAngle * Math.PI) / 180,
     },

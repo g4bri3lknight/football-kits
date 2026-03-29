@@ -3,18 +3,68 @@
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, ContactShadows, Environment } from '@react-three/drei';
 import { EffectComposer, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Shirt, Sparkles, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react';
+import { Shirt, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
 import { FramerDialog, DialogPrimitive } from '@/components/ui/framer-dialog';
 import { staggerContainer, staggerItem } from '@/components/ui/animated-dialog';
 import { motion } from 'framer-motion';
-import { useViewerConfig, defaultViewer3DConfig } from '@/hooks/useViewer3DConfig';
+import { useViewerConfig } from '@/hooks/useViewer3DConfig';
 
 // Fallback config per quando il context non è disponibile
-const FALLBACK_CONFIG = KIT_VIEWER_CONFIG;
+const FALLBACK_CONFIG: ConvertedConfig = {
+  camera: {
+    initialDistance: KIT_VIEWER_CONFIG.camera.initialDistance,
+    fov: KIT_VIEWER_CONFIG.camera.fov,
+    minDistance: KIT_VIEWER_CONFIG.camera.minDistance,
+    maxDistance: KIT_VIEWER_CONFIG.camera.maxDistance,
+  },
+  rotation: {
+    freeRotation: false,
+    minPolarAngle: KIT_VIEWER_CONFIG.rotation.minPolarAngle,
+    maxPolarAngle: KIT_VIEWER_CONFIG.rotation.maxPolarAngle,
+  },
+  autoRotate: KIT_VIEWER_CONFIG.autoRotate as ConvertedConfig['autoRotate'],
+  controls: KIT_VIEWER_CONFIG.controls as ConvertedConfig['controls'],
+  model: KIT_VIEWER_CONFIG.model as ConvertedConfig['model'],
+  lighting: {
+    ambientIntensity: KIT_VIEWER_CONFIG.lighting.ambientIntensity,
+    mainLight: {
+      position: KIT_VIEWER_CONFIG.lighting.mainLight.position as [number, number, number],
+      intensity: KIT_VIEWER_CONFIG.lighting.mainLight.intensity,
+    },
+    secondaryLight: {
+      position: KIT_VIEWER_CONFIG.lighting.secondaryLight.position as [number, number, number],
+      intensity: KIT_VIEWER_CONFIG.lighting.secondaryLight.intensity,
+    },
+    fillLights: KIT_VIEWER_CONFIG.lighting.fillLights.map(l => ({
+      position: l.position as [number, number, number],
+      intensity: l.intensity,
+    })),
+  },
+  shadows: {
+    enabled: true,
+    position: KIT_VIEWER_CONFIG.shadows.position as [number, number, number],
+    opacity: KIT_VIEWER_CONFIG.shadows.opacity,
+    scale: KIT_VIEWER_CONFIG.shadows.scale,
+    blur: KIT_VIEWER_CONFIG.shadows.blur,
+    far: KIT_VIEWER_CONFIG.shadows.far,
+    resolution: KIT_VIEWER_CONFIG.shadows.resolution,
+  },
+  effects: {
+    enabled: true,
+    envMapIntensity: 1.5,
+    roughness: 0.4,
+    metalness: 0.1,
+    toneMappingWhitePoint: 4.0,
+    toneMappingMiddleGrey: 0.6,
+    vignetteOffset: 0.3,
+    vignetteDarkness: 0.5,
+  },
+  backgroundColor: '#1a1a1a',
+};
 
 // Tipo per la configurazione convertita
 interface ConvertedConfig {
@@ -25,6 +75,7 @@ interface ConvertedConfig {
     maxDistance: number;
   };
   rotation: {
+    freeRotation: boolean;
     minPolarAngle: number;
     maxPolarAngle: number;
   };
@@ -107,6 +158,20 @@ function Model({
   const { scene } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
 
+  // Salva i valori originali dei materiali per poterli ripristinare
+  const originalMaterialsRef = useRef<Map<number, {
+    envMapIntensity: number;
+    roughness: number;
+    metalness: number;
+    color: THREE.Color;
+  }>>(new Map());
+
+  // Contatore per ID univoci per materiali senza .id
+  const materialIdCounter = useRef(0);
+
+  // Store the scene URL to track changes
+  const prevSceneUrlRef = useRef<string>('');
+
   useEffect(() => {
     if (!groupRef.current) return;
 
@@ -124,41 +189,78 @@ function Model({
     );
   }, [scene, targetSize]);
 
-  // Material Enhancement - migliora i materiali del modello (solo se effetti attivi)
+  // Reset original materials cache when scene changes
   useEffect(() => {
-    if (!effectsEnabled) return;
+    if (url !== prevSceneUrlRef.current) {
+      prevSceneUrlRef.current = url;
+      originalMaterialsRef.current.clear();
+      materialIdCounter.current = 0;
+    }
+  }, [url]);
 
-    scene.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const material = child.material as THREE.MeshStandardMaterial;
+  // Material Enhancement - applica e ripristina i materiali in base agli effetti
+  useEffect(() => {
+    if (effectsEnabled) {
+      // Applica gli effetti ai materiali — sovrascrive sempre i valori
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          const material = child.material as THREE.MeshStandardMaterial;
 
-        if (material && material.isMeshStandardMaterial) {
-          // Migliora la risposta all'ambiente HDR
-          material.envMapIntensity = envMapIntensity;
+          if (material && material.isMeshStandardMaterial) {
+            const materialId = (material as any).id ?? materialIdCounter.current++;
 
-          // Imposta roughness se non definita (materiali semi-lucidi)
-          if (material.roughness === undefined || material.roughness === 1) {
+            // Salva i valori originali solo la prima volta
+            if (!originalMaterialsRef.current.has(materialId)) {
+              originalMaterialsRef.current.set(materialId, {
+                envMapIntensity: material.envMapIntensity,
+                roughness: material.roughness ?? 0.5,
+                metalness: material.metalness ?? 0,
+                color: material.color ? material.color.clone() : new THREE.Color(),
+              });
+            }
+
+            // Applica sempre envMapIntensity (serve per riflettere l'ambiente HDR)
+            material.envMapIntensity = envMapIntensity;
+
+            // Applica sempre roughness e metalness dai controlli
             material.roughness = roughness;
-          }
-
-          // Imposta metalness per materiali che sembrano metallici
-          if (material.metalness === undefined) {
             material.metalness = metalness;
+
+            // Migliora il contrasto dei colori
+            if (material.color) {
+              material.color.convertSRGBToLinear();
+            }
+
+            // Abilita tonemapping sui materiali
+            material.toneMapped = true;
+
+            // Forza l'aggiornamento
+            material.needsUpdate = true;
           }
-
-          // Migliora il contrasto dei colori
-          if (material.color) {
-            material.color.convertSRGBToLinear();
-          }
-
-          // Abilita tonemapping sui materiali
-          material.toneMapped = true;
-
-          // Forza l'aggiornamento
-          material.needsUpdate = true;
         }
-      }
-    });
+      });
+    } else {
+      // Ripristina i valori originali dei materiali
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          const material = child.material as THREE.MeshStandardMaterial;
+
+          if (material && material.isMeshStandardMaterial) {
+            const materialId = (material as any).id ?? 0;
+            const original = originalMaterialsRef.current.get(materialId);
+            if (original) {
+              material.envMapIntensity = original.envMapIntensity;
+              material.roughness = original.roughness;
+              material.metalness = original.metalness;
+              if (material.color && original.color) {
+                material.color.copy(original.color);
+              }
+              material.needsUpdate = true;
+            }
+          }
+        }
+      });
+    }
   }, [scene, effectsEnabled, envMapIntensity, roughness, metalness]);
 
   return (
@@ -192,22 +294,60 @@ function CameraController({
   // Pan personalizzato se uno degli assi è disabilitato
   const useCustomPan = !config.controls.enablePanHorizontal || !config.controls.enablePanVertical;
 
+  // Inizializza camera e controlli — si attiva al mount, al reset (double-click)
+  // e quando cambiano distanza/fov dal pannello admin.
+  // NOTA: NON usiamo controlsRef.current.reset() perché ripristinerebbe
+  // la posizione salvata al mount ignorando il nuovo config.camera.initialDistance.
   useEffect(() => {
-    camera.position.set(0, 0, config.camera.initialDistance);
-    camera.lookAt(0, 0, 0);
-    camera.updateProjectionMatrix();
+    const perspCamera = camera as THREE.PerspectiveCamera;
+    perspCamera.position.set(0, 0, config.camera.initialDistance);
+    perspCamera.fov = config.camera.fov;
+    perspCamera.lookAt(0, 0, 0);
+    perspCamera.updateProjectionMatrix();
     if (controlsRef.current) {
-      controlsRef.current.reset();
-      initialTarget.current.copy(controlsRef.current.target);
+      // Sincronizza OrbitControls sulla nuova posizione della camera
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+      initialTarget.current.set(0, 0, 0);
+      panOffset.current.set(0, 0);
     }
-  }, [camera, resetKey, config.camera.initialDistance]);
+  }, [camera, resetKey, config.camera.initialDistance, config.camera.fov]);
 
-  // Aggiorna autoRotate dinamicamente
+  // Aggiorna autoRotate e autoRotateSpeed dinamicamente
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.autoRotate = autoRotate;
+      controlsRef.current.autoRotateSpeed = config.autoRotate.speed;
     }
-  }, [autoRotate]);
+  }, [autoRotate, config.autoRotate.speed]);
+
+  // Aggiorna dinamicamente tutti i limiti di OrbitControls (zoom, rotazione, damping)
+  useEffect(() => {
+    if (!controlsRef.current) return;
+    const controls = controlsRef.current;
+
+    controls.minDistance = config.camera.minDistance;
+    controls.maxDistance = config.camera.maxDistance;
+    controls.minPolarAngle = config.rotation.freeRotation ? 0 : config.rotation.minPolarAngle;
+    controls.maxPolarAngle = config.rotation.freeRotation ? Math.PI : config.rotation.maxPolarAngle;
+    controls.rotateSpeed = config.controls.rotateSpeed;
+    controls.zoomSpeed = config.controls.zoomSpeed;
+    controls.panSpeed = config.controls.panSpeed;
+    controls.enableDamping = config.controls.enableDamping;
+    controls.dampingFactor = config.controls.dampingFactor;
+    controls.update();
+  }, [
+    config.camera.minDistance,
+    config.camera.maxDistance,
+    config.rotation.freeRotation,
+    config.rotation.minPolarAngle,
+    config.rotation.maxPolarAngle,
+    config.controls.rotateSpeed,
+    config.controls.zoomSpeed,
+    config.controls.panSpeed,
+    config.controls.enableDamping,
+    config.controls.dampingFactor,
+  ]);
 
   // Gestisci eventi drag di OrbitControls (rotazione e zoom)
   useEffect(() => {
@@ -300,7 +440,7 @@ function CameraController({
       canvas.removeEventListener('mouseleave', handleMouseLeave);
       canvas.removeEventListener('contextmenu', handleContextMenu);
     };
-  }, [gl, useCustomPan, onPauseAutoRotate, onResumeAutoRotate, config.controls]);
+  }, [gl, useCustomPan, onPauseAutoRotate, onResumeAutoRotate, config.controls.panSpeed, config.controls.enablePanHorizontal, config.controls.enablePanVertical]);
 
   useFrame(() => {
     if (controlsRef.current) {
@@ -312,10 +452,6 @@ function CameraController({
     <OrbitControls
       ref={controlsRef}
       enablePan={useCustomPan ? false : config.controls.enablePan}
-      minDistance={config.camera.minDistance}
-      maxDistance={config.camera.maxDistance}
-      minPolarAngle={config.rotation.minPolarAngle}
-      maxPolarAngle={config.rotation.maxPolarAngle}
       rotateSpeed={config.controls.rotateSpeed}
       zoomSpeed={config.controls.zoomSpeed}
       panSpeed={config.controls.panSpeed}
@@ -324,6 +460,51 @@ function CameraController({
       autoRotate={autoRotate}
       autoRotateSpeed={config.autoRotate.speed}
     />
+  );
+}
+
+// Componente controller luci — aggiorna imperativamente le proprietà delle luci
+// perché R3F non sempre aggiorna reattivamente i props dei componenti light.
+function LightController({ config }: { config: ConvertedConfig }) {
+  const ambientRef = useRef<THREE.AmbientLight>(null!);
+  const mainLightRef = useRef<THREE.DirectionalLight>(null!);
+  const secondaryLightRef = useRef<THREE.DirectionalLight>(null!);
+
+  useEffect(() => {
+    if (ambientRef.current) {
+      ambientRef.current.intensity = config.lighting.ambientIntensity;
+    }
+  }, [config.lighting.ambientIntensity]);
+
+  useEffect(() => {
+    if (mainLightRef.current) {
+      mainLightRef.current.position.set(...config.lighting.mainLight.position);
+      mainLightRef.current.intensity = config.lighting.mainLight.intensity;
+    }
+  }, [config.lighting.mainLight.position, config.lighting.mainLight.intensity]);
+
+  useEffect(() => {
+    if (secondaryLightRef.current) {
+      secondaryLightRef.current.position.set(...config.lighting.secondaryLight.position);
+      secondaryLightRef.current.intensity = config.lighting.secondaryLight.intensity;
+    }
+  }, [config.lighting.secondaryLight.position, config.lighting.secondaryLight.intensity]);
+
+  return (
+    <>
+      <ambientLight ref={ambientRef} intensity={config.lighting.ambientIntensity} />
+      <directionalLight
+        ref={mainLightRef}
+        position={config.lighting.mainLight.position}
+        intensity={config.lighting.mainLight.intensity}
+        castShadow
+      />
+      <directionalLight
+        ref={secondaryLightRef}
+        position={config.lighting.secondaryLight.position}
+        intensity={config.lighting.secondaryLight.intensity}
+      />
+    </>
   );
 }
 
@@ -345,21 +526,41 @@ function Scene({
 }) {
   const effectsEnabled = config.effects.enabled;
 
+  // Ref per accedere all'EffectComposer e aggiornare gli effetti senza
+  // usare refs su ToneMapping/Vignette (che hanno reference circolari).
+  const composerRef = useRef<any>(null);
+
+  // Aggiorna ToneMapping e Vignette uniforms imperativamente traversando
+  // gli effetti dentro l'EffectComposer (evita JSON.stringify circolare)
+  useEffect(() => {
+    if (!composerRef.current || !effectsEnabled) return;
+    try {
+      const effects = composerRef.current.effects || [];
+      for (const effect of effects) {
+        // ToneMapping
+        if (effect.uniforms?.has?.('whitePoint')) {
+          effect.uniforms.get('whitePoint').value = config.effects.toneMappingWhitePoint;
+          effect.uniforms.get('middleGrey').value = config.effects.toneMappingMiddleGrey;
+        }
+        // Vignette
+        if (effect.uniforms?.has?.('offset')) {
+          effect.uniforms.get('offset').value = config.effects.vignetteOffset;
+          effect.uniforms.get('darkness').value = config.effects.vignetteDarkness;
+        }
+      }
+    } catch {
+      // gli effetti potrebbero non essere pronti
+    }
+  }, [effectsEnabled, config.effects.toneMappingWhitePoint, config.effects.toneMappingMiddleGrey, config.effects.vignetteOffset, config.effects.vignetteDarkness]);
+
   return (
     <>
       {/* HDR Environment per riflessi realistici - solo se effetti attivi */}
       {effectsEnabled && <Environment preset="studio" background={false} />}
 
-      <ambientLight intensity={config.lighting.ambientIntensity} />
-      <directionalLight
-        position={config.lighting.mainLight.position}
-        intensity={config.lighting.mainLight.intensity}
-        castShadow
-      />
-      <directionalLight
-        position={config.lighting.secondaryLight.position}
-        intensity={config.lighting.secondaryLight.intensity}
-      />
+      {/* Luci con aggiornamento imperativo via LightController */}
+      <LightController config={config} />
+
       {config.lighting.fillLights.map((light, i) => (
         <pointLight key={i} position={light.position} intensity={light.intensity} />
       ))}
@@ -377,9 +578,10 @@ function Scene({
         </Suspense>
       </group>
 
-      {/* Contact Shadows - solo se effetti e ombre attivi */}
-      {effectsEnabled && config.shadows.enabled && (
+      {/* Contact Shadows - indipendente dagli effetti */}
+      {config.shadows.enabled && (
         <ContactShadows
+          key={`${config.shadows.opacity}-${config.shadows.scale}-${config.shadows.blur}-${config.shadows.far}-${config.shadows.resolution}`}
           position={config.shadows.position}
           opacity={config.shadows.opacity}
           scale={config.shadows.scale}
@@ -397,9 +599,9 @@ function Scene({
         config={config}
       />
 
-      {/* Post-processing effects - solo se abilitati */}
+      {/* Post-processing effects - solo se effetti abilitati (ombre sono indipendenti) */}
       {effectsEnabled && (
-        <EffectComposer multisampling={0}>
+        <EffectComposer ref={composerRef} multisampling={0}>
           {/* Anti-aliasing */}
           <SMAA />
 
@@ -448,7 +650,6 @@ export default function KitViewer3D({
   const [isDragging, setIsDragging] = useState(false);
   const [autoRotateEnabled, setAutoRotateEnabled] = useState<boolean>(config.autoRotate.enabled);
   const [autoRotate, setAutoRotate] = useState<boolean>(config.autoRotate.enabled);
-  const [effectsEnabled, setEffectsEnabled] = useState(config.effects.enabled);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [modelState, setModelState] = useState<ModelState>('checking');
@@ -478,7 +679,7 @@ export default function KitViewer3D({
       });
   }, [modelUrl]);
 
-  const pauseAutoRotate = () => {
+  const pauseAutoRotate = useCallback(() => {
     isInteractingRef.current = true;
     setIsDragging(true);
     setAutoRotate(false);
@@ -486,9 +687,9 @@ export default function KitViewer3D({
       clearTimeout(resumeTimeoutRef.current);
       resumeTimeoutRef.current = null;
     }
-  };
+  }, []);
 
-  const resumeAutoRotate = () => {
+  const resumeAutoRotate = useCallback(() => {
     isInteractingRef.current = false;
     setIsDragging(false);
     if (resumeTimeoutRef.current) {
@@ -501,7 +702,7 @@ export default function KitViewer3D({
       }
       resumeTimeoutRef.current = null;
     }, config.autoRotate.resumeDelay);
-  };
+  }, [autoRotateEnabled, config.autoRotate.resumeDelay]);
 
   const toggleAutoRotate = () => {
     const newValue = !autoRotateEnabled;
@@ -547,11 +748,6 @@ export default function KitViewer3D({
     }
   }, [modelState]);
 
-  // Aggiorna effectsEnabled quando la config cambia
-  useEffect(() => {
-    setEffectsEnabled(config.effects.enabled);
-  }, [config.effects.enabled]);
-
   // Aggiorna autoRotateEnabled quando la config cambia
   useEffect(() => {
     setAutoRotateEnabled(config.autoRotate.enabled);
@@ -596,9 +792,12 @@ export default function KitViewer3D({
   return (
     <div
       ref={containerRef}
-      className={`w-full h-full relative ${className} ${isFullscreen ? 'bg-black' : ''}`}
+      className={`w-full h-full relative ${className}`}
+      style={{
+        backgroundColor: isFullscreen ? config.backgroundColor : undefined,
+        cursor: isDragging ? 'none' : 'grab',
+      }}
       onDoubleClick={() => setResetKey(k => k + 1)}
-      style={{ cursor: isDragging ? 'none' : 'grab' }}
     >
       <Canvas
         key={modelUrl}
@@ -629,17 +828,6 @@ export default function KitViewer3D({
         >
           <RotateCw
             className={`w-5 h-5 transition-colors ${autoRotateEnabled ? 'text-green-400' : 'text-white/50'}`}
-          />
-        </button>
-
-        {/* Toggle Effects Button */}
-        <button
-          onClick={() => setEffectsEnabled(!effectsEnabled)}
-          className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
-          title={effectsEnabled ? 'Disattiva effetti grafici' : 'Attiva effetti grafici'}
-        >
-          <Sparkles
-            className={`w-5 h-5 transition-colors ${effectsEnabled ? 'text-yellow-400' : 'text-white/50'}`}
           />
         </button>
 
@@ -733,11 +921,6 @@ export default function KitViewer3D({
           <motion.div variants={staggerItem} className="flex items-center gap-2.5 py-1">
             <RotateCw className="w-5 h-5 text-green-500 shrink-0" />
             <span className="text-sm">Attiva/disattiva rotazione automatica</span>
-          </motion.div>
-
-          <motion.div variants={staggerItem} className="flex items-center gap-2.5 py-1">
-            <Sparkles className="w-5 h-5 text-yellow-500 shrink-0" />
-            <span className="text-sm">Attiva/disattiva effetti grafici</span>
           </motion.div>
 
           <motion.div variants={staggerItem} className="flex items-center gap-2.5 py-1">

@@ -192,6 +192,7 @@ model Viewer3DConfig {
   cameraMaxDistance     Float   @default(6)
 
   // === ROTAZIONE (angoli in gradi, convertiti in radianti) ===
+  cameraFreeRotation     Boolean @default(false) // Rotazione libera a 360°
   rotationMinPolarAngle Float   @default(90)  // 90 gradi = PI/2 radianti
   rotationMaxPolarAngle Float   @default(90)
 
@@ -246,5 +247,5 @@ model Viewer3DConfig {
   effectsVignetteDarkness Float @default(0.5)
 
   // === BACKGROUND ===
-  backgroundColor String @default("#1a1a1a")  // Colore esadecimale
+  backgroundColor String @default("#1a1a1a")  // Colore esadecimale (usato anche in fullscreen)
 }
