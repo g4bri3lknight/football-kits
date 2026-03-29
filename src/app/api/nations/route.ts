@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { randomUUID } from 'crypto';
 
 // Funzione helper per generare un ID
 const generateId = () => {

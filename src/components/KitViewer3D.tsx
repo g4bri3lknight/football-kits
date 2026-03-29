@@ -2,7 +2,7 @@
 
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, ContactShadows, Environment } from '@react-three/drei';
-import { EffectComposer, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, SMAA, ToneMapping, Vignette, Bloom, N8AO, BrightnessContrast, HueSaturation, ChromaticAberration, DepthOfField, TiltShift2, Noise, DotScreen, Pixelation, Scanline, Glitch } from '@react-three/postprocessing';
 import { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -63,6 +63,36 @@ const FALLBACK_CONFIG: ConvertedConfig = {
     vignetteOffset: 0.3,
     vignetteDarkness: 0.5,
   },
+  bloom: {
+    enabled: false,
+    intensity: 0.5,
+    luminanceThreshold: 0.9,
+    luminanceSmoothing: 0.025,
+  },
+  ao: {
+    enabled: false,
+    intensity: 2.0,
+    distance: 0.2,
+    falloff: 0.01,
+  },
+  brightnessContrast: {
+    enabled: false,
+    brightness: 0,
+    contrast: 0,
+  },
+  hueSaturation: {
+    enabled: false,
+    hue: 0,
+    saturation: 0,
+  },
+  chromaticAberration: { enabled: false, offset: 0.002 },
+  depthOfField: { enabled: false, focusDistance: 0.01, focalLength: 0.02, bokehScale: 3 },
+  tiltShift: { enabled: false, blur: 0.05, start: 0.49, end: 0.5 },
+  noise: { enabled: false, opacity: 0.05 },
+  dotScreen: { enabled: false, angle: 1.39, scale: 1 },
+  pixelation: { enabled: false, granularity: 5 },
+  scanline: { enabled: false, density: 1.5, opacity: 0.1 },
+  glitch: { enabled: false, delay: 3, duration: 0.6, strength: 0.3 },
   backgroundColor: '#1a1a1a',
 };
 
@@ -128,6 +158,18 @@ interface ConvertedConfig {
     vignetteOffset: number;
     vignetteDarkness: number;
   };
+  bloom: { enabled: boolean; intensity: number; luminanceThreshold: number; luminanceSmoothing: number };
+  ao: { enabled: boolean; intensity: number; distance: number; falloff: number };
+  brightnessContrast: { enabled: boolean; brightness: number; contrast: number };
+  hueSaturation: { enabled: boolean; hue: number; saturation: number };
+  chromaticAberration: { enabled: boolean; offset: number };
+  depthOfField: { enabled: boolean; focusDistance: number; focalLength: number; bokehScale: number };
+  tiltShift: { enabled: boolean; blur: number; start: number; end: number };
+  noise: { enabled: boolean; opacity: number };
+  dotScreen: { enabled: boolean; angle: number; scale: number };
+  pixelation: { enabled: boolean; granularity: number };
+  scanline: { enabled: boolean; density: number; opacity: number };
+  glitch: { enabled: boolean; delay: number; duration: number; strength: number };
   backgroundColor: string;
 }
 
@@ -547,11 +589,36 @@ function Scene({
           effect.uniforms.get('offset').value = config.effects.vignetteOffset;
           effect.uniforms.get('darkness').value = config.effects.vignetteDarkness;
         }
+        // BrightnessContrast
+        if (effect.uniforms?.has?.('brightness')) {
+          effect.uniforms.get('brightness').value = config.brightnessContrast.brightness;
+          effect.uniforms.get('contrast').value = config.brightnessContrast.contrast;
+        }
+        // HueSaturation
+        if (effect.uniforms?.has?.('hue')) {
+          effect.uniforms.get('hue').value = config.hueSaturation.hue;
+          effect.uniforms.get('saturation').value = config.hueSaturation.saturation;
+        }
+        // ChromaticAberration
+        if (effect.uniforms?.has?.('offset') && effect.uniforms.get('offset').value?.isVector2) {
+          effect.uniforms.get('offset').value.set(config.chromaticAberration.offset, config.chromaticAberration.offset);
+        }
       }
     } catch {
       // gli effetti potrebbero non essere pronti
     }
-  }, [effectsEnabled, config.effects.toneMappingWhitePoint, config.effects.toneMappingMiddleGrey, config.effects.vignetteOffset, config.effects.vignetteDarkness]);
+  }, [
+    effectsEnabled,
+    config.effects.toneMappingWhitePoint,
+    config.effects.toneMappingMiddleGrey,
+    config.effects.vignetteOffset,
+    config.effects.vignetteDarkness,
+    config.brightnessContrast.brightness,
+    config.brightnessContrast.contrast,
+    config.hueSaturation.hue,
+    config.hueSaturation.saturation,
+    config.chromaticAberration.offset,
+  ]);
 
   return (
     <>
@@ -602,24 +669,30 @@ function Scene({
       {/* Post-processing effects - solo se effetti abilitati (ombre sono indipendenti) */}
       {effectsEnabled && (
         <EffectComposer ref={composerRef} multisampling={0}>
-          {/* Anti-aliasing */}
-          <SMAA />
-
-          {/* Tone Mapping - colori cinematografici */}
-          <ToneMapping
-            mode={THREE.ACESFilmicToneMapping}
-            resolution={256}
-            whitePoint={config.effects.toneMappingWhitePoint}
-            middleGrey={config.effects.toneMappingMiddleGrey}
-            minLuminance={0.01}
-            averageLuminance={1.0}
-          />
-
-          {/* Vignette - scurisce leggermente i bordi */}
-          <Vignette
-            offset={config.effects.vignetteOffset}
-            darkness={config.effects.vignetteDarkness}
-          />
+          {/* Tutti gli effetti in un unico array ReactElement per compatibilità con EffectComposer children */}
+          {(() => {
+            const fx: React.ReactElement[] = [];
+            // Anti-aliasing sempre attivo
+            fx.push(<SMAA key="smaa" />);
+            // Tone Mapping sempre attivo
+            fx.push(<ToneMapping key="tm" mode={THREE.ACESFilmicToneMapping} resolution={256} whitePoint={config.effects.toneMappingWhitePoint} middleGrey={config.effects.toneMappingMiddleGrey} minLuminance={0.01} averageLuminance={1.0} />);
+            // Vignette sempre attiva
+            fx.push(<Vignette key="vig" offset={config.effects.vignetteOffset} darkness={config.effects.vignetteDarkness} />);
+            // Effetti opzionali
+            if (config.bloom.enabled) fx.push(<Bloom key="bloom" intensity={config.bloom.intensity} luminanceThreshold={config.bloom.luminanceThreshold} luminanceSmoothing={config.bloom.luminanceSmoothing} mipmapBlur />);
+            if (config.ao.enabled) fx.push(<N8AO key="ao" intensity={config.ao.intensity} aoRadius={config.ao.distance} distanceFalloff={config.ao.falloff} />);
+            if (config.brightnessContrast.enabled) fx.push(<BrightnessContrast key="bc" brightness={config.brightnessContrast.brightness} contrast={config.brightnessContrast.contrast} />);
+            if (config.hueSaturation.enabled) fx.push(<HueSaturation key="hs" hue={config.hueSaturation.hue} saturation={config.hueSaturation.saturation} />);
+            if (config.chromaticAberration.enabled) fx.push(<ChromaticAberration key="ca" offset={new THREE.Vector2(config.chromaticAberration.offset, config.chromaticAberration.offset)} radialModulation={false} modulationOffset={0} />);
+            if (config.depthOfField.enabled) fx.push(<DepthOfField key="dof" focusDistance={config.depthOfField.focusDistance} focalLength={config.depthOfField.focalLength} bokehScale={config.depthOfField.bokehScale} />);
+            if (config.tiltShift.enabled) fx.push(<TiltShift2 key="ts" blur={config.tiltShift.blur} start={[config.tiltShift.start, config.tiltShift.start]} end={[config.tiltShift.end, config.tiltShift.end]} />);
+            if (config.noise.enabled) fx.push(<Noise key="noise" opacity={config.noise.opacity} />);
+            if (config.dotScreen.enabled) fx.push(<DotScreen key="dot" angle={config.dotScreen.angle} scale={config.dotScreen.scale} />);
+            if (config.pixelation.enabled) fx.push(<Pixelation key="pixel" granularity={config.pixelation.granularity} />);
+            if (config.scanline.enabled) fx.push(<Scanline key="scan" density={config.scanline.density} opacity={config.scanline.opacity} />);
+            if (config.glitch.enabled) fx.push(<Glitch key="glitch" delay={new THREE.Vector2(config.glitch.delay, config.glitch.delay)} duration={new THREE.Vector2(config.glitch.duration, config.glitch.duration)} strength={new THREE.Vector2(config.glitch.strength, config.glitch.strength)} />);
+            return fx;
+          })()}
         </EffectComposer>
       )}
     </>

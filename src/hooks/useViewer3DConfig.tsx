@@ -70,6 +70,61 @@ export interface Viewer3DConfigData {
   effectsVignetteOffset: number;
   effectsVignetteDarkness: number;
 
+  // Bloom
+  bloomEnabled: boolean;
+  bloomIntensity: number;
+  bloomLuminanceThreshold: number;
+  bloomLuminanceSmoothing: number;
+
+  // Ambient Occlusion (N8AO)
+  aoEnabled: boolean;
+  aoIntensity: number;
+  aoDistance: number;
+  aoFalloff: number;
+
+  // Brightness / Contrast
+  brightnessContrastEnabled: boolean;
+  brightness: number;
+  contrast: number;
+
+  // Hue / Saturation
+  hueSaturationEnabled: boolean;
+  hue: number;
+  saturation: number;
+
+  // Chromatic Aberration
+  chromaticAberrationEnabled: boolean;
+  chromaticAberrationOffset: number;
+  // Depth of Field
+  depthOfFieldEnabled: boolean;
+  depthOfFieldFocusDistance: number;
+  depthOfFieldFocalLength: number;
+  depthOfFieldBokehScale: number;
+  // Tilt Shift
+  tiltShiftEnabled: boolean;
+  tiltShiftBlur: number;
+  tiltShiftStart: number;
+  tiltShiftEnd: number;
+  // Noise
+  noiseEnabled: boolean;
+  noiseOpacity: number;
+  // Dot Screen
+  dotScreenEnabled: boolean;
+  dotScreenAngle: number;
+  dotScreenScale: number;
+  // Pixelation
+  pixelationEnabled: boolean;
+  pixelationGranularity: number;
+  // Scanline
+  scanlineEnabled: boolean;
+  scanlineDensity: number;
+  scanlineOpacity: number;
+  // Glitch
+  glitchEnabled: boolean;
+  glitchDelay: number;
+  glitchDuration: number;
+  glitchStrength: number;
+
   // Background
   backgroundColor: string;
 }
@@ -123,6 +178,44 @@ export const defaultViewer3DConfig: Viewer3DConfigData = {
   effectsToneMappingMiddleGrey: 0.6,
   effectsVignetteOffset: 0.3,
   effectsVignetteDarkness: 0.5,
+  bloomEnabled: false,
+  bloomIntensity: 0.5,
+  bloomLuminanceThreshold: 0.9,
+  bloomLuminanceSmoothing: 0.025,
+  aoEnabled: false,
+  aoIntensity: 2.0,
+  aoDistance: 0.2,
+  aoFalloff: 0.01,
+  brightnessContrastEnabled: false,
+  brightness: 0,
+  contrast: 0,
+  hueSaturationEnabled: false,
+  hue: 0,
+  saturation: 0,
+  chromaticAberrationEnabled: false,
+  chromaticAberrationOffset: 0.002,
+  depthOfFieldEnabled: false,
+  depthOfFieldFocusDistance: 0.01,
+  depthOfFieldFocalLength: 0.02,
+  depthOfFieldBokehScale: 3,
+  tiltShiftEnabled: false,
+  tiltShiftBlur: 0.05,
+  tiltShiftStart: 0.49,
+  tiltShiftEnd: 0.5,
+  noiseEnabled: false,
+  noiseOpacity: 0.05,
+  dotScreenEnabled: false,
+  dotScreenAngle: 1.39,
+  dotScreenScale: 1,
+  pixelationEnabled: false,
+  pixelationGranularity: 5,
+  scanlineEnabled: false,
+  scanlineDensity: 1.5,
+  scanlineOpacity: 0.1,
+  glitchEnabled: false,
+  glitchDelay: 3,
+  glitchDuration: 0.6,
+  glitchStrength: 0.3,
   backgroundColor: '#1a1a1a',
 };
 
@@ -243,6 +336,68 @@ export function useViewerConfig() {
       toneMappingMiddleGrey: config.effectsToneMappingMiddleGrey,
       vignetteOffset: config.effectsVignetteOffset,
       vignetteDarkness: config.effectsVignetteDarkness,
+    },
+    bloom: {
+      enabled: config.bloomEnabled,
+      intensity: config.bloomIntensity,
+      luminanceThreshold: config.bloomLuminanceThreshold,
+      luminanceSmoothing: config.bloomLuminanceSmoothing,
+    },
+    ao: {
+      enabled: config.aoEnabled,
+      intensity: config.aoIntensity,
+      distance: config.aoDistance,
+      falloff: config.aoFalloff,
+    },
+    brightnessContrast: {
+      enabled: config.brightnessContrastEnabled,
+      brightness: config.brightness,
+      contrast: config.contrast,
+    },
+    hueSaturation: {
+      enabled: config.hueSaturationEnabled,
+      hue: config.hue,
+      saturation: config.saturation,
+    },
+    chromaticAberration: {
+      enabled: config.chromaticAberrationEnabled,
+      offset: config.chromaticAberrationOffset,
+    },
+    depthOfField: {
+      enabled: config.depthOfFieldEnabled,
+      focusDistance: config.depthOfFieldFocusDistance,
+      focalLength: config.depthOfFieldFocalLength,
+      bokehScale: config.depthOfFieldBokehScale,
+    },
+    tiltShift: {
+      enabled: config.tiltShiftEnabled,
+      blur: config.tiltShiftBlur,
+      start: config.tiltShiftStart,
+      end: config.tiltShiftEnd,
+    },
+    noise: {
+      enabled: config.noiseEnabled,
+      opacity: config.noiseOpacity,
+    },
+    dotScreen: {
+      enabled: config.dotScreenEnabled,
+      angle: config.dotScreenAngle,
+      scale: config.dotScreenScale,
+    },
+    pixelation: {
+      enabled: config.pixelationEnabled,
+      granularity: config.pixelationGranularity,
+    },
+    scanline: {
+      enabled: config.scanlineEnabled,
+      density: config.scanlineDensity,
+      opacity: config.scanlineOpacity,
+    },
+    glitch: {
+      enabled: config.glitchEnabled,
+      delay: config.glitchDelay,
+      duration: config.glitchDuration,
+      strength: config.glitchStrength,
     },
     backgroundColor: config.backgroundColor,
   };

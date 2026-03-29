@@ -30,6 +30,16 @@ import {
   Palette,
   Eye,
   Shirt,
+  Layers,
+  Sun,
+  Droplets,
+  Aperture,
+  MonitorSmartphone,
+  Film,
+  Grid3x3,
+  Box,
+  Tv,
+  Zap,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useViewerConfig } from '@/hooks/useViewer3DConfig';
@@ -86,6 +96,44 @@ interface Viewer3DConfig {
   effectsToneMappingMiddleGrey: number;
   effectsVignetteOffset: number;
   effectsVignetteDarkness: number;
+  bloomEnabled: boolean;
+  bloomIntensity: number;
+  bloomLuminanceThreshold: number;
+  bloomLuminanceSmoothing: number;
+  aoEnabled: boolean;
+  aoIntensity: number;
+  aoDistance: number;
+  aoFalloff: number;
+  brightnessContrastEnabled: boolean;
+  brightness: number;
+  contrast: number;
+  hueSaturationEnabled: boolean;
+  hue: number;
+  saturation: number;
+  chromaticAberrationEnabled: boolean;
+  chromaticAberrationOffset: number;
+  depthOfFieldEnabled: boolean;
+  depthOfFieldFocusDistance: number;
+  depthOfFieldFocalLength: number;
+  depthOfFieldBokehScale: number;
+  tiltShiftEnabled: boolean;
+  tiltShiftBlur: number;
+  tiltShiftStart: number;
+  tiltShiftEnd: number;
+  noiseEnabled: boolean;
+  noiseOpacity: number;
+  dotScreenEnabled: boolean;
+  dotScreenAngle: number;
+  dotScreenScale: number;
+  pixelationEnabled: boolean;
+  pixelationGranularity: number;
+  scanlineEnabled: boolean;
+  scanlineDensity: number;
+  scanlineOpacity: number;
+  glitchEnabled: boolean;
+  glitchDelay: number;
+  glitchDuration: number;
+  glitchStrength: number;
   backgroundColor: string;
 }
 
@@ -137,6 +185,44 @@ const defaultConfig: Viewer3DConfig = {
   effectsToneMappingMiddleGrey: 0.6,
   effectsVignetteOffset: 0.3,
   effectsVignetteDarkness: 0.5,
+  bloomEnabled: false,
+  bloomIntensity: 0.5,
+  bloomLuminanceThreshold: 0.9,
+  bloomLuminanceSmoothing: 0.025,
+  aoEnabled: false,
+  aoIntensity: 2.0,
+  aoDistance: 0.2,
+  aoFalloff: 0.01,
+  brightnessContrastEnabled: false,
+  brightness: 0,
+  contrast: 0,
+  hueSaturationEnabled: false,
+  hue: 0,
+  saturation: 0,
+  chromaticAberrationEnabled: false,
+  chromaticAberrationOffset: 0.002,
+  depthOfFieldEnabled: false,
+  depthOfFieldFocusDistance: 0.01,
+  depthOfFieldFocalLength: 0.02,
+  depthOfFieldBokehScale: 3,
+  tiltShiftEnabled: false,
+  tiltShiftBlur: 0.05,
+  tiltShiftStart: 0.49,
+  tiltShiftEnd: 0.5,
+  noiseEnabled: false,
+  noiseOpacity: 0.05,
+  dotScreenEnabled: false,
+  dotScreenAngle: 1.39,
+  dotScreenScale: 1,
+  pixelationEnabled: false,
+  pixelationGranularity: 5,
+  scanlineEnabled: false,
+  scanlineDensity: 1.5,
+  scanlineOpacity: 0.1,
+  glitchEnabled: false,
+  glitchDelay: 3,
+  glitchDuration: 0.6,
+  glitchStrength: 0.3,
   backgroundColor: '#1a1a1a',
 };
 
@@ -283,6 +369,18 @@ interface ConvertedConfig {
   lighting: { ambientIntensity: number; mainLight: { position: [number, number, number]; intensity: number }; secondaryLight: { position: [number, number, number]; intensity: number }; fillLights: { position: [number, number, number]; intensity: number }[] };
   shadows: { enabled: boolean; position: [number, number, number]; opacity: number; scale: number; blur: number; far: number; resolution: number };
   effects: { enabled: boolean; envMapIntensity: number; roughness: number; metalness: number; toneMappingWhitePoint: number; toneMappingMiddleGrey: number; vignetteOffset: number; vignetteDarkness: number };
+  bloom: { enabled: boolean; intensity: number; luminanceThreshold: number; luminanceSmoothing: number };
+  ao: { enabled: boolean; intensity: number; distance: number; falloff: number };
+  brightnessContrast: { enabled: boolean; brightness: number; contrast: number };
+  hueSaturation: { enabled: boolean; hue: number; saturation: number };
+  chromaticAberration: { enabled: boolean; offset: number };
+  depthOfField: { enabled: boolean; focusDistance: number; focalLength: number; bokehScale: number };
+  tiltShift: { enabled: boolean; blur: number; start: number; end: number };
+  noise: { enabled: boolean; opacity: number };
+  dotScreen: { enabled: boolean; angle: number; scale: number };
+  pixelation: { enabled: boolean; granularity: number };
+  scanline: { enabled: boolean; density: number; opacity: number };
+  glitch: { enabled: boolean; delay: number; duration: number; strength: number };
   backgroundColor: string;
 }
 
@@ -489,6 +587,68 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
         vignetteOffset: config.effectsVignetteOffset,
         vignetteDarkness: config.effectsVignetteDarkness,
       },
+      bloom: {
+        enabled: config.bloomEnabled,
+        intensity: config.bloomIntensity,
+        luminanceThreshold: config.bloomLuminanceThreshold,
+        luminanceSmoothing: config.bloomLuminanceSmoothing,
+      },
+      ao: {
+        enabled: config.aoEnabled,
+        intensity: config.aoIntensity,
+        distance: config.aoDistance,
+        falloff: config.aoFalloff,
+      },
+      brightnessContrast: {
+        enabled: config.brightnessContrastEnabled,
+        brightness: config.brightness,
+        contrast: config.contrast,
+      },
+      hueSaturation: {
+        enabled: config.hueSaturationEnabled,
+        hue: config.hue,
+        saturation: config.saturation,
+      },
+      chromaticAberration: {
+        enabled: config.chromaticAberrationEnabled,
+        offset: config.chromaticAberrationOffset,
+      },
+      depthOfField: {
+        enabled: config.depthOfFieldEnabled,
+        focusDistance: config.depthOfFieldFocusDistance,
+        focalLength: config.depthOfFieldFocalLength,
+        bokehScale: config.depthOfFieldBokehScale,
+      },
+      tiltShift: {
+        enabled: config.tiltShiftEnabled,
+        blur: config.tiltShiftBlur,
+        start: config.tiltShiftStart,
+        end: config.tiltShiftEnd,
+      },
+      noise: {
+        enabled: config.noiseEnabled,
+        opacity: config.noiseOpacity,
+      },
+      dotScreen: {
+        enabled: config.dotScreenEnabled,
+        angle: config.dotScreenAngle,
+        scale: config.dotScreenScale,
+      },
+      pixelation: {
+        enabled: config.pixelationEnabled,
+        granularity: config.pixelationGranularity,
+      },
+      scanline: {
+        enabled: config.scanlineEnabled,
+        density: config.scanlineDensity,
+        opacity: config.scanlineOpacity,
+      },
+      glitch: {
+        enabled: config.glitchEnabled,
+        delay: config.glitchDelay,
+        duration: config.glitchDuration,
+        strength: config.glitchStrength,
+      },
       backgroundColor: config.backgroundColor,
     }), [config]);
 
@@ -655,6 +815,140 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
                       <ConfigSlider label="Offset" value={config.effectsVignetteOffset} configKey="effectsVignetteOffset" onUpdate={updateConfig} min={0} max={1} step={0.05} />
                       <ConfigSlider label="Darkness" value={config.effectsVignetteDarkness} configKey="effectsVignetteDarkness" onUpdate={updateConfig} min={0} max={3} step={0.1} />
                     </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="bloom" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Sun className="w-4 h-4 text-yellow-400" /><span>Bloom</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.bloomEnabled} configKey="bloomEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Intensità" value={config.bloomIntensity} configKey="bloomIntensity" onUpdate={updateConfig} min={0} max={3} step={0.05} />
+                    <ConfigSlider label="Soglia" value={config.bloomLuminanceThreshold} configKey="bloomLuminanceThreshold" onUpdate={updateConfig} min={0} max={2} step={0.05} />
+                    <ConfigSlider label="Smoothing" value={config.bloomLuminanceSmoothing} configKey="bloomLuminanceSmoothing" onUpdate={updateConfig} min={0} max={0.5} step={0.005} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="ao" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Layers className="w-4 h-4 text-teal-400" /><span>Ambient Occlusion</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.aoEnabled} configKey="aoEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Intensità" value={config.aoIntensity} configKey="aoIntensity" onUpdate={updateConfig} min={0} max={5} step={0.1} />
+                    <ConfigSlider label="Distanza" value={config.aoDistance} configKey="aoDistance" onUpdate={updateConfig} min={0} max={1} step={0.01} />
+                    <ConfigSlider label="Falloff" value={config.aoFalloff} configKey="aoFalloff" onUpdate={updateConfig} min={0} max={0.1} step={0.001} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="brightnessContrast" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Droplets className="w-4 h-4 text-orange-400" /><span>Luminosità / Contrasto</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.brightnessContrastEnabled} configKey="brightnessContrastEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Luminosità" value={config.brightness} configKey="brightness" onUpdate={updateConfig} min={-1} max={1} step={0.05} />
+                    <ConfigSlider label="Contrasto" value={config.contrast} configKey="contrast" onUpdate={updateConfig} min={-1} max={1} step={0.05} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="hueSaturation" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Palette className="w-4 h-4 text-rose-400" /><span>Tonalità / Saturazione</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.hueSaturationEnabled} configKey="hueSaturationEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Tonalità" value={config.hue} configKey="hue" onUpdate={updateConfig} min={0} max={1} step={0.01} />
+                    <ConfigSlider label="Saturazione" value={config.saturation} configKey="saturation" onUpdate={updateConfig} min={-1} max={1} step={0.05} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="chromaticAberration" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Aperture className="w-4 h-4 text-violet-400" /><span>Aberrazione Cromatica</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.chromaticAberrationEnabled} configKey="chromaticAberrationEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Offset" value={config.chromaticAberrationOffset} configKey="chromaticAberrationOffset" onUpdate={updateConfig} min={0} max={0.01} step={0.0005} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="depthOfField" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Layers className="w-4 h-4 text-cyan-400" /><span>Profondità di Campo</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.depthOfFieldEnabled} configKey="depthOfFieldEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Fuoco" value={config.depthOfFieldFocusDistance} configKey="depthOfFieldFocusDistance" onUpdate={updateConfig} min={0} max={0.1} step={0.001} />
+                    <ConfigSlider label="Focale" value={config.depthOfFieldFocalLength} configKey="depthOfFieldFocalLength" onUpdate={updateConfig} min={0} max={0.1} step={0.002} />
+                    <ConfigSlider label="Bokeh" value={config.depthOfFieldBokehScale} configKey="depthOfFieldBokehScale" onUpdate={updateConfig} min={0} max={10} step={0.5} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="tiltShift" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><MonitorSmartphone className="w-4 h-4 text-sky-400" /><span>Tilt Shift</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.tiltShiftEnabled} configKey="tiltShiftEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Sfocatura" value={config.tiltShiftBlur} configKey="tiltShiftBlur" onUpdate={updateConfig} min={0} max={0.1} step={0.005} />
+                    <ConfigSlider label="Inizio" value={config.tiltShiftStart} configKey="tiltShiftStart" onUpdate={updateConfig} min={0} max={0.9} step={0.01} />
+                    <ConfigSlider label="Fine" value={config.tiltShiftEnd} configKey="tiltShiftEnd" onUpdate={updateConfig} min={0.1} max={1} step={0.01} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="noise" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Film className="w-4 h-4 text-stone-400" /><span>Grana (Noise)</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.noiseEnabled} configKey="noiseEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Opacità" value={config.noiseOpacity} configKey="noiseOpacity" onUpdate={updateConfig} min={0} max={1} step={0.01} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="dotScreen" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Grid3x3 className="w-4 h-4 text-emerald-400" /><span>Mezzi Toni (Dot Screen)</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.dotScreenEnabled} configKey="dotScreenEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Angolo" value={config.dotScreenAngle} configKey="dotScreenAngle" onUpdate={updateConfig} min={0} max={6.28} step={0.01} />
+                    <ConfigSlider label="Scala" value={config.dotScreenScale} configKey="dotScreenScale" onUpdate={updateConfig} min={0.5} max={5} step={0.1} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="pixelation" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Box className="w-4 h-4 text-lime-400" /><span>Pixel Art</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.pixelationEnabled} configKey="pixelationEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Granularità" value={config.pixelationGranularity} configKey="pixelationGranularity" onUpdate={updateConfig} min={1} max={50} step={1} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="scanline" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Tv className="w-4 h-4 text-indigo-400" /><span>Scanline (CRT)</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.scanlineEnabled} configKey="scanlineEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Densità" value={config.scanlineDensity} configKey="scanlineDensity" onUpdate={updateConfig} min={0.5} max={5} step={0.1} />
+                    <ConfigSlider label="Opacità" value={config.scanlineOpacity} configKey="scanlineOpacity" onUpdate={updateConfig} min={0} max={1} step={0.05} />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="glitch" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Zap className="w-4 h-4 text-red-400" /><span>Glitch</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ConfigSwitch label="Attivo" value={config.glitchEnabled} configKey="glitchEnabled" onUpdate={updateConfig} />
+                    <ConfigSlider label="Ritardo" value={config.glitchDelay} configKey="glitchDelay" onUpdate={updateConfig} min={0.5} max={10} step={0.5} />
+                    <ConfigSlider label="Durata" value={config.glitchDuration} configKey="glitchDuration" onUpdate={updateConfig} min={0.1} max={3} step={0.1} />
+                    <ConfigSlider label="Intensità" value={config.glitchStrength} configKey="glitchStrength" onUpdate={updateConfig} min={0} max={1} step={0.05} />
                   </div>
                 </AccordionContent>
               </AccordionItem>

@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuthToken } from '@/lib/auth';
+
+export { verifyAuthToken };
 
 // Token semplice basato su timestamp + secret
 function generateAuthToken(): string {
@@ -8,32 +11,6 @@ function generateAuthToken(): string {
     throw new Error('ADMIN_SECRET non configurato');
   }
   return Buffer.from(`${timestamp}:${secret}`).toString('base64');
-}
-
-// Verifica se il token è valido
-export function verifyAuthToken(token: string): boolean {
-  try {
-    const decoded = Buffer.from(token, 'base64').toString('utf-8');
-    const parts = decoded.split(':');
-    if (parts.length !== 2) return false;
-    
-    const timestamp = parts[0];
-    const secret = parts[1];
-
-    // Verifica secret - deve corrispondere esattamente a ADMIN_SECRET
-    const validSecret = process.env.ADMIN_SECRET;
-    if (!validSecret || secret !== validSecret) {
-      return false;
-    }
-
-    // Verifica che il token non sia più vecchio di 24 ore
-    const tokenAge = Date.now() - parseInt(timestamp);
-    const maxAge = 24 * 60 * 60 * 1000; // 24 ore
-
-    return tokenAge < maxAge;
-  } catch {
-    return false;
-  }
 }
 
 // POST /api/admin/login - Login admin
