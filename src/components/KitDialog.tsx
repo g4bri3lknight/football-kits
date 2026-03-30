@@ -93,8 +93,91 @@ export function KitDialog({
   onNavigatePrevious,
   onNavigateNext,
 }: KitDialogProps) {
-  // Ottieni la configurazione del viewer 3D
-  const { config: viewerConfig } = useViewerConfig();
+  // Ottieni la configurazione del viewer 3D (globale)
+  const { config: globalViewerConfig } = useViewerConfig();
+  // Config per-kit: sovrascrive globale se presente
+  const [kitViewerConfig, setKitViewerConfig] = useState<typeof globalViewerConfig | null>(null);
+
+  // Carica config per-kit quando il kit selezionato cambia
+  useEffect(() => {
+    if (!selectedKit?.id) { setKitViewerConfig(null); return; }
+    fetch(`/api/kits/${selectedKit.id}/viewer3d-config`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.found !== false) {
+          // Converti dal formato DB al formato ConvertedConfig
+          setKitViewerConfig({
+            camera: {
+              initialDistance: data.cameraInitialDistance,
+              fov: data.cameraFov,
+              minDistance: data.cameraMinDistance,
+              maxDistance: data.cameraMaxDistance,
+            },
+            rotation: {
+              freeRotation: data.cameraFreeRotation,
+              minPolarAngle: (data.rotationMinPolarAngle * Math.PI) / 180,
+              maxPolarAngle: (data.rotationMaxPolarAngle * Math.PI) / 180,
+            },
+            autoRotate: {
+              enabled: data.autoRotateEnabled,
+              speed: data.autoRotateSpeed,
+              resumeDelay: data.autoRotateResumeDelay,
+            },
+            controls: {
+              enablePan: data.controlsEnablePan,
+              enablePanHorizontal: data.controlsEnablePanHorizontal,
+              enablePanVertical: data.controlsEnablePanVertical,
+              rotateSpeed: data.controlsRotateSpeed,
+              zoomSpeed: data.controlsZoomSpeed,
+              panSpeed: data.controlsPanSpeed,
+              enableDamping: data.controlsEnableDamping,
+              dampingFactor: data.controlsDampingFactor,
+            },
+            model: { targetSize: data.modelTargetSize },
+            lighting: {
+              ambientIntensity: data.lightingAmbientIntensity,
+              mainLight: { position: [data.lightingMainLightPositionX, data.lightingMainLightPositionY, data.lightingMainLightPositionZ] as [number, number, number], intensity: data.lightingMainLightIntensity },
+              secondaryLight: { position: [data.lightingSecondaryLightPositionX, data.lightingSecondaryLightPositionY, data.lightingSecondaryLightPositionZ] as [number, number, number], intensity: data.lightingSecondaryLightIntensity },
+              fillLights: [],
+            },
+            shadows: {
+              enabled: data.shadowsEnabled,
+              position: [data.shadowsPositionX, data.shadowsPositionY, data.shadowsPositionZ] as [number, number, number],
+              opacity: data.shadowsOpacity, scale: data.shadowsScale, blur: data.shadowsBlur, far: data.shadowsFar, resolution: data.shadowsResolution,
+            },
+            effects: {
+              enabled: data.effectsEnabled,
+              envMapIntensity: data.effectsEnvMapIntensity,
+              roughness: data.effectsRoughness,
+              metalness: data.effectsMetalness,
+              toneMappingWhitePoint: data.effectsToneMappingWhitePoint,
+              toneMappingMiddleGrey: data.effectsToneMappingMiddleGrey,
+              vignetteOffset: data.effectsVignetteOffset,
+              vignetteDarkness: data.effectsVignetteDarkness,
+            },
+            bloom: { enabled: data.bloomEnabled, intensity: data.bloomIntensity, luminanceThreshold: data.bloomLuminanceThreshold, luminanceSmoothing: data.bloomLuminanceSmoothing },
+            ao: { enabled: data.aoEnabled, intensity: data.aoIntensity, distance: data.aoDistance, falloff: data.aoFalloff },
+            brightnessContrast: { enabled: data.brightnessContrastEnabled, brightness: data.brightness, contrast: data.contrast },
+            hueSaturation: { enabled: data.hueSaturationEnabled, hue: data.hue, saturation: data.saturation },
+            chromaticAberration: { enabled: data.chromaticAberrationEnabled, offset: data.chromaticAberrationOffset },
+            depthOfField: { enabled: data.depthOfFieldEnabled, focusDistance: data.depthOfFieldFocusDistance, focalLength: data.depthOfFieldFocalLength, bokehScale: data.depthOfFieldBokehScale },
+            tiltShift: { enabled: data.tiltShiftEnabled, blur: data.tiltShiftBlur, start: data.tiltShiftStart, end: data.tiltShiftEnd },
+            noise: { enabled: data.noiseEnabled, opacity: data.noiseOpacity },
+            dotScreen: { enabled: data.dotScreenEnabled, angle: data.dotScreenAngle, scale: data.dotScreenScale },
+            pixelation: { enabled: data.pixelationEnabled, granularity: data.pixelationGranularity },
+            scanline: { enabled: data.scanlineEnabled, density: data.scanlineDensity, opacity: data.scanlineOpacity },
+            glitch: { enabled: data.glitchEnabled, delay: data.glitchDelay, duration: data.glitchDuration, strength: data.glitchStrength },
+            backgroundColor: data.backgroundColor,
+          });
+        } else {
+          setKitViewerConfig(null);
+        }
+      })
+      .catch(() => setKitViewerConfig(null));
+  }, [selectedKit?.id]);
+
+  // Usa config per-kit se disponibile, altrimenti globale
+  const viewerConfig = kitViewerConfig || globalViewerConfig;
   
   const [selectedDetail, setSelectedDetail] = useState<SelectedDetail | null>(null);
   const [hoveredDetail, setHoveredDetail] = useState<HoverDetail | null>(null);

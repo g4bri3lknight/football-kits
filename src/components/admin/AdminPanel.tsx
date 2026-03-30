@@ -1,6 +1,5 @@
 'use client';
-
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,6 +10,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   User as UserIcon,
   Shirt,
@@ -30,8 +39,8 @@ import {
   ChevronLeft,
   Menu,
   Box,
-  Save,
   RotateCcw,
+  Tag,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Player, Kit, PlayerKit, Nation, AdminPanelProps } from './types';
@@ -44,11 +53,9 @@ import VisiteStats from './VisiteStats';
 import VotiKitStats from './VotiKitStats';
 import Viewer3DTab, { Viewer3DTabRef } from './Viewer3DTab';
 import { cn } from '@/lib/utils';
-
 interface ExtendedAdminPanelProps extends AdminPanelProps {
   adminToken: string;
 }
-
 // Menu item types
 interface MenuItem {
   id: string;
@@ -56,7 +63,6 @@ interface MenuItem {
   icon: React.ReactNode;
   subItems?: { id: string; label: string; icon: React.ReactNode }[];
 }
-
 const menuItems: MenuItem[] = [
   {
     id: 'statistiche',
@@ -89,7 +95,6 @@ const menuItems: MenuItem[] = [
     icon: <MessageSquare className="w-5 h-5" />,
   },
 ];
-
 function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanelProps) {
   const { toast } = useToast();
   
@@ -111,31 +116,25 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['statistiche', 'gestione']);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   // Viewer3D Tab state
   const viewer3DRef = useRef<Viewer3DTabRef>(null);
-  const [viewer3DHasChanges, setViewer3DHasChanges] = useState(false);
-  const [viewer3DSaving, setViewer3DSaving] = useState(false);
+  const [viewer3DState, setViewer3DState] = useState({
+    hasChanges: false,
+    hasKitConfig: false,
+    selectedKitId: '',
+    savingKit: false,
+    savingGlobal: false,
+  });
+  const [showDeleteKitConfigDialog, setShowDeleteKitConfigDialog] = useState(false);
+  const viewer3DIsSaving = viewer3DState.savingKit || viewer3DState.savingGlobal;
 
+  const handleViewer3DStateChange = useCallback((state: { hasChanges: boolean; saving: boolean; hasKitConfig: boolean; selectedKitId: string; savingKit: boolean; savingGlobal: boolean }) => {
+    setViewer3DState(prev => ({ ...prev, hasChanges: state.hasChanges, hasKitConfig: state.hasKitConfig, selectedKitId: state.selectedKitId, savingKit: state.savingKit, savingGlobal: state.savingGlobal }));
+  }, []);
   useEffect(() => {
     fetchData();
     fetchNickname();
   }, []);
-
-  // Poll viewer3D state when that tab is active
-  useEffect(() => {
-    if (activeItem !== 'viewer3d') return;
-    
-    const interval = setInterval(() => {
-      if (viewer3DRef.current) {
-        setViewer3DHasChanges(viewer3DRef.current.hasChanges);
-        setViewer3DSaving(viewer3DRef.current.saving);
-      }
-    }, 200);
-    
-    return () => clearInterval(interval);
-  }, [activeItem]);
-
   const fetchNickname = async () => {
     try {
       const response = await fetch('/api/admin/nickname');
@@ -145,7 +144,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       console.error('Error fetching nickname:', error);
     }
   };
-
   const handleSaveNickname = async () => {
     if (!adminToken) {
       toast({
@@ -166,7 +164,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
           adminToken: adminToken
         })
       });
-
       if (!response.ok) {
         const error = await response.json();
         
@@ -182,7 +179,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         
         throw new Error(error.details || error.error || 'Failed to update nickname');
       }
-
       setNickname(editNickname.trim());
       setIsEditingNickname(false);
       
@@ -201,17 +197,14 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       setSavingNickname(false);
     }
   };
-
   const handleStartEditNickname = () => {
     setEditNickname(nickname);
     setIsEditingNickname(true);
   };
-
   const handleCancelEditNickname = () => {
     setEditNickname('');
     setIsEditingNickname(false);
   };
-
   const fetchData = async () => {
     try {
       const [playersRes, kitsRes, playerKitsRes, nationsRes] = await Promise.all([
@@ -220,14 +213,12 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         fetch('/api/player-kits'),
         fetch('/api/nations'),
       ]);
-
       const [playersData, kitsData, playerKitsData, nationsData] = await Promise.all([
         playersRes.json(),
         kitsRes.json(),
         playerKitsRes.json(),
         nationsRes.json(),
       ]);
-
       setPlayers(Array.isArray(playersData) ? playersData : []);
       setKits(Array.isArray(kitsData) ? kitsData : []);
       setPlayerKits(Array.isArray(playerKitsData) ? playerKitsData : []);
@@ -243,21 +234,17 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       setLoading(false);
     }
   };
-
   const handleFileUpload = async (file: File, folder: string = 'uploads'): Promise<string> => {
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', folder);
-
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
-
       if (!response.ok) throw new Error('Upload failed');
-
       const data = await response.json();
       return data.url;
     } catch (error) {
@@ -272,7 +259,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       setUploading(false);
     }
   };
-
   // Player CRUD operations
   const handleCreatePlayer = async (playerData: any) => {
     try {
@@ -281,7 +267,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(playerData),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 409) {
@@ -294,10 +279,8 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         }
         throw new Error(errorData.error || 'Failed to create player');
       }
-
       const newPlayer = await response.json();
       setPlayers([...players, newPlayer]);
-
       toast({
         title: 'Successo',
         description: 'Giocatore creato con successo',
@@ -308,7 +291,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       throw error;
     }
   };
-
   const handleUpdatePlayer = async (playerId: string, playerData: any) => {
     try {
       const response = await fetch(`/api/players/${playerId}`, {
@@ -316,7 +298,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(playerData),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 409) {
@@ -329,10 +310,8 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         }
         throw new Error(errorData.error || 'Failed to update player');
       }
-
       const updatedPlayer = await response.json();
       setPlayers(players.map((p) => (p.id === playerId ? updatedPlayer : p)));
-
       if (Array.isArray(playerKits)) {
         setPlayerKits(
           playerKits.map((pk) =>
@@ -342,7 +321,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
           )
         );
       }
-
       toast({
         title: 'Successo',
         description: 'Giocatore aggiornato con successo',
@@ -353,12 +331,10 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       throw error;
     }
   };
-
   const handleDeletePlayer = async (playerId: string) => {
     try {
       await fetch(`/api/players/${playerId}`, { method: 'DELETE' });
       setPlayers(players.filter((p) => p.id !== playerId));
-
       toast({
         title: 'Successo',
         description: 'Giocatore eliminato con successo',
@@ -373,7 +349,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       });
     }
   };
-
   // Kit CRUD operations
   const handleCreateKit = async (kitData: any) => {
     try {
@@ -382,16 +357,13 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(kitData),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Create kit error:', errorData);
         throw new Error(errorData.error || errorData.details || 'Failed to create kit');
       }
-
       const newKit = await response.json();
       setKits([...kits, newKit]);
-
       toast({
         title: 'Successo',
         description: 'Kit creato con successo',
@@ -402,7 +374,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       throw error;
     }
   };
-
   const handleUpdateKit = async (kitId: string, kitData: any) => {
     try {
       const response = await fetch(`/api/kit/${kitId}`, {
@@ -410,22 +381,18 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(kitData),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Update kit error response:', errorData);
         throw new Error(errorData.details || errorData.error || 'Failed to update kit');
       }
-
       const updatedKit = await response.json();
       setKits(kits.map((k) => (k.id === kitId ? updatedKit : k)));
-
       if (Array.isArray(playerKits)) {
         setPlayerKits(playerKits.map((pk) =>
           pk.kitId === kitId ? { ...pk, Kit: updatedKit } : pk
         ));
       }
-
       toast({
         title: 'Successo',
         description: 'Kit aggiornato con successo',
@@ -436,12 +403,10 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       throw error;
     }
   };
-
   const handleDeleteKit = async (kitId: string) => {
     try {
       await fetch(`/api/kit/${kitId}`, { method: 'DELETE' });
       setKits(kits.filter((k) => k.id !== kitId));
-
       toast({
         title: 'Successo',
         description: 'Kit eliminato con successo',
@@ -456,7 +421,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       });
     }
   };
-
   // PlayerKit operations
   const handleCreatePlayerKit = async (data: { playerId: string; kitId: string }) => {
     try {
@@ -465,15 +429,12 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create player kit');
       }
-
       const newPlayerKit = await response.json();
       setPlayerKits([...playerKits, newPlayerKit]);
-
       toast({
         title: 'Successo',
         description: 'Associazione creata con successo',
@@ -489,12 +450,10 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       throw error;
     }
   };
-
   const handleDeletePlayerKit = async (id: string) => {
     try {
       await fetch(`/api/player-kits/${id}`, { method: 'DELETE' });
       setPlayerKits(playerKits.filter((pk) => pk.id !== id));
-
       toast({
         title: 'Successo',
         description: 'Associazione eliminata con successo',
@@ -509,7 +468,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       });
     }
   };
-
   const handleUpdatePlayerKit = async (id: string, data: { playerId: string; kitId: string }) => {
     try {
       const response = await fetch(`/api/player-kits/${id}`, {
@@ -517,15 +475,12 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update player kit');
       }
-
       const updatedPlayerKit = await response.json();
       setPlayerKits(playerKits.map((pk) => (pk.id === id ? updatedPlayerKit : pk)));
-
       toast({
         title: 'Successo',
         description: 'Associazione aggiornata con successo',
@@ -541,7 +496,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       throw error;
     }
   };
-
   const toggleMenu = (menuId: string) => {
     setExpandedMenus(prev => 
       prev.includes(menuId) 
@@ -549,12 +503,10 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         : [...prev, menuId]
     );
   };
-
   const handleMenuClick = (itemId: string) => {
     setActiveItem(itemId);
     setMobileMenuOpen(false); // Chiude il drawer mobile dopo la selezione
   };
-
   const renderContent = () => {
     switch (activeItem) {
       case 'visite':
@@ -598,14 +550,13 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       case 'nations':
         return <NationsTab />;
       case 'viewer3d':
-        return <Viewer3DTab ref={viewer3DRef} adminToken={adminToken} />;
+        return <Viewer3DTab ref={viewer3DRef} adminToken={adminToken} onStateChange={handleViewer3DStateChange} />;
       case 'comments':
         return <CommentsTab adminToken={adminToken} adminNickname={nickname} />;
       default:
         return <VisiteStats />;
     }
   };
-
   const getPageTitle = () => {
     switch (activeItem) {
       case 'visite': return 'Statistiche Visite';
@@ -619,7 +570,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       default: return 'Dashboard';
     }
   };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -630,7 +580,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       </div>
     );
   }
-
   // Renderizza il contenuto del menu sidebar (riutilizzabile)
   const renderSidebarContent = (isMobile: boolean = false) => (
     <>
@@ -699,7 +648,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
           </Button>
         )}
       </div>
-
       {/* Sidebar Navigation */}
       <ScrollArea className="flex-1">
         <nav className="p-2 space-y-1">
@@ -779,7 +727,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
           ))}
         </nav>
       </ScrollArea>
-
       {/* Collapse Button - Solo per desktop */}
       {!isMobile && (
         <div className="p-2 border-t border-border">
@@ -799,7 +746,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       )}
     </>
   );
-
   return (
     <div className="relative flex flex-col lg:flex-row h-[calc(100vh-140px)] bg-card rounded-lg shadow-lg border border-border">
       {/* Desktop Sidebar */}
@@ -811,7 +757,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       >
         {renderSidebarContent(false)}
       </aside>
-
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 w-full overflow-hidden">
         {/* Content Header with Mobile Menu Button */}
@@ -838,20 +783,31 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
                 {getPageTitle()}
               </h2>
             </div>
-
             {/* Viewer3D Action Buttons */}
             {activeItem === 'viewer3d' && (
-              <div className="flex items-center gap-2">
-                {viewer3DHasChanges && (
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                {viewer3DState.hasChanges && (
                   <span className="text-xs text-amber-500 animate-pulse">
                     Modifiche non salvate
                   </span>
+                )}
+                {viewer3DState.hasKitConfig && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDeleteKitConfigDialog(true)}
+                    disabled={viewer3DIsSaving}
+                    className="text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Rimuovi config kit
+                  </Button>
                 )}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => viewer3DRef.current?.handleReset()}
-                  disabled={!viewer3DHasChanges}
+                  disabled={!viewer3DState.hasChanges || viewer3DIsSaving}
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Annulla
@@ -859,28 +815,57 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => viewer3DRef.current?.handleResetDefault()}
+                  onClick={() => viewer3DRef.current?.handleSaveForKit()}
+                  disabled={viewer3DIsSaving || !viewer3DState.selectedKitId}
+                  className="text-emerald-600 border-emerald-300 hover:bg-emerald-50"
                 >
-                  Default
+                  {viewer3DState.savingKit ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Tag className="w-4 h-4 mr-2" />
+                  )}
+                  Salva per kit
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => viewer3DRef.current?.handleSave()}
-                  disabled={viewer3DSaving || !viewer3DHasChanges}
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  disabled={viewer3DIsSaving}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
-                  {viewer3DSaving ? (
+                  {viewer3DState.savingGlobal ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
-                    <Save className="w-4 h-4 mr-2" />
+                    <Globe className="w-4 h-4 mr-2" />
                   )}
-                  Salva
+                  Salva globale
                 </Button>
               </div>
             )}
+            {/* Confirm delete kit config dialog */}
+            <AlertDialog open={showDeleteKitConfigDialog} onOpenChange={setShowDeleteKitConfigDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Rimuovere configurazione personalizzata?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Verrà eliminata la configurazione 3D salvata per questo kit. Il kit tornerà a utilizzare la configurazione globale.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      setShowDeleteKitConfigDialog(false);
+                      viewer3DRef.current?.handleDeleteKitConfig();
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Rimuovi
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </header>
-
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
           <div className="h-full w-full">
@@ -891,7 +876,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
     </div>
   );
 }
-
 export default function AdminPanel(props: AdminPanelProps) {
   return (
     <Suspense fallback={

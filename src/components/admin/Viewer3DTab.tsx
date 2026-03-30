@@ -40,6 +40,7 @@ import {
   Box,
   Tv,
   Zap,
+  Search,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useViewerConfig } from '@/hooks/useViewer3DConfig';
@@ -238,11 +239,17 @@ export interface Viewer3DTabRef {
   handleReset: () => void;
   handleResetDefault: () => void;
   handleSave: () => void;
+  handleSaveForKit: () => void;
+  handleDeleteKitConfig: () => void;
+  selectedKitId: string;
+  hasKitConfig: boolean;
+  savingKit: boolean;
+  savingGlobal: boolean;
 }
 
 interface Viewer3DTabProps {
   adminToken: string;
-  onStateChange?: (hasChanges: boolean, saving: boolean) => void;
+  onStateChange?: (state: { hasChanges: boolean; saving: boolean; hasKitConfig: boolean; selectedKitId: string; savingKit: boolean; savingGlobal: boolean }) => void;
 }
 
 // ============================================================================
@@ -430,12 +437,15 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
     const { refetch: refetchGlobalConfig } = useViewerConfig();
     const [config, setConfig] = useState<Viewer3DConfig>(defaultConfig);
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const [originalConfig, setOriginalConfig] = useState<Viewer3DConfig>(defaultConfig);
     const [kits, setKits] = useState<KitPreview[]>([]);
     const [selectedKitId, setSelectedKitId] = useState<string>('');
     const [loadingKits, setLoadingKits] = useState(true);
+    const [kitSearch, setKitSearch] = useState('');
+    const [hasKitConfig, setHasKitConfig] = useState(false);
+    const [savingKit, setSavingKit] = useState(false);
+    const [savingGlobal, setSavingGlobal] = useState(false);
 
     // Stable updateConfig — useCallback con [] = riferimento stabile per memo dei figli
     const updateConfig = useCallback(<K extends keyof Viewer3DConfig>(key: K, value: Viewer3DConfig[K]) => {
@@ -470,12 +480,40 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
         .finally(() => setLoadingKits(false));
     }, []);
 
+    // Filtra kit in base alla ricerca
+    const filteredKits = useMemo(() => {
+      if (!kitSearch.trim()) return kits;
+      const q = kitSearch.toLowerCase();
+      return kits.filter(k => k.name.toLowerCase().includes(q) || k.team.toLowerCase().includes(q));
+    }, [kits, kitSearch]);
+
+    // Quando si seleziona un kit, carica la sua config per-kit (se esiste)
+    useEffect(() => {
+      if (!selectedKitId) { setHasKitConfig(false); return; }
+      fetch(`/api/kits/${selectedKitId}/viewer3d-config`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.found !== false) {
+            setConfig(data);
+            setOriginalConfig(data);
+            setHasKitConfig(true);
+          } else {
+            // Nessuna config per-kit → ricarica globale
+            fetch('/api/viewer3d-config')
+              .then(res => res.json())
+              .then(globalData => { setConfig(globalData); setOriginalConfig(globalData); })
+              .catch(() => {});
+            setHasKitConfig(false);
+          }
+        })
+        .catch(() => setHasKitConfig(false));
+    }, [selectedKitId]);
+
     // Controlla modifiche
     useEffect(() => {
       const changed = JSON.stringify(config) !== JSON.stringify(originalConfig);
       setHasChanges(changed);
-      onStateChange?.(changed, saving);
-    }, [config, originalConfig, saving, onStateChange]);
+    }, [config, originalConfig]);
 
     const handleReset = useCallback(() => {
       setConfig(originalConfig);
@@ -491,7 +529,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
         return;
       }
 
-      setSaving(true);
+      setSavingGlobal(true);
       fetch('/api/viewer3d-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -499,9 +537,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
       })
         .then(async res => {
           const data = await res.json();
-          if (!res.ok) {
-            throw new Error(data.details || data.error || 'Failed to save');
-          }
+          if (!res.ok) throw new Error(data.details || data.error || 'Failed to save');
           return data;
         })
         .then(saved => {
@@ -509,23 +545,115 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
           setOriginalConfig(saved);
           setHasChanges(false);
           refetchGlobalConfig();
-          toast({ title: 'Successo', description: 'Configurazione salvata' });
+          toast({ title: 'Successo', description: 'Configurazione globale salvata' });
         })
         .catch(err => {
           console.error(err);
           toast({ title: 'Errore', description: err.message || 'Impossibile salvare', variant: 'destructive' });
         })
-        .finally(() => setSaving(false));
+        .finally(() => setSavingGlobal(false));
     }, [adminToken, config, toast, refetchGlobalConfig]);
+
+    // Salva config solo per il kit selezionato
+    const handleSaveForKit = useCallback(() => {
+      if (!adminToken) {
+        toast({ title: 'Errore', description: 'Token non trovato', variant: 'destructive' });
+        return;
+      }
+      if (!selectedKitId) {
+        toast({ title: 'Errore', description: 'Nessun kit selezionato', variant: 'destructive' });
+        return;
+      }
+
+      setSavingKit(true);
+      fetch(`/api/kits/${selectedKitId}/viewer3d-config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...config, adminToken }),
+      })
+        .then(async res => {
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.details || data.error || 'Failed to save');
+          return data;
+        })
+        .then(saved => {
+          setConfig(saved);
+          setOriginalConfig(saved);
+          setHasChanges(false);
+          setHasKitConfig(true);
+          toast({ title: 'Successo', description: 'Configurazione salvata per questo kit' });
+        })
+        .catch(err => {
+          console.error(err);
+          toast({ title: 'Errore', description: err.message || 'Impossibile salvare', variant: 'destructive' });
+        })
+        .finally(() => setSavingKit(false));
+    }, [adminToken, config, selectedKitId, toast]);
+
+    // Rimuovi config per-kit e ricarica globale
+    const handleDeleteKitConfig = useCallback(() => {
+      if (!adminToken) {
+        toast({ title: 'Errore', description: 'Token non trovato', variant: 'destructive' });
+        return;
+      }
+      if (!selectedKitId) return;
+
+      fetch(`/api/kits/${selectedKitId}/viewer3d-config`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminToken }),
+      })
+        .then(async res => {
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.details || data.error || 'Failed to delete');
+          }
+        })
+        .then(() => {
+          setHasKitConfig(false);
+          // Ricarica la config globale
+          fetch('/api/viewer3d-config')
+            .then(res => res.json())
+            .then(globalData => {
+              setConfig(globalData);
+              setOriginalConfig(globalData);
+              setHasChanges(false);
+            })
+            .catch(() => {});
+          toast({ title: 'Successo', description: 'Configurazione kit rimossa' });
+        })
+        .catch(err => {
+          console.error(err);
+          toast({ title: 'Errore', description: err.message || 'Impossibile rimuovere la configurazione', variant: 'destructive' });
+        });
+    }, [adminToken, selectedKitId, toast]);
+
+    // Notifica il padre ad ogni cambio di stato rilevante
+    useEffect(() => {
+      onStateChange?.({
+        hasChanges,
+        saving: savingKit || savingGlobal,
+        hasKitConfig,
+        selectedKitId,
+        savingKit,
+        savingGlobal,
+      });
+    }, [hasChanges, savingKit, savingGlobal, hasKitConfig, selectedKitId, onStateChange]);
 
     // Esponi funzioni al padre
     useImperativeHandle(ref, () => ({
       hasChanges,
-      saving,
+      saving: savingKit || savingGlobal,
       handleReset,
       handleResetDefault,
       handleSave,
-    }), [hasChanges, saving, handleReset, handleResetDefault, handleSave]);
+      handleSaveForKit,
+      handleDeleteKitConfig,
+      selectedKitId,
+      hasKitConfig,
+      savingKit,
+      savingGlobal,
+    }), [hasChanges, savingKit, savingGlobal, handleReset, handleResetDefault, handleSave, handleSaveForKit, handleDeleteKitConfig, selectedKitId, hasKitConfig]);
 
     // Converte config per viewer
     const viewerConfig = useMemo(() => ({
@@ -679,18 +807,35 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Eye className="w-4 h-4 text-blue-400" /> Anteprima Modello
+                    {hasKitConfig && <span className="ml-auto text-[10px] bg-emerald-500/20 text-emerald-600 px-1.5 py-0.5 rounded-full">Config kit</span>}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="py-2 px-3">
+                <CardContent className="py-2 px-3 space-y-2">
                   {loadingKits ? (
                     <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /><span className="text-xs text-muted-foreground">Caricamento...</span></div>
                   ) : kits.length === 0 ? (
                     <div className="flex items-center gap-2 text-muted-foreground"><Shirt className="w-4 h-4" /><span className="text-xs">Nessun kit 3D</span></div>
                   ) : (
-                    <Select value={selectedKitId} onValueChange={setSelectedKitId}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>{kits.map(k => <SelectItem key={k.id} value={k.id}>{k.name} - {k.team}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          placeholder="Cerca kit..."
+                          value={kitSearch}
+                          onChange={e => setKitSearch(e.target.value)}
+                          className="h-7 pl-8 text-xs"
+                        />
+                      </div>
+                      <Select value={selectedKitId} onValueChange={setSelectedKitId}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-48">
+                          {filteredKits.map(k => <SelectItem key={k.id} value={k.id}>{k.name} - {k.team}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {kitSearch && filteredKits.length === 0 && (
+                        <p className="text-[10px] text-muted-foreground text-center">Nessun kit trovato</p>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>

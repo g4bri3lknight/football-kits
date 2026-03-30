@@ -78,6 +78,7 @@ model Kit {
   PlayerKit       PlayerKit[]
   KitVote         KitVote[]
   Comment         Comment[]
+  KitViewer3DConfig KitViewer3DConfig?
 }
 
 model Nation {
@@ -310,4 +311,140 @@ model Viewer3DConfig {
 
   // === BACKGROUND ===
   backgroundColor String @default("#1a1a1a")  // Colore esadecimale (usato anche in fullscreen)
+}
+
+// Configurazione del visualizzatore 3D per singolo kit
+model KitViewer3DConfig {
+  id        String   @id @default(uuid())
+  kitId     String   @unique
+  updatedAt DateTime @updatedAt
+
+  // === CAMERA ===
+  cameraInitialDistance Float   @default(6)
+  cameraFov             Float   @default(50)
+  cameraMinDistance     Float   @default(3.5)
+  cameraMaxDistance     Float   @default(6)
+
+  // === ROTAZIONE ===
+  cameraFreeRotation     Boolean @default(false)
+  rotationMinPolarAngle Float   @default(90)
+  rotationMaxPolarAngle Float   @default(90)
+
+  // === AUTO-ROTATION ===
+  autoRotateEnabled   Boolean @default(true)
+  autoRotateSpeed     Float   @default(1.5)
+  autoRotateResumeDelay Int   @default(2000)
+
+  // === CONTROLLI ===
+  controlsEnablePan          Boolean @default(true)
+  controlsEnablePanHorizontal Boolean @default(false)
+  controlsEnablePanVertical  Boolean @default(true)
+  controlsRotateSpeed        Float   @default(0.5)
+  controlsZoomSpeed          Float   @default(1.2)
+  controlsPanSpeed           Float   @default(1)
+  controlsEnableDamping      Boolean @default(true)
+  controlsDampingFactor      Float   @default(0.05)
+
+  // === MODELLO ===
+  modelTargetSize Float @default(5)
+
+  // === ILLUMINAZIONE ===
+  lightingAmbientIntensity Float @default(0.7)
+  lightingMainLightPositionX Float @default(5)
+  lightingMainLightPositionY Float @default(10)
+  lightingMainLightPositionZ Float @default(7.5)
+  lightingMainLightIntensity Float @default(1.5)
+  lightingSecondaryLightPositionX Float @default(-5)
+  lightingSecondaryLightPositionY Float @default(5)
+  lightingSecondaryLightPositionZ Float @default(-7.5)
+  lightingSecondaryLightIntensity Float @default(0.8)
+
+  // === OMBRE ===
+  shadowsEnabled  Boolean @default(true)
+  shadowsPositionX Float   @default(0)
+  shadowsPositionY Float   @default(-2.45)
+  shadowsPositionZ Float   @default(0)
+  shadowsOpacity   Float   @default(0.5)
+  shadowsScale     Float   @default(10)
+  shadowsBlur      Float   @default(2)
+  shadowsFar       Float   @default(10)
+  shadowsResolution Int    @default(1024)
+
+  // === EFFETTI POST-PROCESSING ===
+  effectsEnabled       Boolean @default(true)
+  effectsEnvMapIntensity Float @default(1.5)
+  effectsRoughness     Float   @default(0.4)
+  effectsMetalness     Float   @default(0.1)
+  effectsToneMappingWhitePoint Float @default(4.0)
+  effectsToneMappingMiddleGrey Float @default(0.6)
+  effectsVignetteOffset Float  @default(0.3)
+  effectsVignetteDarkness Float @default(0.5)
+
+  // === BLOOM ===
+  bloomEnabled Boolean @default(false)
+  bloomIntensity Float @default(0.5)
+  bloomLuminanceThreshold Float @default(0.9)
+  bloomLuminanceSmoothing Float @default(0.025)
+
+  // === AMBIENT OCCLUSION (N8AO) ===
+  aoEnabled Boolean @default(false)
+  aoIntensity Float @default(2.0)
+  aoDistance Float @default(0.2)
+  aoFalloff Float @default(0.01)
+
+  // === BRIGHTNESS / CONTRAST ===
+  brightnessContrastEnabled Boolean @default(false)
+  brightness Float @default(0)
+  contrast Float @default(0)
+
+  // === HUE / SATURATION ===
+  hueSaturationEnabled Boolean @default(false)
+  hue Float @default(0)
+  saturation Float @default(0)
+
+  // === CHROMATIC ABERRATION ===
+  chromaticAberrationEnabled Boolean @default(false)
+  chromaticAberrationOffset Float @default(0.002)
+
+  // === DEPTH OF FIELD ===
+  depthOfFieldEnabled Boolean @default(false)
+  depthOfFieldFocusDistance Float @default(0.01)
+  depthOfFieldFocalLength Float @default(0.02)
+  depthOfFieldBokehScale Float @default(3)
+
+  // === TILT SHIFT ===
+  tiltShiftEnabled Boolean @default(false)
+  tiltShiftBlur Float @default(0.05)
+  tiltShiftStart Float @default(0.49)
+  tiltShiftEnd Float @default(0.5)
+
+  // === NOISE ===
+  noiseEnabled Boolean @default(false)
+  noiseOpacity Float @default(0.05)
+
+  // === DOT SCREEN ===
+  dotScreenEnabled Boolean @default(false)
+  dotScreenAngle Float @default(1.39)
+  dotScreenScale Float @default(1)
+
+  // === PIXELATION ===
+  pixelationEnabled Boolean @default(false)
+  pixelationGranularity Int @default(5)
+
+  // === SCANLINE ===
+  scanlineEnabled Boolean @default(false)
+  scanlineDensity Float @default(1.5)
+  scanlineOpacity Float @default(0.1)
+
+  // === GLITCH ===
+  glitchEnabled Boolean @default(false)
+  glitchDelay Float @default(3)
+  glitchDuration Float @default(0.6)
+  glitchStrength Float @default(0.3)
+
+  // === BACKGROUND ===
+  backgroundColor String @default("#1a1a1a")
+
+  // === RELAZIONE ===
+  Kit Kit @relation(fields: [kitId], references: [id], onDelete: Cascade)
 }
