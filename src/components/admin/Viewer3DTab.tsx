@@ -231,6 +231,7 @@ interface KitPreview {
   id: string;
   name: string;
   team: string;
+  updatedAt?: string | Date;
 }
 
 export interface Viewer3DTabRef {
@@ -241,6 +242,7 @@ export interface Viewer3DTabRef {
   handleSave: () => void;
   handleSaveForKit: () => void;
   handleDeleteKitConfig: () => void;
+  handleRefreshKits: () => void;
   selectedKitId: string;
   hasKitConfig: boolean;
   savingKit: boolean;
@@ -398,9 +400,10 @@ interface PreviewPanelProps {
   configJson: string;
   selectedKitId: string;
   backgroundColor: string;
+  modelCacheKey: string;
 }
 
-const PreviewPanel = memo(function PreviewPanel({ configJson, selectedKitId, backgroundColor }: PreviewPanelProps) {
+const PreviewPanel = memo(function PreviewPanel({ configJson, selectedKitId, backgroundColor, modelCacheKey }: PreviewPanelProps) {
   const [liveConfig, setLiveConfig] = useState<ConvertedConfig | null>(null);
 
   useEffect(() => {
@@ -416,7 +419,7 @@ const PreviewPanel = memo(function PreviewPanel({ configJson, selectedKitId, bac
       <CardContent className="flex-1 p-0">
         <div className="w-full h-full min-h-[400px] lg:min-h-0 relative" style={{ backgroundColor }}>
           {selectedKitId && liveConfig ? (
-            <KitViewer3D modelUrl={`/api/kits/${selectedKitId}/model3d`} config={liveConfig} className="w-full h-full" />
+            <KitViewer3D key={modelCacheKey} modelUrl={`/api/kits/${selectedKitId}/model3d?v=${modelCacheKey}`} config={liveConfig} className="w-full h-full" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <div className="text-center text-muted-foreground"><Shirt className="w-12 h-12 mx-auto mb-2 opacity-50" /><p className="text-sm">Nessun modello</p></div>
@@ -468,17 +471,24 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
     }, [toast]);
 
     // Carica kit con modello 3D
-    useEffect(() => {
+    const fetchKits = useCallback(() => {
+      setLoadingKits(true);
       fetch('/api/kits')
         .then(res => res.json())
         .then(data => {
           const kitsWithModel = data.filter((k: any) => k.hasModel3D);
           setKits(kitsWithModel);
-          if (kitsWithModel.length > 0) setSelectedKitId(kitsWithModel[0].id);
+          if (kitsWithModel.length > 0 && !selectedKitId) {
+            setSelectedKitId(kitsWithModel[0].id);
+          }
         })
         .catch(console.error)
         .finally(() => setLoadingKits(false));
-    }, []);
+    }, [selectedKitId]);
+
+    useEffect(() => {
+      fetchKits();
+    }, [fetchKits]);
 
     // Filtra kit in base alla ricerca
     const filteredKits = useMemo(() => {
@@ -486,6 +496,13 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
       const q = kitSearch.toLowerCase();
       return kits.filter(k => k.name.toLowerCase().includes(q) || k.team.toLowerCase().includes(q));
     }, [kits, kitSearch]);
+
+    // Cache buster per il modello 3D: cambia quando updatedAt del kit cambia
+    const selectedKit = useMemo(() => kits.find(k => k.id === selectedKitId), [kits, selectedKitId]);
+    const modelCacheKey = useMemo(() => {
+      if (!selectedKit?.updatedAt) return `${selectedKitId}-0`;
+      return `${selectedKitId}-${new Date(selectedKit.updatedAt).getTime()}`;
+    }, [selectedKitId, selectedKit?.updatedAt]);
 
     // Quando si seleziona un kit, carica la sua config per-kit (se esiste)
     useEffect(() => {
@@ -649,11 +666,12 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
       handleSave,
       handleSaveForKit,
       handleDeleteKitConfig,
+      handleRefreshKits: fetchKits,
       selectedKitId,
       hasKitConfig,
       savingKit,
       savingGlobal,
-    }), [hasChanges, savingKit, savingGlobal, handleReset, handleResetDefault, handleSave, handleSaveForKit, handleDeleteKitConfig, selectedKitId, hasKitConfig]);
+    }), [hasChanges, savingKit, savingGlobal, handleReset, handleResetDefault, handleSave, handleSaveForKit, handleDeleteKitConfig, fetchKits, selectedKitId, hasKitConfig]);
 
     // Converte config per viewer
     const viewerConfig = useMemo(() => ({
@@ -1106,6 +1124,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
           configJson={debouncedConfigJson}
           selectedKitId={selectedKitId}
           backgroundColor={config.backgroundColor}
+          modelCacheKey={modelCacheKey}
         />
       </div>
     );

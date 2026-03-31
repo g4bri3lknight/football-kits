@@ -369,6 +369,10 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         description: 'Kit creato con successo',
       });
       onUpdate?.();
+      // Refresh viewer3D kits se il tab è attivo
+      if (activeItem === 'viewer3d') {
+        viewer3DRef.current?.handleRefreshKits();
+      }
     } catch (error) {
       console.error('Error creating kit:', error);
       throw error;
@@ -398,6 +402,10 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         description: 'Kit aggiornato con successo',
       });
       onUpdate?.();
+      // Refresh viewer3D kits se il tab è attivo (per aggiornare cache buster)
+      if (activeItem === 'viewer3d') {
+        viewer3DRef.current?.handleRefreshKits();
+      }
     } catch (error) {
       console.error('Error updating kit:', error);
       throw error;

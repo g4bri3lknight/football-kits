@@ -23,12 +23,18 @@ export async function GET(
       );
     }
 
+    // Cache breve o niente: il modello può essere aggiornato dall'admin
+    // Il client aggiunge un cache buster (?v=...) per forzare il refresh
+    const cacheControl = request.nextUrl.searchParams.has('v')
+      ? 'no-cache, no-store, must-revalidate'
+      : 'public, max-age=60';
+
     return new NextResponse(kit.model3DData, {
       status: 200,
       headers: {
         'Content-Type': 'model/gltf-binary',
         'Content-Disposition': `inline; filename="${kit.model3DName || 'model.glb'}"`,
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Cache-Control': cacheControl,
       },
     });
   } catch (error) {
