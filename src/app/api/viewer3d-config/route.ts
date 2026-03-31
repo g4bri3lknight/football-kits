@@ -30,7 +30,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { adminToken, ...configData } = body;
+    const { adminToken, id, updatedAt, ...configData } = body;
 
     // Verifica il token admin
     if (!adminToken || !verifyAuthToken(adminToken)) {
@@ -53,8 +53,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(config);
   } catch (error) {
     console.error('Error updating viewer3d config:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to update viewer3d config' },
+      { error: 'Failed to update viewer3d config', details: message },
       { status: 500 }
     );
   }

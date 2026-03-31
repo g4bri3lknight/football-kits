@@ -11,16 +11,6 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   User as UserIcon,
   Shirt,
   Link2,
@@ -40,7 +30,6 @@ import {
   Menu,
   Box,
   RotateCcw,
-  Tag,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Player, Kit, PlayerKit, Nation, AdminPanelProps } from './types';
@@ -122,14 +111,12 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
     hasChanges: false,
     hasKitConfig: false,
     selectedKitId: '',
-    savingKit: false,
     savingGlobal: false,
   });
-  const [showDeleteKitConfigDialog, setShowDeleteKitConfigDialog] = useState(false);
-  const viewer3DIsSaving = viewer3DState.savingKit || viewer3DState.savingGlobal;
+  const viewer3DIsSaving = viewer3DState.savingGlobal;
 
-  const handleViewer3DStateChange = useCallback((state: { hasChanges: boolean; saving: boolean; hasKitConfig: boolean; selectedKitId: string; savingKit: boolean; savingGlobal: boolean }) => {
-    setViewer3DState(prev => ({ ...prev, hasChanges: state.hasChanges, hasKitConfig: state.hasKitConfig, selectedKitId: state.selectedKitId, savingKit: state.savingKit, savingGlobal: state.savingGlobal }));
+  const handleViewer3DStateChange = useCallback((state: { hasChanges: boolean; saving: boolean; hasKitConfig: boolean; selectedKitId: string; savingGlobal: boolean }) => {
+    setViewer3DState(prev => ({ ...prev, hasChanges: state.hasChanges, hasKitConfig: state.hasKitConfig, selectedKitId: state.selectedKitId, savingGlobal: state.savingGlobal }));
   }, []);
   useEffect(() => {
     fetchData();
@@ -799,18 +786,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
                     Modifiche non salvate
                   </span>
                 )}
-                {viewer3DState.hasKitConfig && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowDeleteKitConfigDialog(true)}
-                    disabled={viewer3DIsSaving}
-                    className="text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Rimuovi config kit
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -819,20 +794,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Annulla
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => viewer3DRef.current?.handleSaveForKit()}
-                  disabled={viewer3DIsSaving || !viewer3DState.selectedKitId}
-                  className="text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-                >
-                  {viewer3DState.savingKit ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Tag className="w-4 h-4 mr-2" />
-                  )}
-                  Salva per kit
                 </Button>
                 <Button
                   size="sm"
@@ -849,29 +810,6 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
                 </Button>
               </div>
             )}
-            {/* Confirm delete kit config dialog */}
-            <AlertDialog open={showDeleteKitConfigDialog} onOpenChange={setShowDeleteKitConfigDialog}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Rimuovere configurazione personalizzata?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Verrà eliminata la configurazione 3D salvata per questo kit. Il kit tornerà a utilizzare la configurazione globale.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annulla</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => {
-                      setShowDeleteKitConfigDialog(false);
-                      viewer3DRef.current?.handleDeleteKitConfig();
-                    }}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    Rimuovi
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
         </header>
         {/* Content Area */}

@@ -41,10 +41,23 @@ import {
   Tv,
   Zap,
   Search,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useViewerConfig } from '@/hooks/useViewer3DConfig';
 import KitViewer3D from '@/components/KitViewer3D';
+import PresetsManager, { normalizeConfig } from '@/components/admin/PresetsManager';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // ============================================================================
 // Tipo per la configurazione
@@ -240,18 +253,15 @@ export interface Viewer3DTabRef {
   handleReset: () => void;
   handleResetDefault: () => void;
   handleSave: () => void;
-  handleSaveForKit: () => void;
-  handleDeleteKitConfig: () => void;
   handleRefreshKits: () => void;
   selectedKitId: string;
   hasKitConfig: boolean;
-  savingKit: boolean;
   savingGlobal: boolean;
 }
 
 interface Viewer3DTabProps {
   adminToken: string;
-  onStateChange?: (state: { hasChanges: boolean; saving: boolean; hasKitConfig: boolean; selectedKitId: string; savingKit: boolean; savingGlobal: boolean }) => void;
+  onStateChange?: (state: { hasChanges: boolean; saving: boolean; hasKitConfig: boolean; selectedKitId: string; savingGlobal: boolean }) => void;
 }
 
 // ============================================================================
@@ -295,7 +305,11 @@ const ConfigSlider = memo(function ConfigSlider({
     const num = parseFloat(inputValue);
     if (!isNaN(num)) {
       const clamped = Math.max(min, Math.min(max, num));
-      onUpdate(configKey, Math.round(clamped / step) * step as any);
+      // Arronda al passo del solo slider per evitare float imprecisi,
+      // ma accetta qualsiasi valore inserito manualmente
+      const decimals = (step.toString().split('.')[1] || '').length;
+      const rounded = parseFloat(clamped.toFixed(Math.max(decimals, 3)));
+      onUpdate(configKey, rounded as any);
     } else {
       setInputValue(value.toString());
     }
@@ -447,8 +461,16 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
     const [loadingKits, setLoadingKits] = useState(true);
     const [kitSearch, setKitSearch] = useState('');
     const [hasKitConfig, setHasKitConfig] = useState(false);
-    const [savingKit, setSavingKit] = useState(false);
     const [savingGlobal, setSavingGlobal] = useState(false);
+    const [showDeleteKitDialog, setShowDeleteKitDialog] = useState(false);
+
+    // Presets per il matching del badge
+    const [presetsList, setPresetsList] = useState<Array<{ id: string; name: string; config: string }>>([]);
+
+    // Stable callback per evitare loop infinito con PresetsManager
+    const handlePresetsChange = useCallback((list: Array<{ id: string; name: string; config: string }>) => {
+      setPresetsList(list);
+    }, []);
 
     // Stable updateConfig — useCallback con [] = riferimento stabile per memo dei figli
     const updateConfig = useCallback(<K extends keyof Viewer3DConfig>(key: K, value: Viewer3DConfig[K]) => {
@@ -496,6 +518,9 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
       const q = kitSearch.toLowerCase();
       return kits.filter(k => k.name.toLowerCase().includes(q) || k.team.toLowerCase().includes(q));
     }, [kits, kitSearch]);
+
+    // Lista kit per il PresetsManager (stabile, con hasModel3D=true per tutti quelli passati)
+    const presetsKitsList = useMemo(() => kits.map(k => ({ id: k.id, name: k.name, team: k.team, hasModel3D: true })), [kits]);
 
     // Cache buster per il modello 3D: cambia quando updatedAt del kit cambia
     const selectedKit = useMemo(() => kits.find(k => k.id === selectedKitId), [kits, selectedKitId]);
@@ -571,42 +596,6 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
         .finally(() => setSavingGlobal(false));
     }, [adminToken, config, toast, refetchGlobalConfig]);
 
-    // Salva config solo per il kit selezionato
-    const handleSaveForKit = useCallback(() => {
-      if (!adminToken) {
-        toast({ title: 'Errore', description: 'Token non trovato', variant: 'destructive' });
-        return;
-      }
-      if (!selectedKitId) {
-        toast({ title: 'Errore', description: 'Nessun kit selezionato', variant: 'destructive' });
-        return;
-      }
-
-      setSavingKit(true);
-      fetch(`/api/kits/${selectedKitId}/viewer3d-config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...config, adminToken }),
-      })
-        .then(async res => {
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.details || data.error || 'Failed to save');
-          return data;
-        })
-        .then(saved => {
-          setConfig(saved);
-          setOriginalConfig(saved);
-          setHasChanges(false);
-          setHasKitConfig(true);
-          toast({ title: 'Successo', description: 'Configurazione salvata per questo kit' });
-        })
-        .catch(err => {
-          console.error(err);
-          toast({ title: 'Errore', description: err.message || 'Impossibile salvare', variant: 'destructive' });
-        })
-        .finally(() => setSavingKit(false));
-    }, [adminToken, config, selectedKitId, toast]);
-
     // Rimuovi config per-kit e ricarica globale
     const handleDeleteKitConfig = useCallback(() => {
       if (!adminToken) {
@@ -649,29 +638,25 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
     useEffect(() => {
       onStateChange?.({
         hasChanges,
-        saving: savingKit || savingGlobal,
+        saving: savingGlobal,
         hasKitConfig,
         selectedKitId,
-        savingKit,
         savingGlobal,
       });
-    }, [hasChanges, savingKit, savingGlobal, hasKitConfig, selectedKitId, onStateChange]);
+    }, [hasChanges, savingGlobal, hasKitConfig, selectedKitId, onStateChange]);
 
     // Esponi funzioni al padre
     useImperativeHandle(ref, () => ({
       hasChanges,
-      saving: savingKit || savingGlobal,
+      saving: savingGlobal,
       handleReset,
       handleResetDefault,
       handleSave,
-      handleSaveForKit,
-      handleDeleteKitConfig,
       handleRefreshKits: fetchKits,
       selectedKitId,
       hasKitConfig,
-      savingKit,
       savingGlobal,
-    }), [hasChanges, savingKit, savingGlobal, handleReset, handleResetDefault, handleSave, handleSaveForKit, handleDeleteKitConfig, fetchKits, selectedKitId, hasKitConfig]);
+    }), [hasChanges, savingGlobal, handleReset, handleResetDefault, handleSave, fetchKits, selectedKitId, hasKitConfig]);
 
     // Converte config per viewer
     const viewerConfig = useMemo(() => ({
@@ -815,7 +800,8 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
     }
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full pb-2">
+      <>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full pb-2">
         {/* Controlli */}
         <Card className="border-border flex flex-col h-full">
           <CardContent className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -825,7 +811,41 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Eye className="w-4 h-4 text-blue-400" /> Anteprima Modello
-                    {hasKitConfig && <span className="ml-auto text-[10px] bg-emerald-500/20 text-emerald-600 px-1.5 py-0.5 rounded-full">Config kit</span>}
+                    {(() => {
+                      try {
+                        const configFingerprint = normalizeConfig(config);
+                        let badge = null;
+                        if (hasKitConfig && presetsList.length > 0) {
+                          for (const p of presetsList) {
+                            try {
+                              if (normalizeConfig(p.config) === configFingerprint) {
+                                badge = p.name;
+                                break;
+                              }
+                            } catch { /* skip invalid preset */ }
+                          }
+                        }
+                        return (
+                          <div className="ml-auto flex items-center gap-1.5">
+                            {badge ? (
+                              <span className="text-[10px] bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded-full truncate max-w-[120px]" title={badge}>{badge}</span>
+                            ) : hasKitConfig ? (
+                              <span className="text-[10px] bg-emerald-500/20 text-emerald-600 px-1.5 py-0.5 rounded-full">Config kit</span>
+                            ) : null}
+                            {hasKitConfig && (
+                              <button
+                                type="button"
+                                onClick={() => setShowDeleteKitDialog(true)}
+                                className="p-0.5 rounded hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors"
+                                title="Rimuovi configurazione personalizzata"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      } catch { return null; }
+                    })()}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="py-2 px-3 space-y-2">
@@ -875,7 +895,24 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
             </div>
 
             {/* Accordion impostazioni */}
-            <Accordion type="multiple" defaultValue={['camera', 'effects']} className="space-y-2">
+            <Accordion type="multiple" defaultValue={['presets', 'camera', 'effects']} className="space-y-2">
+              <AccordionItem value="presets" className="border rounded-lg border-border">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Sparkles className="w-4 h-4 text-emerald-400" /><span>Presets</span></div></AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <PresetsManager
+                    adminToken={adminToken}
+                    currentConfig={config as unknown as Record<string, any>}
+                    onLoadPreset={(presetConfig) => {
+                      setConfig(presetConfig as unknown as Viewer3DConfig);
+                      setOriginalConfig(presetConfig as unknown as Viewer3DConfig);
+                      setHasChanges(false);
+                    }}
+                    onPresetsChange={handlePresetsChange}
+                    kits={presetsKitsList}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+
               <AccordionItem value="camera" className="border rounded-lg border-border">
                 <AccordionTrigger className="px-3 py-2 hover:no-underline text-sm"><div className="flex items-center gap-2"><Camera className="w-4 h-4 text-blue-400" /><span>Camera</span></div></AccordionTrigger>
                 <AccordionContent className="px-3 pb-3">
@@ -947,7 +984,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
                   <div className="grid grid-cols-2 gap-3">
                     <ConfigSwitch label="Attive" value={config.shadowsEnabled} configKey="shadowsEnabled" onUpdate={updateConfig} />
                     <ConfigSlider label="Opacità" value={config.shadowsOpacity} configKey="shadowsOpacity" onUpdate={updateConfig} min={0} max={1} step={0.05} />
-                    <ConfigSlider label="Blur" value={config.shadowsBlur} configKey="shadowsBlur" onUpdate={updateConfig} min={0} max={10} step={0.5} />
+                    <ConfigSlider label="Blur" value={config.shadowsBlur} configKey="shadowsBlur" onUpdate={updateConfig} min={0} max={10} step={0.1} />
                     <ConfigSlider label="Scala" value={config.shadowsScale} configKey="shadowsScale" onUpdate={updateConfig} min={1} max={30} step={0.5} />
                     <ConfigSlider label="Distanza (far)" value={config.shadowsFar} configKey="shadowsFar" onUpdate={updateConfig} min={1} max={20} step={0.5} />
                     <ConfigSlider label="Pos. Y" value={config.shadowsPositionY} configKey="shadowsPositionY" onUpdate={updateConfig} min={-5} max={0} step={0.05} />
@@ -1126,7 +1163,35 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
           backgroundColor={config.backgroundColor}
           modelCacheKey={modelCacheKey}
         />
-      </div>
+        </div>
+
+        {/* Confirm delete kit config dialog */}
+        <AlertDialog open={showDeleteKitDialog} onOpenChange={setShowDeleteKitDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                Rimuovere configurazione personalizzata?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Verrà eliminata la configurazione 3D salvata per questo kit. Il kit tornerà a utilizzare la configurazione globale.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setShowDeleteKitDialog(false);
+                  handleDeleteKitConfig();
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Rimuovi
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
     );
   }
 );

@@ -36,7 +36,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { adminToken, kitId, id: configId, ...configData } = body;
+    const { adminToken, kitId, id: configId, updatedAt, ...configData } = body;
 
     // Verify admin token
     if (!adminToken || !verifyAuthToken(adminToken)) {

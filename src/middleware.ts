@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const response = NextResponse.next()
   
-  // Aggiungi header CORS per permettere le richieste cross-origin
+  // Aggiungi header CORS per permettere le richieste
   const origin = request.headers.get('origin') || '*'
   response.headers.set('Access-Control-Allow-Origin', origin)
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')

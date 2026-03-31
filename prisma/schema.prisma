@@ -448,3 +448,12 @@ model KitViewer3DConfig {
   // === RELAZIONE ===
   Kit Kit @relation(fields: [kitId], references: [id], onDelete: Cascade)
 }
+
+// Preset configurazione viewer 3D (salvato come JSON)
+model Viewer3DPreset {
+  id        String   @id @default(uuid())
+  name      String
+  config    String   // JSON con tutti i valori della configurazione
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
