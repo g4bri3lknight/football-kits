@@ -123,6 +123,8 @@ interface ConvertedConfig {
     panSpeed: number;
     enableDamping: boolean;
     dampingFactor: number;
+    maxPanHorizontal: number;
+    maxPanVertical: number;
   };
   model: {
     targetSize: number;
@@ -333,8 +335,8 @@ function CameraController({
   const isPanning = useRef(false);
   const lastMousePos = useRef(new THREE.Vector2(0, 0));
 
-  // Pan personalizzato se uno degli assi è disabilitato
-  const useCustomPan = !config.controls.enablePanHorizontal || !config.controls.enablePanVertical;
+  // Pan personalizzato sempre attivo per applicare i limiti maxPan
+  const useCustomPan = true;
 
   // Inizializza camera e controlli — si attiva al mount, al reset (double-click)
   // e quando cambiano distanza/fov dal pannello admin.
@@ -437,13 +439,18 @@ function CameraController({
       const deltaY = e.clientY - lastMousePos.current.y;
       lastMousePos.current.set(e.clientX, e.clientY);
 
-      const speed = config.controls.panSpeed * 0.01;
+      // La velocità del pan è proporzionale alla distanza della camera,
+      // così il pan si comporta in modo consistente a qualsiasi livello di zoom
+      const cameraDistance = camera.position.distanceTo(controlsRef.current.target);
+      const baseSpeed = config.controls.panSpeed * 0.003 * cameraDistance;
 
       if (config.controls.enablePanHorizontal) {
-        panOffset.current.x -= deltaX * speed;
+        panOffset.current.x -= deltaX * baseSpeed;
+        panOffset.current.x = Math.max(-config.controls.maxPanHorizontal, Math.min(config.controls.maxPanHorizontal, panOffset.current.x));
       }
       if (config.controls.enablePanVertical) {
-        panOffset.current.y += deltaY * speed;
+        panOffset.current.y += deltaY * baseSpeed;
+        panOffset.current.y = Math.max(-config.controls.maxPanVertical, Math.min(config.controls.maxPanVertical, panOffset.current.y));
       }
 
       const target = controlsRef.current.target;
@@ -482,7 +489,7 @@ function CameraController({
       canvas.removeEventListener('mouseleave', handleMouseLeave);
       canvas.removeEventListener('contextmenu', handleContextMenu);
     };
-  }, [gl, useCustomPan, onPauseAutoRotate, onResumeAutoRotate, config.controls.panSpeed, config.controls.enablePanHorizontal, config.controls.enablePanVertical]);
+  }, [gl, useCustomPan, onPauseAutoRotate, onResumeAutoRotate, config.controls.panSpeed, config.controls.enablePanHorizontal, config.controls.enablePanVertical, config.controls.maxPanHorizontal, config.controls.maxPanVertical]);
 
   useFrame(() => {
     if (controlsRef.current) {
@@ -493,7 +500,7 @@ function CameraController({
   return (
     <OrbitControls
       ref={controlsRef}
-      enablePan={useCustomPan ? false : config.controls.enablePan}
+      enablePan={false}
       rotateSpeed={config.controls.rotateSpeed}
       zoomSpeed={config.controls.zoomSpeed}
       panSpeed={config.controls.panSpeed}

@@ -11,6 +11,16 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   User as UserIcon,
   Shirt,
   Link2,
@@ -113,6 +123,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
     selectedKitId: '',
     savingGlobal: false,
   });
+  const [showSaveGlobalWarning, setShowSaveGlobalWarning] = useState(false);
   const viewer3DIsSaving = viewer3DState.savingGlobal;
 
   const handleViewer3DStateChange = useCallback((state: { hasChanges: boolean; saving: boolean; hasKitConfig: boolean; selectedKitId: string; savingGlobal: boolean }) => {
@@ -797,7 +808,13 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => viewer3DRef.current?.handleSave()}
+                  onClick={() => {
+                    if (viewer3DState.hasKitConfig) {
+                      setShowSaveGlobalWarning(true);
+                    } else {
+                      viewer3DRef.current?.handleSave();
+                    }
+                  }}
                   disabled={viewer3DIsSaving}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -810,6 +827,28 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
                 </Button>
               </div>
             )}
+            <AlertDialog open={showSaveGlobalWarning} onOpenChange={setShowSaveGlobalWarning}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Salvare come configurazione globale?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Hai selezionato un kit con configurazione personalizzata. Salvando come globale, questa configurazione diventerà il default per tutti i kit senza config propria.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      setShowSaveGlobalWarning(false);
+                      viewer3DRef.current?.handleSave();
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Salva globale
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </header>
         {/* Content Area */}

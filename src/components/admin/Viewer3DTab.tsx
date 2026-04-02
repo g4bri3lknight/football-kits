@@ -83,6 +83,8 @@ interface Viewer3DConfig {
   controlsPanSpeed: number;
   controlsEnableDamping: boolean;
   controlsDampingFactor: number;
+  controlsMaxPanHorizontal: number;
+  controlsMaxPanVertical: number;
   modelTargetSize: number;
   lightingAmbientIntensity: number;
   lightingMainLightPositionX: number;
@@ -172,6 +174,8 @@ const defaultConfig: Viewer3DConfig = {
   controlsPanSpeed: 1,
   controlsEnableDamping: true,
   controlsDampingFactor: 0.05,
+  controlsMaxPanHorizontal: 3,
+  controlsMaxPanVertical: 2,
   modelTargetSize: 5,
   lightingAmbientIntensity: 0.7,
   lightingMainLightPositionX: 5,
@@ -289,12 +293,13 @@ const ConfigSlider = memo(function ConfigSlider({
   max = 10,
   step = 0.1,
 }: ConfigSliderProps) {
-  const [inputValue, setInputValue] = useState(value.toString());
+  const safeValue = value ?? 0;
+  const [inputValue, setInputValue] = useState(safeValue.toString());
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (!isEditing) setInputValue(value.toString());
-  }, [value, isEditing]);
+    if (!isEditing) setInputValue(safeValue.toString());
+  }, [safeValue, isEditing]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -387,7 +392,7 @@ interface ConvertedConfig {
   camera: { initialDistance: number; fov: number; minDistance: number; maxDistance: number };
   rotation: { freeRotation: boolean; minPolarAngle: number; maxPolarAngle: number };
   autoRotate: { enabled: boolean; speed: number; resumeDelay: number };
-  controls: { enablePan: boolean; enablePanHorizontal: boolean; enablePanVertical: boolean; rotateSpeed: number; zoomSpeed: number; panSpeed: number; enableDamping: boolean; dampingFactor: number };
+  controls: { enablePan: boolean; enablePanHorizontal: boolean; enablePanVertical: boolean; rotateSpeed: number; zoomSpeed: number; panSpeed: number; enableDamping: boolean; dampingFactor: number; maxPanHorizontal: number; maxPanVertical: number };
   model: { targetSize: number };
   lighting: { ambientIntensity: number; mainLight: { position: [number, number, number]; intensity: number }; secondaryLight: { position: [number, number, number]; intensity: number }; fillLights: { position: [number, number, number]; intensity: number }[] };
   shadows: { enabled: boolean; position: [number, number, number]; opacity: number; scale: number; blur: number; far: number; resolution: number };
@@ -482,8 +487,9 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
       fetch('/api/viewer3d-config')
         .then(res => res.json())
         .then(data => {
-          setConfig(data);
-          setOriginalConfig(data);
+          const merged = { ...defaultConfig, ...data };
+          setConfig(merged);
+          setOriginalConfig(merged);
         })
         .catch(err => {
           console.error('Error fetching config:', err);
@@ -536,14 +542,15 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
         .then(res => res.json())
         .then(data => {
           if (data && data.found !== false) {
-            setConfig(data);
-            setOriginalConfig(data);
+            const merged = { ...defaultConfig, ...data };
+            setConfig(merged);
+            setOriginalConfig(merged);
             setHasKitConfig(true);
           } else {
             // Nessuna config per-kit → ricarica globale
             fetch('/api/viewer3d-config')
               .then(res => res.json())
-              .then(globalData => { setConfig(globalData); setOriginalConfig(globalData); })
+              .then(globalData => { const merged = { ...defaultConfig, ...globalData }; setConfig(merged); setOriginalConfig(merged); })
               .catch(() => {});
             setHasKitConfig(false);
           }
@@ -621,8 +628,9 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
           fetch('/api/viewer3d-config')
             .then(res => res.json())
             .then(globalData => {
-              setConfig(globalData);
-              setOriginalConfig(globalData);
+              const merged = { ...defaultConfig, ...globalData };
+              setConfig(merged);
+              setOriginalConfig(merged);
               setHasChanges(false);
             })
             .catch(() => {});
@@ -685,6 +693,8 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
         panSpeed: config.controlsPanSpeed,
         enableDamping: config.controlsEnableDamping,
         dampingFactor: config.controlsDampingFactor,
+        maxPanHorizontal: config.controlsMaxPanHorizontal,
+        maxPanVertical: config.controlsMaxPanVertical,
       },
       model: { targetSize: config.modelTargetSize },
       lighting: {
@@ -949,6 +959,8 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
                     <ConfigSlider label="Rotazione" value={config.controlsRotateSpeed} configKey="controlsRotateSpeed" onUpdate={updateConfig} min={0.1} max={2} step={0.1} />
                     <ConfigSlider label="Zoom" value={config.controlsZoomSpeed} configKey="controlsZoomSpeed" onUpdate={updateConfig} min={0.1} max={3} step={0.1} />
                     <ConfigSlider label="Damping" value={config.controlsDampingFactor} configKey="controlsDampingFactor" onUpdate={updateConfig} min={0.01} max={0.5} step={0.01} />
+                    <ConfigSlider label="Max pan orizz." value={config.controlsMaxPanHorizontal} configKey="controlsMaxPanHorizontal" onUpdate={updateConfig} min={0} max={10} step={0.1} />
+                    <ConfigSlider label="Max pan vert." value={config.controlsMaxPanVertical} configKey="controlsMaxPanVertical" onUpdate={updateConfig} min={0} max={10} step={0.1} />
                   </div>
                 </AccordionContent>
               </AccordionItem>

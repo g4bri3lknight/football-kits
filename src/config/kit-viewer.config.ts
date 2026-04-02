@@ -35,6 +35,8 @@ export const KIT_VIEWER_CONFIG = {
     panSpeed: 1,               // Velocità pan
     enableDamping: true,       // Abilita smorzamento fluido
     dampingFactor: 0.05,       // Fattore smorzamento (0-1)
+    maxPanHorizontal: 3,       // Limite massimo pan orizzontale
+    maxPanVertical: 2,         // Limite massimo pan verticale
   },
 
   // === MODELLO ===

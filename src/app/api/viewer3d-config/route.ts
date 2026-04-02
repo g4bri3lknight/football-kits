@@ -30,7 +30,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { adminToken, id, updatedAt, ...configData } = body;
+    const { adminToken, id, updatedAt, kitId, createdAt, ...configData } = body;
 
     // Verifica il token admin
     if (!adminToken || !verifyAuthToken(adminToken)) {

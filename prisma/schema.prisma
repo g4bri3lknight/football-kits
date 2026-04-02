@@ -181,7 +181,6 @@ model Admin {
   updatedAt DateTime @updatedAt
 }
 
-// Configurazione del visualizzatore 3D
 model Viewer3DConfig {
   id        String   @id @default("viewer3d-config")
   updatedAt DateTime @updatedAt
@@ -211,6 +210,8 @@ model Viewer3DConfig {
   controlsPanSpeed           Float   @default(1)
   controlsEnableDamping      Boolean @default(true)
   controlsDampingFactor      Float   @default(0.05)
+  controlsMaxPanHorizontal   Float   @default(3)
+  controlsMaxPanVertical     Float   @default(2)
 
   // === MODELLO ===
   modelTargetSize Float @default(5)
@@ -344,6 +345,8 @@ model KitViewer3DConfig {
   controlsPanSpeed           Float   @default(1)
   controlsEnableDamping      Boolean @default(true)
   controlsDampingFactor      Float   @default(0.05)
+  controlsMaxPanHorizontal   Float   @default(3)
+  controlsMaxPanVertical     Float   @default(2)
 
   // === MODELLO ===
   modelTargetSize Float @default(5)

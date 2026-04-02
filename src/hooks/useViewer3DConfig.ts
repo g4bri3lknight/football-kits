@@ -31,6 +31,8 @@ export interface Viewer3DConfigData {
   controlsPanSpeed: number;
   controlsEnableDamping: boolean;
   controlsDampingFactor: number;
+  controlsMaxPanHorizontal: number;
+  controlsMaxPanVertical: number;
 
   // Modello
   modelTargetSize: number;
@@ -92,6 +94,8 @@ export const defaultViewer3DConfig: Viewer3DConfigData = {
   controlsPanSpeed: 1,
   controlsEnableDamping: true,
   controlsDampingFactor: 0.05,
+  controlsMaxPanHorizontal: 3,
+  controlsMaxPanVertical: 2,
   modelTargetSize: 5,
   lightingAmbientIntensity: 0.7,
   lightingMainLightPositionX: 5,
@@ -204,6 +208,8 @@ export function useViewerConfig() {
       panSpeed: config.controlsPanSpeed,
       enableDamping: config.controlsEnableDamping,
       dampingFactor: config.controlsDampingFactor,
+      maxPanHorizontal: config.controlsMaxPanHorizontal,
+      maxPanVertical: config.controlsMaxPanVertical,
     },
     model: {
       targetSize: config.modelTargetSize,
