@@ -12,6 +12,7 @@ export interface Viewer3DConfigData {
   cameraFov: number;
   cameraMinDistance: number;
   cameraMaxDistance: number;
+  cameraFreeRotation: boolean;
 
   // Rotazione (in gradi)
   rotationMinPolarAngle: number;
@@ -69,11 +70,73 @@ export interface Viewer3DConfigData {
   effectsVignetteOffset: number;
   effectsVignetteDarkness: number;
 
+  // Post-processing: Bloom
+  bloomEnabled: boolean;
+  bloomIntensity: number;
+  bloomLuminanceThreshold: number;
+  bloomLuminanceSmoothing: number;
+
+  // Post-processing: Ambient Occlusion
+  aoEnabled: boolean;
+  aoIntensity: number;
+  aoDistance: number;
+  aoFalloff: number;
+
+  // Post-processing: Brightness / Contrast
+  brightnessContrastEnabled: boolean;
+  brightness: number;
+  contrast: number;
+
+  // Post-processing: Hue / Saturation
+  hueSaturationEnabled: boolean;
+  hue: number;
+  saturation: number;
+
+  // Post-processing: Chromatic Aberration
+  chromaticAberrationEnabled: boolean;
+  chromaticAberrationOffset: number;
+
+  // Post-processing: Depth of Field
+  depthOfFieldEnabled: boolean;
+  depthOfFieldFocusDistance: number;
+  depthOfFieldFocalLength: number;
+  depthOfFieldBokehScale: number;
+
+  // Post-processing: Tilt Shift
+  tiltShiftEnabled: boolean;
+  tiltShiftBlur: number;
+  tiltShiftStart: number;
+  tiltShiftEnd: number;
+
+  // Post-processing: Noise
+  noiseEnabled: boolean;
+  noiseOpacity: number;
+
+  // Post-processing: Dot Screen
+  dotScreenEnabled: boolean;
+  dotScreenAngle: number;
+  dotScreenScale: number;
+
+  // Post-processing: Pixelation
+  pixelationEnabled: boolean;
+  pixelationGranularity: number;
+
+  // Post-processing: Scanline
+  scanlineEnabled: boolean;
+  scanlineDensity: number;
+  scanlineOpacity: number;
+
+  // Post-processing: Glitch
+  glitchEnabled: boolean;
+  glitchDelay: number;
+  glitchDuration: number;
+  glitchStrength: number;
+
   // Background
   backgroundColor: string;
 }
 
-// Configurazione di default (corrisponde ai valori nel file config)
+// Configurazione di default (corrisponde ai valori nel Prisma schema)
 export const defaultViewer3DConfig: Viewer3DConfigData = {
   id: 'viewer3d-config',
   updatedAt: new Date(),
@@ -81,6 +144,7 @@ export const defaultViewer3DConfig: Viewer3DConfigData = {
   cameraFov: 50,
   cameraMinDistance: 3.5,
   cameraMaxDistance: 6,
+  cameraFreeRotation: false,
   rotationMinPolarAngle: 90,
   rotationMaxPolarAngle: 90,
   autoRotateEnabled: true,
@@ -123,6 +187,45 @@ export const defaultViewer3DConfig: Viewer3DConfigData = {
   effectsToneMappingMiddleGrey: 0.6,
   effectsVignetteOffset: 0.3,
   effectsVignetteDarkness: 0.5,
+  // Post-processing
+  bloomEnabled: false,
+  bloomIntensity: 0.5,
+  bloomLuminanceThreshold: 0.9,
+  bloomLuminanceSmoothing: 0.025,
+  aoEnabled: false,
+  aoIntensity: 2.0,
+  aoDistance: 0.2,
+  aoFalloff: 0.01,
+  brightnessContrastEnabled: false,
+  brightness: 0,
+  contrast: 0,
+  hueSaturationEnabled: false,
+  hue: 0,
+  saturation: 0,
+  chromaticAberrationEnabled: false,
+  chromaticAberrationOffset: 0.002,
+  depthOfFieldEnabled: false,
+  depthOfFieldFocusDistance: 0.01,
+  depthOfFieldFocalLength: 0.02,
+  depthOfFieldBokehScale: 3,
+  tiltShiftEnabled: false,
+  tiltShiftBlur: 0.05,
+  tiltShiftStart: 0.49,
+  tiltShiftEnd: 0.5,
+  noiseEnabled: false,
+  noiseOpacity: 0.05,
+  dotScreenEnabled: false,
+  dotScreenAngle: 1.39,
+  dotScreenScale: 1,
+  pixelationEnabled: false,
+  pixelationGranularity: 5,
+  scanlineEnabled: false,
+  scanlineDensity: 1.5,
+  scanlineOpacity: 0.1,
+  glitchEnabled: false,
+  glitchDelay: 3,
+  glitchDuration: 0.6,
+  glitchStrength: 0.3,
   backgroundColor: '#1a1a2e',
 };
 
@@ -191,6 +294,7 @@ export function useViewerConfig() {
       maxDistance: config.cameraMaxDistance,
     },
     rotation: {
+      freeRotation: config.cameraFreeRotation,
       minPolarAngle: (config.rotationMinPolarAngle * Math.PI) / 180, // Converti in radianti
       maxPolarAngle: (config.rotationMaxPolarAngle * Math.PI) / 180,
     },
@@ -245,18 +349,18 @@ export function useViewerConfig() {
       vignetteOffset: config.effectsVignetteOffset,
       vignetteDarkness: config.effectsVignetteDarkness,
     },
-    bloom: { enabled: false, intensity: 0.5, luminanceThreshold: 0.9, luminanceSmoothing: 0.025 },
-    ao: { enabled: false, intensity: 0.1, distance: 0.2, falloff: 0.01 },
-    brightnessContrast: { enabled: false, brightness: 0, contrast: 0 },
-    hueSaturation: { enabled: false, hue: 0, saturation: 0 },
-    chromaticAberration: { enabled: false, offset: 0.002 },
-    depthOfField: { enabled: false, focusDistance: 0.01, focalLength: 0.02, bokehScale: 3 },
-    tiltShift: { enabled: false, blur: 0.05, start: 0.49, end: 0.5 },
-    noise: { enabled: false, opacity: 0.05 },
-    dotScreen: { enabled: false, angle: 1.39, scale: 1 },
-    pixelation: { enabled: false, granularity: 5 },
-    scanline: { enabled: false, density: 1.5, opacity: 0.1 },
-    glitch: { enabled: false, delay: 3, duration: 0.6, strength: 0.3 },
+    bloom: { enabled: config.bloomEnabled, intensity: config.bloomIntensity, luminanceThreshold: config.bloomLuminanceThreshold, luminanceSmoothing: config.bloomLuminanceSmoothing },
+    ao: { enabled: config.aoEnabled, intensity: config.aoIntensity, distance: config.aoDistance, falloff: config.aoFalloff },
+    brightnessContrast: { enabled: config.brightnessContrastEnabled, brightness: config.brightness, contrast: config.contrast },
+    hueSaturation: { enabled: config.hueSaturationEnabled, hue: config.hue, saturation: config.saturation },
+    chromaticAberration: { enabled: config.chromaticAberrationEnabled, offset: config.chromaticAberrationOffset },
+    depthOfField: { enabled: config.depthOfFieldEnabled, focusDistance: config.depthOfFieldFocusDistance, focalLength: config.depthOfFieldFocalLength, bokehScale: config.depthOfFieldBokehScale },
+    tiltShift: { enabled: config.tiltShiftEnabled, blur: config.tiltShiftBlur, start: config.tiltShiftStart, end: config.tiltShiftEnd },
+    noise: { enabled: config.noiseEnabled, opacity: config.noiseOpacity },
+    dotScreen: { enabled: config.dotScreenEnabled, angle: config.dotScreenAngle, scale: config.dotScreenScale },
+    pixelation: { enabled: config.pixelationEnabled, granularity: config.pixelationGranularity },
+    scanline: { enabled: config.scanlineEnabled, density: config.scanlineDensity, opacity: config.scanlineOpacity },
+    glitch: { enabled: config.glitchEnabled, delay: config.glitchDelay, duration: config.glitchDuration, strength: config.glitchStrength },
     backgroundColor: config.backgroundColor,
   };
 
