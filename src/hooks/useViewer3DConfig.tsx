@@ -13,9 +13,6 @@ export interface Viewer3DConfigData {
   cameraMinDistance: number;
   cameraMaxDistance: number;
 
-  // Rotazione libera 360°
-  cameraFreeRotation: boolean;
-
   // Rotazione (in gradi)
   rotationMinPolarAngle: number;
   rotationMaxPolarAngle: number;
@@ -34,6 +31,8 @@ export interface Viewer3DConfigData {
   controlsPanSpeed: number;
   controlsEnableDamping: boolean;
   controlsDampingFactor: number;
+  controlsMaxPanHorizontal: number;
+  controlsMaxPanVertical: number;
 
   // Modello
   modelTargetSize: number;
@@ -70,61 +69,6 @@ export interface Viewer3DConfigData {
   effectsVignetteOffset: number;
   effectsVignetteDarkness: number;
 
-  // Bloom
-  bloomEnabled: boolean;
-  bloomIntensity: number;
-  bloomLuminanceThreshold: number;
-  bloomLuminanceSmoothing: number;
-
-  // Ambient Occlusion (N8AO)
-  aoEnabled: boolean;
-  aoIntensity: number;
-  aoDistance: number;
-  aoFalloff: number;
-
-  // Brightness / Contrast
-  brightnessContrastEnabled: boolean;
-  brightness: number;
-  contrast: number;
-
-  // Hue / Saturation
-  hueSaturationEnabled: boolean;
-  hue: number;
-  saturation: number;
-
-  // Chromatic Aberration
-  chromaticAberrationEnabled: boolean;
-  chromaticAberrationOffset: number;
-  // Depth of Field
-  depthOfFieldEnabled: boolean;
-  depthOfFieldFocusDistance: number;
-  depthOfFieldFocalLength: number;
-  depthOfFieldBokehScale: number;
-  // Tilt Shift
-  tiltShiftEnabled: boolean;
-  tiltShiftBlur: number;
-  tiltShiftStart: number;
-  tiltShiftEnd: number;
-  // Noise
-  noiseEnabled: boolean;
-  noiseOpacity: number;
-  // Dot Screen
-  dotScreenEnabled: boolean;
-  dotScreenAngle: number;
-  dotScreenScale: number;
-  // Pixelation
-  pixelationEnabled: boolean;
-  pixelationGranularity: number;
-  // Scanline
-  scanlineEnabled: boolean;
-  scanlineDensity: number;
-  scanlineOpacity: number;
-  // Glitch
-  glitchEnabled: boolean;
-  glitchDelay: number;
-  glitchDuration: number;
-  glitchStrength: number;
-
   // Background
   backgroundColor: string;
 }
@@ -137,7 +81,6 @@ export const defaultViewer3DConfig: Viewer3DConfigData = {
   cameraFov: 50,
   cameraMinDistance: 3.5,
   cameraMaxDistance: 6,
-  cameraFreeRotation: false,
   rotationMinPolarAngle: 90,
   rotationMaxPolarAngle: 90,
   autoRotateEnabled: true,
@@ -151,6 +94,8 @@ export const defaultViewer3DConfig: Viewer3DConfigData = {
   controlsPanSpeed: 1,
   controlsEnableDamping: true,
   controlsDampingFactor: 0.05,
+  controlsMaxPanHorizontal: 3,
+  controlsMaxPanVertical: 2,
   modelTargetSize: 5,
   lightingAmbientIntensity: 0.7,
   lightingMainLightPositionX: 5,
@@ -178,45 +123,7 @@ export const defaultViewer3DConfig: Viewer3DConfigData = {
   effectsToneMappingMiddleGrey: 0.6,
   effectsVignetteOffset: 0.3,
   effectsVignetteDarkness: 0.5,
-  bloomEnabled: false,
-  bloomIntensity: 0.5,
-  bloomLuminanceThreshold: 0.9,
-  bloomLuminanceSmoothing: 0.025,
-  aoEnabled: false,
-  aoIntensity: 2.0,
-  aoDistance: 0.2,
-  aoFalloff: 0.01,
-  brightnessContrastEnabled: false,
-  brightness: 0,
-  contrast: 0,
-  hueSaturationEnabled: false,
-  hue: 0,
-  saturation: 0,
-  chromaticAberrationEnabled: false,
-  chromaticAberrationOffset: 0.002,
-  depthOfFieldEnabled: false,
-  depthOfFieldFocusDistance: 0.01,
-  depthOfFieldFocalLength: 0.02,
-  depthOfFieldBokehScale: 3,
-  tiltShiftEnabled: false,
-  tiltShiftBlur: 0.05,
-  tiltShiftStart: 0.49,
-  tiltShiftEnd: 0.5,
-  noiseEnabled: false,
-  noiseOpacity: 0.05,
-  dotScreenEnabled: false,
-  dotScreenAngle: 1.39,
-  dotScreenScale: 1,
-  pixelationEnabled: false,
-  pixelationGranularity: 5,
-  scanlineEnabled: false,
-  scanlineDensity: 1.5,
-  scanlineOpacity: 0.1,
-  glitchEnabled: false,
-  glitchDelay: 3,
-  glitchDuration: 0.6,
-  glitchStrength: 0.3,
-  backgroundColor: '#1a1a1a',
+  backgroundColor: '#1a1a2e',
 };
 
 // Context
@@ -284,7 +191,6 @@ export function useViewerConfig() {
       maxDistance: config.cameraMaxDistance,
     },
     rotation: {
-      freeRotation: config.cameraFreeRotation,
       minPolarAngle: (config.rotationMinPolarAngle * Math.PI) / 180, // Converti in radianti
       maxPolarAngle: (config.rotationMaxPolarAngle * Math.PI) / 180,
     },
@@ -302,6 +208,8 @@ export function useViewerConfig() {
       panSpeed: config.controlsPanSpeed,
       enableDamping: config.controlsEnableDamping,
       dampingFactor: config.controlsDampingFactor,
+      maxPanHorizontal: config.controlsMaxPanHorizontal,
+      maxPanVertical: config.controlsMaxPanVertical,
     },
     model: {
       targetSize: config.modelTargetSize,
@@ -337,68 +245,18 @@ export function useViewerConfig() {
       vignetteOffset: config.effectsVignetteOffset,
       vignetteDarkness: config.effectsVignetteDarkness,
     },
-    bloom: {
-      enabled: config.bloomEnabled,
-      intensity: config.bloomIntensity,
-      luminanceThreshold: config.bloomLuminanceThreshold,
-      luminanceSmoothing: config.bloomLuminanceSmoothing,
-    },
-    ao: {
-      enabled: config.aoEnabled,
-      intensity: config.aoIntensity,
-      distance: config.aoDistance,
-      falloff: config.aoFalloff,
-    },
-    brightnessContrast: {
-      enabled: config.brightnessContrastEnabled,
-      brightness: config.brightness,
-      contrast: config.contrast,
-    },
-    hueSaturation: {
-      enabled: config.hueSaturationEnabled,
-      hue: config.hue,
-      saturation: config.saturation,
-    },
-    chromaticAberration: {
-      enabled: config.chromaticAberrationEnabled,
-      offset: config.chromaticAberrationOffset,
-    },
-    depthOfField: {
-      enabled: config.depthOfFieldEnabled,
-      focusDistance: config.depthOfFieldFocusDistance,
-      focalLength: config.depthOfFieldFocalLength,
-      bokehScale: config.depthOfFieldBokehScale,
-    },
-    tiltShift: {
-      enabled: config.tiltShiftEnabled,
-      blur: config.tiltShiftBlur,
-      start: config.tiltShiftStart,
-      end: config.tiltShiftEnd,
-    },
-    noise: {
-      enabled: config.noiseEnabled,
-      opacity: config.noiseOpacity,
-    },
-    dotScreen: {
-      enabled: config.dotScreenEnabled,
-      angle: config.dotScreenAngle,
-      scale: config.dotScreenScale,
-    },
-    pixelation: {
-      enabled: config.pixelationEnabled,
-      granularity: config.pixelationGranularity,
-    },
-    scanline: {
-      enabled: config.scanlineEnabled,
-      density: config.scanlineDensity,
-      opacity: config.scanlineOpacity,
-    },
-    glitch: {
-      enabled: config.glitchEnabled,
-      delay: config.glitchDelay,
-      duration: config.glitchDuration,
-      strength: config.glitchStrength,
-    },
+    bloom: { enabled: false, intensity: 0.5, luminanceThreshold: 0.9, luminanceSmoothing: 0.025 },
+    ao: { enabled: false, intensity: 0.1, distance: 0.2, falloff: 0.01 },
+    brightnessContrast: { enabled: false, brightness: 0, contrast: 0 },
+    hueSaturation: { enabled: false, hue: 0, saturation: 0 },
+    chromaticAberration: { enabled: false, offset: 0.002 },
+    depthOfField: { enabled: false, focusDistance: 0.01, focalLength: 0.02, bokehScale: 3 },
+    tiltShift: { enabled: false, blur: 0.05, start: 0.49, end: 0.5 },
+    noise: { enabled: false, opacity: 0.05 },
+    dotScreen: { enabled: false, angle: 1.39, scale: 1 },
+    pixelation: { enabled: false, granularity: 5 },
+    scanline: { enabled: false, density: 1.5, opacity: 0.1 },
+    glitch: { enabled: false, delay: 3, duration: 0.6, strength: 0.3 },
     backgroundColor: config.backgroundColor,
   };
 

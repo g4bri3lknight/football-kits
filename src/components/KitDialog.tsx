@@ -132,6 +132,8 @@ export function KitDialog({
               panSpeed: data.controlsPanSpeed,
               enableDamping: data.controlsEnableDamping,
               dampingFactor: data.controlsDampingFactor,
+              maxPanHorizontal: data.controlsMaxPanHorizontal,
+              maxPanVertical: data.controlsMaxPanVertical,
             },
             model: { targetSize: data.modelTargetSize },
             lighting: {
