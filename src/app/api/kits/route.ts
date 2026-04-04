@@ -65,7 +65,16 @@ export async function GET() {
 // POST /api/kits - Crea un nuovo kit
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('POST /api/kits - Failed to parse request body:', parseError);
+      return NextResponse.json(
+        { error: 'Request body too large or invalid JSON', details: parseError instanceof Error ? parseError.message : String(parseError) },
+        { status: 413 }
+      );
+    }
     console.log('POST /api/kits - Request body keys:', Object.keys(body));
     console.log('POST /api/kits - name:', body.name, 'team:', body.team, 'type:', body.type);
 

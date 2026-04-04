@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  experimental: {
+    proxyClientMaxBodySize: '50mb',
+  },
   // Headers CORS - sostituisce il middleware deprecato
   async headers() {
     return [

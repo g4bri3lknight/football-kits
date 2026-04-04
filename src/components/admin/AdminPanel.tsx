@@ -356,9 +356,14 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         body: JSON.stringify(kitData),
       });
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData: any;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
         console.error('Create kit error:', errorData);
-        throw new Error(errorData.error || errorData.details || 'Failed to create kit');
+        throw new Error(errorData.error || errorData.details || `Errore HTTP ${response.status}`);
       }
       const newKit = await response.json();
       setKits([...kits, newKit]);
