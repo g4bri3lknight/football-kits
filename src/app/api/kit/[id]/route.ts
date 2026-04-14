@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Permetti payload fino a 50MB per il caricamento di file
+export const maxDuration = 60; // 60 secondi di timeout
+
 // Funzione helper per rimuovere i dati binari dalla risposta
 const sanitizeKit = (kit: any) => {
   const { imageData, logoData, model3DData, detail1Data, detail2Data, detail3Data, detail4Data, detail5Data, detail6Data, ...rest } = kit;
