@@ -30,15 +30,60 @@ function extractSeason(name: string | null | undefined): string | null {
 // GET /api/timeline - Ottiene tutti i kit organizzati per anno
 export async function GET() {
   try {
-    // Recupera tutti i playerKit
+    // Recupera tutti i playerKit usando select esplicito per evitare
+    // l'errore "Failed to convert rust String into napi string" sui campi Bytes
     const playerKits = await db.playerKit.findMany({
-      include: {
-        Kit: true,
+      select: {
+        id: true,
+        playerId: true,
+        kitId: true,
+        createdAt: true,
+        updatedAt: true,
+        Kit: {
+          select: {
+            id: true,
+            name: true,
+            team: true,
+            type: true,
+            createdAt: true,
+            updatedAt: true,
+            status: true,
+            hasImage: true,
+            hasLogo: true,
+            hasModel3D: true,
+            hasDetail1: true,
+            hasDetail2: true,
+            hasDetail3: true,
+            hasDetail4: true,
+            hasDetail5: true,
+            hasDetail6: true,
+            detail1Label: true,
+            detail2Label: true,
+            detail3Label: true,
+            detail4Label: true,
+            detail5Label: true,
+            detail6Label: true,
+            likes: true,
+            dislikes: true,
+          },
+        },
         Player: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            nationId: true,
+            biography: true,
+            createdAt: true,
+            updatedAt: true,
+            hasImage: true,
+            status: true,
             Nation: true,
           },
         },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 

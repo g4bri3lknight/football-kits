@@ -6,7 +6,7 @@ import { EffectComposer, SMAA, ToneMapping, Vignette, Bloom, N8AO, BrightnessCon
 import { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Shirt, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react';
+import { Shirt, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, AlertTriangle, Loader2, X } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
 import { FramerDialog, DialogPrimitive } from '@/components/ui/framer-dialog';
 import { staggerContainer, staggerItem } from '@/components/ui/animated-dialog';
@@ -182,6 +182,75 @@ interface KitViewer3DProps {
 }
 
 type ModelState = 'checking' | 'loading' | 'ready' | 'not_found';
+
+// Shared help content for both normal and fullscreen modes
+function HelpDialogContent() {
+  return (
+    <div className="space-y-3">
+      <p className="text-base font-semibold mb-4">Controlli 3D</p>
+
+      {/* Rotazione */}
+      <div className="flex items-start gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+          <MousePointer2 className="w-5 h-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium text-sm">Rotazione</p>
+          <p className="text-muted-foreground text-xs">Click sinistro + trascina</p>
+        </div>
+      </div>
+
+      {/* Zoom */}
+      <div className="flex items-start gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+          <ZoomIn className="w-5 h-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium text-sm">Zoom</p>
+          <p className="text-muted-foreground text-xs">Scroll del mouse o pinch</p>
+        </div>
+      </div>
+
+      {/* Pan */}
+      <div className="flex items-start gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+          <Move className="w-5 h-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium text-sm">Pan</p>
+          <p className="text-muted-foreground text-xs">Click destro + trascina</p>
+        </div>
+      </div>
+
+      {/* Reset Camera */}
+      <div className="flex items-start gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+          <RotateCcw className="w-5 h-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium text-sm">Reset camera</p>
+          <p className="text-muted-foreground text-xs">Doppio click sul modello</p>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t my-4" />
+
+      {/* Legenda pulsanti */}
+      <p className="text-muted-foreground text-xs uppercase tracking-wide mb-3">Pulsanti</p>
+
+      <div className="flex items-center gap-2.5 py-1">
+        <RotateCw className="w-5 h-5 text-green-500 shrink-0" />
+        <span className="text-sm">Attiva/disattiva rotazione automatica</span>
+      </div>
+
+      <div className="flex items-center gap-2.5 py-1">
+        <Maximize2 className="w-5 h-5 text-foreground shrink-0" />
+        <span className="text-sm">Modalità schermo intero</span>
+      </div>
+    </div>
+  );
+}
 
 // Componente Modello con Material Enhancement
 function Model({
@@ -934,81 +1003,45 @@ export default function KitViewer3D({
         </button>
       </div>
 
-      {/* Help Dialog */}
-      <FramerDialog
-        open={showHelp}
-        onOpenChange={setShowHelp}
-        className="max-w-sm w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto"
-      >
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="space-y-3"
+      {/* Help Dialog - Normal mode (uses Portal) */}
+      {!isFullscreen && (
+        <FramerDialog
+          open={showHelp}
+          onOpenChange={setShowHelp}
+          className="max-w-sm w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto"
         >
-          <DialogPrimitive.Title className="text-lg sm:text-xl font-semibold mb-4">Controlli 3D</DialogPrimitive.Title>
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="space-y-3"
+          >
+            <DialogPrimitive.Title className="text-lg sm:text-xl font-semibold mb-4">Controlli 3D</DialogPrimitive.Title>
 
-          {/* Rotazione */}
-          <motion.div variants={staggerItem} className="flex items-start gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
-              <MousePointer2 className="w-5 h-5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-sm sm:text-base">Rotazione</p>
-              <p className="text-muted-foreground text-xs sm:text-sm">Click sinistro + trascina</p>
-            </div>
+            <HelpDialogContent />
           </motion.div>
+        </FramerDialog>
+      )}
 
-          {/* Zoom */}
-          <motion.div variants={staggerItem} className="flex items-start gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
-              <ZoomIn className="w-5 h-5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-sm sm:text-base">Zoom</p>
-              <p className="text-muted-foreground text-xs sm:text-sm">Scroll del mouse o pinch</p>
-            </div>
-          </motion.div>
-
-          {/* Pan */}
-          <motion.div variants={staggerItem} className="flex items-start gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
-              <Move className="w-5 h-5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-sm sm:text-base">Pan</p>
-              <p className="text-muted-foreground text-xs sm:text-sm">Click destro + trascina</p>
-            </div>
-          </motion.div>
-
-          {/* Reset Camera */}
-          <motion.div variants={staggerItem} className="flex items-start gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
-              <RotateCcw className="w-5 h-5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-sm sm:text-base">Reset camera</p>
-              <p className="text-muted-foreground text-xs sm:text-sm">Doppio click sul modello</p>
-            </div>
-          </motion.div>
-
-          {/* Divider */}
-          <div className="border-t my-4" />
-
-          {/* Legenda pulsanti */}
-          <p className="text-muted-foreground text-xs uppercase tracking-wide mb-3">Pulsanti</p>
-
-          <motion.div variants={staggerItem} className="flex items-center gap-2.5 py-1">
-            <RotateCw className="w-5 h-5 text-green-500 shrink-0" />
-            <span className="text-sm">Attiva/disattiva rotazione automatica</span>
-          </motion.div>
-
-          <motion.div variants={staggerItem} className="flex items-center gap-2.5 py-1">
-            <Maximize2 className="w-5 h-5 text-foreground shrink-0" />
-            <span className="text-sm">Modalità schermo intero</span>
-          </motion.div>
+      {/* Help Panel - Fullscreen mode (inline, no portal) */}
+      {isFullscreen && showHelp && (
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
+          className="absolute bottom-16 right-3 z-20 w-72 max-w-[calc(100vw-2rem)] rounded-xl border-2 bg-background/95 backdrop-blur-md p-5 shadow-2xl"
+          style={{ borderColor: '#002f42' }}
+        >
+          <button
+            onClick={() => setShowHelp(false)}
+            className="absolute top-3 right-3 p-1 rounded-md bg-black/30 hover:bg-black/50 transition-colors"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+          <HelpDialogContent />
         </motion.div>
-      </FramerDialog>
+      )}
     </div>
   );
 }

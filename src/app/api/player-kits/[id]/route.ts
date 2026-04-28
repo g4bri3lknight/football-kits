@@ -1,6 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Kit fields senza dati binari (Bytes)
+const kitSelectWithoutBinary = {
+  id: true,
+  name: true,
+  team: true,
+  type: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  hasImage: true,
+  hasLogo: true,
+  hasModel3D: true,
+  hasDetail1: true,
+  hasDetail2: true,
+  hasDetail3: true,
+  hasDetail4: true,
+  hasDetail5: true,
+  hasDetail6: true,
+  detail1Label: true,
+  detail2Label: true,
+  detail3Label: true,
+  detail4Label: true,
+  detail5Label: true,
+  detail6Label: true,
+  likes: true,
+  dislikes: true,
+} as const;
+
+// Player fields senza dati binari (Bytes)
+const playerSelectWithoutBinary = {
+  id: true,
+  name: true,
+  surname: true,
+  nationId: true,
+  biography: true,
+  createdAt: true,
+  updatedAt: true,
+  hasImage: true,
+  status: true,
+  Nation: true,
+} as const;
+
 // PUT /api/player-kits/[id] - Aggiorna un'associazione player-kit
 export async function PUT(
   request: NextRequest,
@@ -51,13 +93,18 @@ export async function PUT(
         ...(kitId !== undefined && { kitId }),
         updatedAt: new Date(),
       },
-      include: {
+      select: {
+        id: true,
+        playerId: true,
+        kitId: true,
+        createdAt: true,
+        updatedAt: true,
         Player: {
-          include: {
-            Nation: true,
-          },
+          select: playerSelectWithoutBinary,
         },
-        Kit: true,
+        Kit: {
+          select: kitSelectWithoutBinary,
+        },
       },
     });
 
