@@ -38,6 +38,7 @@ import {
   CircleCheck,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { HoverTooltip } from '@/components/HoverTooltip';
 
 // ============================================================================
 // Types
@@ -585,42 +586,46 @@ export default function PresetsManager({
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                  <HoverTooltip text="Carica preset" side="top">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
-                    title="Carica preset"
                     onClick={() => handleLoadPreset(preset)}
                   >
                     <Play className="w-3.5 h-3.5" />
                   </Button>
+                  </HoverTooltip>
+                  <HoverTooltip text="Applica a kit..." side="top">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
-                    title="Applica a kit..."
                     onClick={() => handleOpenBulkApply(preset)}
                   >
                     <CheckSquare className="w-3.5 h-3.5" />
                   </Button>
+                  </HoverTooltip>
+                  <HoverTooltip text="Esporta JSON" side="top">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-accent"
-                    title="Esporta JSON"
                     onClick={() => handleExportPreset(preset)}
                   >
                     <Download className="w-3.5 h-3.5" />
                   </Button>
+                  </HoverTooltip>
+                  <HoverTooltip text="Elimina preset" side="top">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-red-400 hover:text-red-500 hover:bg-red-500/10"
-                    title="Elimina preset"
                     onClick={() => setPresetToDelete(preset)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
+                  </HoverTooltip>
                 </div>
               </div>
             ))}
@@ -734,7 +739,9 @@ export default function PresetsManager({
                         </span>
                       </div>
                       {alreadyApplied && (
-                        <CircleCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Configurazione già applicata" />
+                        <HoverTooltip text="Configurazione già applicata" side="top">
+                        <CircleCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        </HoverTooltip>
                       )}
                     </label>
                   );

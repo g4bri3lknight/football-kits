@@ -47,6 +47,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useViewerConfig } from '@/hooks/useViewer3DConfig';
 import KitViewer3D from '@/components/KitViewer3D';
+import { HoverTooltip } from '@/components/HoverTooltip';
 import PresetsManager, { normalizeConfig } from '@/components/admin/PresetsManager';
 import {
   AlertDialog,
@@ -838,19 +839,22 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
                         return (
                           <div className="ml-auto flex items-center gap-1.5">
                             {badge ? (
-                              <span className="text-[10px] bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded-full truncate max-w-[120px]" title={badge}>{badge}</span>
+                              <HoverTooltip text={badge} side="top">
+                              <span className="text-[10px] bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded-full truncate max-w-[120px]">{badge}</span>
+                              </HoverTooltip>
                             ) : hasKitConfig ? (
                               <span className="text-[10px] bg-emerald-500/20 text-emerald-600 px-1.5 py-0.5 rounded-full">Config kit</span>
                             ) : null}
                             {hasKitConfig && (
+                              <HoverTooltip text="Rimuovi configurazione personalizzata" side="top">
                               <button
                                 type="button"
                                 onClick={() => setShowDeleteKitDialog(true)}
                                 className="p-0.5 rounded hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors"
-                                title="Rimuovi configurazione personalizzata"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
+                              </HoverTooltip>
                             )}
                           </div>
                         );

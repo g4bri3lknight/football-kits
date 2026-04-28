@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Shirt, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, AlertTriangle, Loader2, X } from 'lucide-react';
 import { KIT_VIEWER_CONFIG } from '@/config/kit-viewer.config';
+import { HoverTooltip } from '@/components/HoverTooltip';
 import { FramerDialog, DialogPrimitive } from '@/components/ui/framer-dialog';
 import { staggerContainer, staggerItem } from '@/components/ui/animated-dialog';
 import { motion } from 'framer-motion';
@@ -970,37 +971,40 @@ export default function KitViewer3D({
       {/* Controls Buttons */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2">
         {/* Toggle Auto-Rotate Button */}
-        <button
-          onClick={toggleAutoRotate}
-          className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
-          title={autoRotateEnabled ? 'Disattiva rotazione automatica' : 'Attiva rotazione automatica'}
-        >
-          <RotateCw
-            className={`w-5 h-5 transition-colors ${autoRotateEnabled ? 'text-green-400' : 'text-white/50'}`}
-          />
-        </button>
+        <HoverTooltip text={autoRotateEnabled ? 'Disattiva rotazione automatica' : 'Attiva rotazione automatica'} side="top" noPortal={isFullscreen}>
+          <button
+            onClick={toggleAutoRotate}
+            className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+          >
+            <RotateCw
+              className={`w-5 h-5 transition-colors ${autoRotateEnabled ? 'text-green-400' : 'text-white/50'}`}
+            />
+          </button>
+        </HoverTooltip>
 
         {/* Fullscreen Button */}
-        <button
-          onClick={toggleFullscreen}
-          className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
-          title={isFullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
-        >
-          {isFullscreen ? (
-            <Minimize2 className="w-5 h-5 text-white" />
-          ) : (
-            <Maximize2 className="w-5 h-5 text-white" />
-          )}
-        </button>
+        <HoverTooltip text={isFullscreen ? 'Esci da schermo intero' : 'Schermo intero'} side="top" noPortal={isFullscreen}>
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-5 h-5 text-white" />
+            ) : (
+              <Maximize2 className="w-5 h-5 text-white" />
+            )}
+          </button>
+        </HoverTooltip>
 
         {/* Help Button */}
-        <button
-          onClick={() => setShowHelp(true)}
-          className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
-          title='Controlli'
-        >
-          <HelpCircle className="w-5 h-5 text-white" />
-        </button>
+        <HoverTooltip text="Controlli" side="top" noPortal={isFullscreen}>
+          <button
+            onClick={() => setShowHelp(true)}
+            className="p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+          >
+            <HelpCircle className="w-5 h-5 text-white" />
+          </button>
+        </HoverTooltip>
       </div>
 
       {/* Help Dialog - Normal mode (uses Portal) */}

@@ -39,6 +39,7 @@ import { Pencil, Trash2, Search, Loader2, MessageCircle, Reply } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 import { Comment } from './types';
 import { translateKitType, getKitTypeColor } from './utils';
+import { HoverTooltip } from '@/components/HoverTooltip';
 
 interface CommentsTabProps {
   adminToken: string;
@@ -423,9 +424,11 @@ export default function CommentsTab({ adminToken, adminNickname }: CommentsTabPr
                         </TableCell>
                         <TableCell>
                           <div className="max-w-[300px]">
-                            <p className="text-sm truncate" title={comment.content}>
+                            <HoverTooltip text={comment.content} side="top">
+                            <p className="text-sm truncate">
                               {comment.content}
                             </p>
+                            </HoverTooltip>
                             {isCommentEdited(comment.createdAt, comment.updatedAt) && (
                               <span className="text-[10px] text-muted-foreground italic">(modificato)</span>
                             )}
@@ -439,15 +442,16 @@ export default function CommentsTab({ adminToken, adminNickname }: CommentsTabPr
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             {!comment.isReply && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleOpenReplyDialog(comment)}
-                                className="h-8 w-8 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
-                                title="Rispondi"
-                              >
-                                <Reply className="w-4 h-4" />
-                              </Button>
+                              <HoverTooltip text="Rispondi" side="top">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenReplyDialog(comment)}
+                                  className="h-8 w-8 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                                >
+                                  <Reply className="w-4 h-4" />
+                                </Button>
+                              </HoverTooltip>
                             )}
                             <Button
                               variant="ghost"

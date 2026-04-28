@@ -8,6 +8,7 @@ import { FramerDialog } from '@/components/ui/framer-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Shirt, ThumbsUp, ThumbsDown, Share2, Facebook, Twitter, MessageCircle, Link2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import KitViewer3D from '@/components/KitViewer3D';
+import { HoverTooltip } from '@/components/HoverTooltip';
 import { KitComments } from '@/components/KitComments';
 import { getPlayerDisplayName } from '@/lib/player-utils';
 import { KIT_DETAIL_IMAGE_CONFIG } from '@/config/kit-viewer.config';
@@ -354,6 +355,7 @@ export function KitDialog({
             >
               {/* Kit precedente */}
               {playerKitsList.length > 1 && prevKit ? (
+                <HoverTooltip text={prevKit.name} side="bottom">
                 <motion.button
                   variants={voteButtonVariants}
                   initial="initial"
@@ -361,7 +363,6 @@ export function KitDialog({
                   whileTap="tap"
                   onClick={(e) => { e.stopPropagation(); onNavigatePrevious(); }}
                   className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-                  title={prevKit.name}
                 >
                   <ChevronLeft className="w-4 h-4 text-muted-foreground" />
                   {prevKit.hasLogo ? (
@@ -377,6 +378,7 @@ export function KitDialog({
                     {truncateName(prevKit.name)}
                   </span>
                 </motion.button>
+                </HoverTooltip>
               ) : (
                 <div className="w-[80px] sm:w-[100px] flex-shrink-0" />
               )}
@@ -388,6 +390,7 @@ export function KitDialog({
 
               {/* Kit successivo */}
               {playerKitsList.length > 1 && nextKit ? (
+                <HoverTooltip text={nextKit.name} side="bottom">
                 <motion.button
                   variants={voteButtonVariants}
                   initial="initial"
@@ -395,7 +398,6 @@ export function KitDialog({
                   whileTap="tap"
                   onClick={(e) => { e.stopPropagation(); onNavigateNext(); }}
                   className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer mr-16"
-                  title={nextKit.name}
                 >
                   <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
                     {truncateName(nextKit.name)}
@@ -411,6 +413,7 @@ export function KitDialog({
                   )}
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </motion.button>
+                </HoverTooltip>
               ) : (
                 <div className="w-[80px] sm:w-[100px] flex-shrink-0 mr-16" />
               )}
@@ -687,6 +690,7 @@ export function KitDialog({
 
                   {/* Share button */}
                   <div className="relative">
+                    <HoverTooltip text="Condividi" side="top">
                     <motion.button
                       variants={voteButtonVariants}
                       initial="initial"
@@ -695,11 +699,11 @@ export function KitDialog({
                       type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowShareMenu(!showShareMenu); }}
                       className="flex items-center gap-1.5 px-2.5 sm:px-3 h-10 rounded-lg border-2 transition-all cursor-pointer bg-muted/50 hover:bg-muted border-muted-foreground/30 hover:border-muted-foreground/50"
-                      title="Condividi"
                     >
                       <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                       <span className="hidden sm:inline text-sm font-medium text-muted-foreground">Condividi</span>
                     </motion.button>
+                    </HoverTooltip>
 
                     <AnimatePresence>
                       {showShareMenu && (
