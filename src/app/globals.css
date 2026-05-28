@@ -204,7 +204,7 @@ body {
 /* sfondo fisso SOLO tra header e footer */
 .bg-fixed {
   position: fixed;
-  top: var(--header-h);
+  top: var(--header-only-h);
   left: 0;
   right: 0;
   bottom: var(--footer-h);
@@ -227,6 +227,13 @@ body {
   /* opzionale: padding interno */
   padding: 24px;
   padding-bottom: 40px;
+}
+
+/* Timeline mode: .content becomes a non-scrolling flex container */
+.content-timeline {
+  overflow: hidden !important;
+  padding: 0 !important;
+  height: auto !important;
 }
 
 .card-custom-color {

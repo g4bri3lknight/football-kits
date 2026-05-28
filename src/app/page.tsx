@@ -509,7 +509,7 @@ export default function Home() {
                   placeholder="Cerca giocatore..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`pl-10 backdrop-blur-md bg-black/50 focus-visible:border-white focus-visible:ring-0 ${searchQuery ? '!border-white' : 'border-white/20'}`}
+                  className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${searchQuery ? '!border-white' : 'border-white/20'}`}
                   suppressHydrationWarning
                 />
               </div>
@@ -517,7 +517,7 @@ export default function Home() {
               {/* Nationality filter */}
               <div className="flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
                 <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
-                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/50 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== 'all' ? '!border-white' : 'border-white/20'}`}>
+                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== 'all' ? '!border-white' : 'border-white/20'}`}>
                     <span className={playerNationFilter === 'all' ? 'text-white/70' : 'text-white'}>
                       {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
                     </span>
@@ -544,7 +544,7 @@ export default function Home() {
                   placeholder="Filtra per stagione..."
                   value={kitSeasonFilter}
                   onChange={(e) => setKitSeasonFilter(e.target.value)}
-                  className={`pl-10 backdrop-blur-md bg-black/50 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
+                  className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
                   suppressHydrationWarning
                 />
               </div>
@@ -557,14 +557,14 @@ export default function Home() {
                   placeholder="Filtra per squadra/nazionale..."
                   value={kitTeamFilter}
                   onChange={(e) => setKitTeamFilter(e.target.value)}
-                  className={`pl-10 backdrop-blur-md bg-black/50 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
+                  className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
                   suppressHydrationWarning
                 />
               </div>
 
               {/* Reset button */}
               {hasActiveFilters && (
-                <Button variant="outline" size="default" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/50 border-white/20 hover:bg-black/70">
+                <Button variant="outline" size="default" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/70 border-white/20 hover:bg-black/80">
                   Resetta filtri
                 </Button>
               )}
@@ -577,31 +577,31 @@ export default function Home() {
       {/* Tab Bar - sticky below header */}
       <div
         ref={tabBarRef}
-        className="sticky z-30 bg-black/80 backdrop-blur-md border-b border-white/10"
+        className="sticky z-30 bg-black/70 backdrop-blur-md border-b border-white/10"
         style={{ top: 'var(--header-only-h, 0px)' }}
       >
-        <div className="flex items-center justify-center py-2">
-          <div className="bg-black/60 border border-white/20 h-11 rounded-xl p-1 gap-1 inline-flex items-center">
+        <div className="flex items-center justify-center py-1.5">
+          <div className="bg-black/60 border border-white/20 h-10 rounded-lg p-0.5 gap-1 inline-flex items-center">
             <button
               onClick={() => setActiveTab('home')}
-              className={`px-7 py-2 text-sm font-bold transition-all rounded-lg inline-flex items-center ${
+              className={`px-6 py-1.5 text-sm font-bold transition-all rounded-lg inline-flex items-center ${
                 activeTab === 'home'
                   ? 'bg-[#cd2127] text-white shadow-lg'
                   : 'text-white/70 hover:text-white'
               }`}
             >
-              <UserIcon className="w-4 h-4 mr-2" />
+              <UserIcon className="w-4 h-4 mr-1.5" />
               Home
             </button>
             <button
               onClick={() => setActiveTab('timeline')}
-              className={`px-7 py-2 text-sm font-bold transition-all rounded-lg inline-flex items-center ${
+              className={`px-6 py-1.5 text-sm font-bold transition-all rounded-lg inline-flex items-center ${
                 activeTab === 'timeline'
                   ? 'bg-[#cd2127] text-white shadow-lg'
                   : 'text-white/70 hover:text-white'
               }`}
             >
-              <Clock className="w-4 h-4 mr-2" />
+              <Clock className="w-4 h-4 mr-1.5" />
               Timeline
             </button>
           </div>
@@ -709,49 +709,46 @@ export default function Home() {
         className="bg-fixed flex-1"
         style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
       >
-        <div ref={containerRef} className="content h-full">
-          <main className="flex-1 container mx-auto px-4 py-6">
-            {/* Home Tab */}
-            {activeTab === 'home' && (
-              <>
-                {loading ? (
-                  <PlayerCardSkeletonGrid count={8} />
-                ) : filteredPlayers.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-96 text-center">
-                    <UserIcon className="w-16 h-16 text-muted-foreground/30 mb-4" />
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      {searchQuery ? 'Nessun risultato trovato' : 'Nessun giocatore presente'}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {searchQuery ? 'Prova con una ricerca diversa' : 'Nessun contenuto disponibile'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredPlayers.map((player, index) => (
-                      <PlayerCard
-                        key={player.id}
-                        player={player}
-                        kitSeasonFilter={kitSeasonFilter}
-                        kitTeamFilter={kitTeamFilter}
-                        onPlayerClick={setSelectedPlayer}
-                        onKitClick={handleKitClick}
-                        index={index}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+        <div ref={containerRef} className={`content h-full ${activeTab === 'timeline' ? 'content-timeline' : ''}`}>
+          {/* Home Tab - uses main wrapper with padding */}
+          {activeTab === 'home' && (
+            <main className="flex-1 container mx-auto px-4 py-6">
+              {loading ? (
+                <PlayerCardSkeletonGrid count={8} />
+              ) : filteredPlayers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-96 text-center">
+                  <UserIcon className="w-16 h-16 text-muted-foreground/30 mb-4" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    {searchQuery ? 'Nessun risultato trovato' : 'Nessun giocatore presente'}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {searchQuery ? 'Prova con una ricerca diversa' : 'Nessun contenuto disponibile'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredPlayers.map((player, index) => (
+                    <PlayerCard
+                      key={player.id}
+                      player={player}
+                      kitSeasonFilter={kitSeasonFilter}
+                      kitTeamFilter={kitTeamFilter}
+                      onPlayerClick={setSelectedPlayer}
+                      onKitClick={handleKitClick}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              )}
+            </main>
+          )}
 
-            {/* Timeline Tab */}
-            {activeTab === 'timeline' && (
-              <TimelineContent 
-                onKitClick={handleKitClick}
-                scrollContainerRef={containerRef}
-              />
-            )}
-          </main>
+          {/* Timeline Tab - fills full space, manages own scrolling */}
+          {activeTab === 'timeline' && (
+            <TimelineContent 
+              onKitClick={handleKitClick}
+            />
+          )}
         </div>
       </div>
 
