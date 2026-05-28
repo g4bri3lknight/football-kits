@@ -177,8 +177,10 @@
 
 
 :root {
-  /* Valore di default, verrà sovrascritto da JavaScript */
-  --header-h: 200px;
+  /* Valori di default, verranno sovrascritti da JavaScript */
+  --header-only-h: 0px;   /* solo header, senza tab bar */
+  --tab-bar-h: 0px;       /* altezza tab bar */
+  --header-h: 200px;      /* header + tab bar: usato da .content e .bg-fixed */
   --footer-h: 45px;
 }
 

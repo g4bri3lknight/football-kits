@@ -17,7 +17,7 @@ import { BackToTop } from '@/components/back-to-top';
 import { PlayerCard } from '@/components/PlayerCard';
 import { KitDialog } from '@/components/KitDialog';
 import { BiographyDialog } from '@/components/BiographyDialog';
-import { TimelineDialog } from '@/components/TimelineDialog';
+import { TimelineContent } from '@/components/TimelineContent';
 import { RippleButton } from '@/components/ui/ripple-button';
 import { HEADER_CONFIG } from '@/config/kit-viewer.config';
 import { PlayerCardSkeletonGrid } from '@/components/ui/skeleton-shimmer';
@@ -67,6 +67,7 @@ function saveToken(token: string): void {
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const tabBarRef = useRef<HTMLDivElement>(null);
   
   // Ref per evitare stale closures nell'interval
   const headerBackgroundsRef = useRef<string[]>([]);
@@ -100,21 +101,29 @@ export default function Home() {
   const [selectedKitPlayer, setSelectedKitPlayer] = useState<Player | null>(null);
   const [currentKitIndex, setCurrentKitIndex] = useState<number>(0);
   const [playerKitsList, setPlayerKitsList] = useState<PlayerKit[]>([]);
-  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('home');
 
-  // Dynamic header height calculation
+  // Set CSS custom properties for header and tab bar heights
   useEffect(() => {
-    const updateHeaderHeight = () => {
-      if (headerRef.current) {
-        const height = headerRef.current.offsetHeight;
-        document.documentElement.style.setProperty('--header-h', `${height}px`);
-      }
+    const updateVars = () => {
+      const headerOnlyH = headerRef.current?.offsetHeight || 0;
+      const tabBarH = tabBarRef.current?.offsetHeight || 0;
+      document.documentElement.style.setProperty('--header-only-h', `${headerOnlyH}px`);
+      document.documentElement.style.setProperty('--tab-bar-h', `${tabBarH}px`);
+      document.documentElement.style.setProperty('--header-h', `${headerOnlyH + tabBarH}px`);
     };
+    updateVars();
+    window.addEventListener('resize', updateVars);
 
-    updateHeaderHeight();
-    window.addEventListener('resize', updateHeaderHeight);
-    return () => window.removeEventListener('resize', updateHeaderHeight);
-  }, [loading, players, nations]);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateVars) : null;
+    if (ro && headerRef.current) ro.observe(headerRef.current);
+    if (ro && tabBarRef.current) ro.observe(tabBarRef.current);
+
+    return () => {
+      window.removeEventListener('resize', updateVars);
+      ro?.disconnect();
+    };
+  }, [loading, activeTab]);
 
   useEffect(() => {
     fetchData();
@@ -477,16 +486,8 @@ export default function Home() {
               <Menu className="w-5 h-5" />
             </Button>
 
-            {/* Desktop: Timeline and Admin Buttons */}
+            {/* Desktop: Admin Button */}
             <div className="hidden lg:flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setTimelineOpen(true)}
-                className="flex-shrink-0 gap-2 backdrop-blur-md bg-black/50 border-white/20 hover:bg-black/70"
-              >
-                <Clock className="w-5 h-5" />
-                <span>Timeline</span>
-              </Button>
               <Button
                 variant="outline"
                 onClick={handleAdminClick}
@@ -568,9 +569,44 @@ export default function Home() {
                 </Button>
               )}
           </div>
+
         </div>
         </div>
       </header>
+
+      {/* Tab Bar - sticky below header */}
+      <div
+        ref={tabBarRef}
+        className="sticky z-30 bg-black/80 backdrop-blur-md border-b border-white/10"
+        style={{ top: 'var(--header-only-h, 0px)' }}
+      >
+        <div className="flex items-center justify-center py-2">
+          <div className="bg-black/60 border border-white/20 h-11 rounded-xl p-1 gap-1 inline-flex items-center">
+            <button
+              onClick={() => setActiveTab('home')}
+              className={`px-7 py-2 text-sm font-bold transition-all rounded-lg inline-flex items-center ${
+                activeTab === 'home'
+                  ? 'bg-[#cd2127] text-white shadow-lg'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              <UserIcon className="w-4 h-4 mr-2" />
+              Home
+            </button>
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`px-7 py-2 text-sm font-bold transition-all rounded-lg inline-flex items-center ${
+                activeTab === 'timeline'
+                  ? 'bg-[#cd2127] text-white shadow-lg'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Timeline
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Mobile Menu Sheet */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -579,19 +615,6 @@ export default function Home() {
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
           <div className="mt-6 flex flex-col gap-4 px-2">
-            {/* Timeline Button */}
-            <RippleButton
-              variant="outline"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setTimelineOpen(true);
-              }}
-              className="w-full justify-start gap-2"
-            >
-              <Clock className="w-4 h-4" />
-              Timeline Storica
-            </RippleButton>
-
             {/* Admin Button */}
             <RippleButton
               variant="outline"
@@ -681,39 +704,52 @@ export default function Home() {
         </SheetContent>
       </Sheet>
 
-      {/* Main Content */}
+      {/* Main Content with Tabs */}
       <div 
-        className="bg-fixed"
+        className="bg-fixed flex-1"
         style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
       >
-        <div ref={containerRef} className="content">
+        <div ref={containerRef} className="content h-full">
           <main className="flex-1 container mx-auto px-4 py-6">
-            {loading ? (
-              <PlayerCardSkeletonGrid count={8} />
-            ) : filteredPlayers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-96 text-center">
-                <UserIcon className="w-16 h-16 text-muted-foreground/30 mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {searchQuery ? 'Nessun risultato trovato' : 'Nessun giocatore presente'}
-                </h3>
-                <p className="text-muted-foreground">
-                  {searchQuery ? 'Prova con una ricerca diversa' : 'Nessun contenuto disponibile'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredPlayers.map((player, index) => (
-                  <PlayerCard
-                    key={player.id}
-                    player={player}
-                    kitSeasonFilter={kitSeasonFilter}
-                    kitTeamFilter={kitTeamFilter}
-                    onPlayerClick={setSelectedPlayer}
-                    onKitClick={handleKitClick}
-                    index={index}
-                  />
-                ))}
-              </div>
+            {/* Home Tab */}
+            {activeTab === 'home' && (
+              <>
+                {loading ? (
+                  <PlayerCardSkeletonGrid count={8} />
+                ) : filteredPlayers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-96 text-center">
+                    <UserIcon className="w-16 h-16 text-muted-foreground/30 mb-4" />
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {searchQuery ? 'Nessun risultato trovato' : 'Nessun giocatore presente'}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {searchQuery ? 'Prova con una ricerca diversa' : 'Nessun contenuto disponibile'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredPlayers.map((player, index) => (
+                      <PlayerCard
+                        key={player.id}
+                        player={player}
+                        kitSeasonFilter={kitSeasonFilter}
+                        kitTeamFilter={kitTeamFilter}
+                        onPlayerClick={setSelectedPlayer}
+                        onKitClick={handleKitClick}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Timeline Tab */}
+            {activeTab === 'timeline' && (
+              <TimelineContent 
+                onKitClick={handleKitClick}
+                scrollContainerRef={containerRef}
+              />
             )}
           </main>
         </div>
@@ -750,13 +786,6 @@ export default function Home() {
         selectedPlayer={selectedPlayer}
         onClose={() => setSelectedPlayer(null)}
         onOpen={() => trackPageView('player-biography')}
-      />
-
-      {/* Timeline Dialog */}
-      <TimelineDialog
-        open={timelineOpen}
-        onClose={() => setTimelineOpen(false)}
-        onKitClick={handleKitClick}
       />
 
       {/* Footer */}
