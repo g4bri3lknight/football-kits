@@ -226,14 +226,13 @@ body {
   overflow-x: hidden;
   /* opzionale: padding interno */
   padding: 24px;
-  padding-bottom: 40px;
+  padding-bottom: 24px;
 }
 
 /* Timeline mode: .content becomes a non-scrolling flex container */
 .content-timeline {
   overflow: hidden !important;
   padding: 0 !important;
-  height: auto !important;
 }
 
 .card-custom-color {

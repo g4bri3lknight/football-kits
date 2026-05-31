@@ -68,6 +68,7 @@ export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const tabBarRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
   
   // Ref per evitare stale closures nell'interval
   const headerBackgroundsRef = useRef<string[]>([]);
@@ -108,9 +109,11 @@ export default function Home() {
     const updateVars = () => {
       const headerOnlyH = headerRef.current?.offsetHeight || 0;
       const tabBarH = tabBarRef.current?.offsetHeight || 0;
+      const footerH = footerRef.current?.offsetHeight || 45;
       document.documentElement.style.setProperty('--header-only-h', `${headerOnlyH}px`);
       document.documentElement.style.setProperty('--tab-bar-h', `${tabBarH}px`);
       document.documentElement.style.setProperty('--header-h', `${headerOnlyH + tabBarH}px`);
+      document.documentElement.style.setProperty('--footer-h', `${footerH}px`);
     };
     updateVars();
     window.addEventListener('resize', updateVars);
@@ -118,6 +121,7 @@ export default function Home() {
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateVars) : null;
     if (ro && headerRef.current) ro.observe(headerRef.current);
     if (ro && tabBarRef.current) ro.observe(tabBarRef.current);
+    if (ro && footerRef.current) ro.observe(footerRef.current);
 
     return () => {
       window.removeEventListener('resize', updateVars);
@@ -709,7 +713,7 @@ export default function Home() {
         className="bg-fixed flex-1"
         style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
       >
-        <div ref={containerRef} className={`content h-full ${activeTab === 'timeline' ? 'content-timeline' : ''}`}>
+        <div ref={containerRef} className={`content ${activeTab === 'timeline' ? 'content-timeline' : ''}`}>
           {/* Home Tab - uses main wrapper with padding */}
           {activeTab === 'home' && (
             <main className="flex-1 container mx-auto px-4 py-6">
@@ -786,7 +790,7 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer className="bg-background border-t py-3 px-4 mt-auto footer">
+      <footer ref={footerRef} className="bg-background border-t py-3 px-4 mt-auto footer">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
           <p>© 2026 GK Retro Kits. Tutti i diritti riservati.</p>
         </div>

@@ -293,7 +293,8 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
       </div>
 
       {/* Scroll container for season content - starts BELOW the panel */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 container mx-auto px-4 py-6">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 py-6 px-4">
+        <div className="container mx-auto">
         {loading ? (
           <div className="p-6">
             <TimelineSkeleton />
@@ -463,6 +464,7 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
