@@ -34,6 +34,14 @@ model Kit {
   hasDetail5      Boolean       @default(false)
   hasDetail6      Boolean       @default(false)
 
+  // Flag per indicare la presenza di modelli 3D per dettagli
+  hasDetail1Model3D Boolean     @default(false)
+  hasDetail2Model3D Boolean     @default(false)
+  hasDetail3Model3D Boolean     @default(false)
+  hasDetail4Model3D Boolean     @default(false)
+  hasDetail5Model3D Boolean     @default(false)
+  hasDetail6Model3D Boolean     @default(false)
+
   // Immagine principale del kit (BLOB)
   imageData       Bytes?
   imageMimeType   String?
@@ -50,26 +58,38 @@ model Kit {
   detail1Label    String?
   detail1Data     Bytes?
   detail1MimeType String?
+  detail1Model3DData Bytes?
+  detail1Model3DName String?
 
   detail2Label    String?
   detail2Data     Bytes?
   detail2MimeType String?
+  detail2Model3DData Bytes?
+  detail2Model3DName String?
 
   detail3Label    String?
   detail3Data     Bytes?
   detail3MimeType String?
+  detail3Model3DData Bytes?
+  detail3Model3DName String?
 
   detail4Label    String?
   detail4Data     Bytes?
   detail4MimeType String?
+  detail4Model3DData Bytes?
+  detail4Model3DName String?
 
   detail5Label    String?
   detail5Data     Bytes?
   detail5MimeType String?
+  detail5Model3DData Bytes?
+  detail5Model3DName String?
 
   detail6Label    String?
   detail6Data     Bytes?
   detail6MimeType String?
+  detail6Model3DData Bytes?
+  detail6Model3DName String?
 
   // Voti
   likes           Int           @default(0)

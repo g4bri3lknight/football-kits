@@ -969,7 +969,7 @@ export default function KitViewer3D({
       </Canvas>
 
       {/* Controls Buttons */}
-      <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2">
+      <div className="absolute bottom-3 right-3 z-30 flex items-center gap-2">
         {/* Toggle Auto-Rotate Button */}
         <HoverTooltip text={autoRotateEnabled ? 'Disattiva rotazione automatica' : 'Attiva rotazione automatica'} side="top" noPortal={isFullscreen}>
           <button

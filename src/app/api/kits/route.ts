@@ -10,7 +10,7 @@ const generateId = () => {
 
 // Funzione helper per rimuovere i dati binari dalla risposta
 const sanitizeKit = (kit: any) => {
-  const { imageData, logoData, model3DData, detail1Data, detail2Data, detail3Data, detail4Data, detail5Data, detail6Data, ...rest } = kit;
+  const { imageData, logoData, model3DData, detail1Data, detail2Data, detail3Data, detail4Data, detail5Data, detail6Data, detail1Model3DData, detail2Model3DData, detail3Model3DData, detail4Model3DData, detail5Model3DData, detail6Model3DData, ...rest } = kit;
   return rest;
 };
 
@@ -38,6 +38,13 @@ export async function GET() {
         hasDetail4: true,
         hasDetail5: true,
         hasDetail6: true,
+        // Flag per la presenza di modelli 3D per dettagli
+        hasDetail1Model3D: true,
+        hasDetail2Model3D: true,
+        hasDetail3Model3D: true,
+        hasDetail4Model3D: true,
+        hasDetail5Model3D: true,
+        hasDetail6Model3D: true,
         // Labels dei dettagli
         detail1Label: true,
         detail2Label: true,
@@ -151,6 +158,38 @@ export async function POST(request: NextRequest) {
       data.detail6Data = Buffer.from(body.detail6Data, 'base64');
       data.detail6MimeType = body.detail6MimeType || null;
       data.detail6Label = body.detail6Label || null;
+    }
+
+    // Detail 3D model data
+    if (body.detail1Model3DData) {
+      data.hasDetail1Model3D = true;
+      data.detail1Model3DData = Buffer.from(body.detail1Model3DData, 'base64');
+      data.detail1Model3DName = body.detail1Model3DName || null;
+    }
+    if (body.detail2Model3DData) {
+      data.hasDetail2Model3D = true;
+      data.detail2Model3DData = Buffer.from(body.detail2Model3DData, 'base64');
+      data.detail2Model3DName = body.detail2Model3DName || null;
+    }
+    if (body.detail3Model3DData) {
+      data.hasDetail3Model3D = true;
+      data.detail3Model3DData = Buffer.from(body.detail3Model3DData, 'base64');
+      data.detail3Model3DName = body.detail3Model3DName || null;
+    }
+    if (body.detail4Model3DData) {
+      data.hasDetail4Model3D = true;
+      data.detail4Model3DData = Buffer.from(body.detail4Model3DData, 'base64');
+      data.detail4Model3DName = body.detail4Model3DName || null;
+    }
+    if (body.detail5Model3DData) {
+      data.hasDetail5Model3D = true;
+      data.detail5Model3DData = Buffer.from(body.detail5Model3DData, 'base64');
+      data.detail5Model3DName = body.detail5Model3DName || null;
+    }
+    if (body.detail6Model3DData) {
+      data.hasDetail6Model3D = true;
+      data.detail6Model3DData = Buffer.from(body.detail6Model3DData, 'base64');
+      data.detail6Model3DName = body.detail6Model3DName || null;
     }
 
     const kit = await db.kit.create({ data });

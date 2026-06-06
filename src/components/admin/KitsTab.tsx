@@ -90,6 +90,19 @@ interface KitForm {
   detail4Label: string;
   detail5Label: string;
   detail6Label: string;
+  // Detail 3D models
+  detail1Model3DData: string | null;
+  detail1Model3DName: string | null;
+  detail2Model3DData: string | null;
+  detail2Model3DName: string | null;
+  detail3Model3DData: string | null;
+  detail3Model3DName: string | null;
+  detail4Model3DData: string | null;
+  detail4Model3DName: string | null;
+  detail5Model3DData: string | null;
+  detail5Model3DName: string | null;
+  detail6Model3DData: string | null;
+  detail6Model3DName: string | null;
 }
 
 // Helper per convertire File in base64
@@ -106,6 +119,16 @@ const fileToBase64 = (file: File): Promise<{ data: string; mimeType: string }> =
     reader.readAsDataURL(file);
   });
 };
+
+// Detail section labels for new kits
+const DETAIL_DEFAULT_LABELS = [
+  'Front Details',
+  'Shorts Detail',
+  'Socks + Shoes Detail',
+  'Back Details',
+  'Gloves Detail',
+  '',
+];
 
 export default function KitsTab({
   kits,
@@ -151,6 +174,18 @@ export default function KitsTab({
     detail4Label: '',
     detail5Label: '',
     detail6Label: '',
+    detail1Model3DData: null,
+    detail1Model3DName: null,
+    detail2Model3DData: null,
+    detail2Model3DName: null,
+    detail3Model3DData: null,
+    detail3Model3DName: null,
+    detail4Model3DData: null,
+    detail4Model3DName: null,
+    detail5Model3DData: null,
+    detail5Model3DName: null,
+    detail6Model3DData: null,
+    detail6Model3DName: null,
   });
 
   const filteredKits = kits.filter(kit =>
@@ -184,12 +219,24 @@ export default function KitsTab({
       detail5MimeType: null,
       detail6Data: null,
       detail6MimeType: null,
-      detail1Label: 'Front Details',
-      detail2Label: 'Shorts Detail',
-      detail3Label: 'Socks + Shoes Detail',
-      detail4Label: 'Back Details',
-      detail5Label: 'Gloves Detail',
-      detail6Label: '',
+      detail1Label: DETAIL_DEFAULT_LABELS[0],
+      detail2Label: DETAIL_DEFAULT_LABELS[1],
+      detail3Label: DETAIL_DEFAULT_LABELS[2],
+      detail4Label: DETAIL_DEFAULT_LABELS[3],
+      detail5Label: DETAIL_DEFAULT_LABELS[4],
+      detail6Label: DETAIL_DEFAULT_LABELS[5],
+      detail1Model3DData: null,
+      detail1Model3DName: null,
+      detail2Model3DData: null,
+      detail2Model3DName: null,
+      detail3Model3DData: null,
+      detail3Model3DName: null,
+      detail4Model3DData: null,
+      detail4Model3DName: null,
+      detail5Model3DData: null,
+      detail5Model3DName: null,
+      detail6Model3DData: null,
+      detail6Model3DName: null,
     });
     setDialogOpen(true);
   };
@@ -227,6 +274,18 @@ export default function KitsTab({
       detail4Label: kit.detail4Label || '',
       detail5Label: kit.detail5Label || '',
       detail6Label: kit.detail6Label || '',
+      detail1Model3DData: null,
+      detail1Model3DName: null,
+      detail2Model3DData: null,
+      detail2Model3DName: null,
+      detail3Model3DData: null,
+      detail3Model3DName: null,
+      detail4Model3DData: null,
+      detail4Model3DName: null,
+      detail5Model3DData: null,
+      detail5Model3DName: null,
+      detail6Model3DData: null,
+      detail6Model3DName: null,
     });
     setDialogOpen(true);
   };
@@ -262,6 +321,18 @@ export default function KitsTab({
       detail4Label: '',
       detail5Label: '',
       detail6Label: '',
+      detail1Model3DData: null,
+      detail1Model3DName: null,
+      detail2Model3DData: null,
+      detail2Model3DName: null,
+      detail3Model3DData: null,
+      detail3Model3DName: null,
+      detail4Model3DData: null,
+      detail4Model3DName: null,
+      detail5Model3DData: null,
+      detail5Model3DName: null,
+      detail6Model3DData: null,
+      detail6Model3DName: null,
     });
     setDialogOpen(false);
   };
@@ -291,6 +362,12 @@ export default function KitsTab({
       form.detail4Data,
       form.detail5Data,
       form.detail6Data,
+      form.detail1Model3DData,
+      form.detail2Model3DData,
+      form.detail3Model3DData,
+      form.detail4Model3DData,
+      form.detail5Model3DData,
+      form.detail6Model3DData,
     ].filter(Boolean).length;
     
     // Simula avanzamento iniziale
@@ -357,6 +434,30 @@ export default function KitsTab({
           updateData.detail6Data = form.detail6Data;
           updateData.detail6MimeType = form.detail6MimeType;
         }
+        if (form.detail1Model3DData) {
+          updateData.detail1Model3DData = form.detail1Model3DData;
+          updateData.detail1Model3DName = form.detail1Model3DName;
+        }
+        if (form.detail2Model3DData) {
+          updateData.detail2Model3DData = form.detail2Model3DData;
+          updateData.detail2Model3DName = form.detail2Model3DName;
+        }
+        if (form.detail3Model3DData) {
+          updateData.detail3Model3DData = form.detail3Model3DData;
+          updateData.detail3Model3DName = form.detail3Model3DName;
+        }
+        if (form.detail4Model3DData) {
+          updateData.detail4Model3DData = form.detail4Model3DData;
+          updateData.detail4Model3DName = form.detail4Model3DName;
+        }
+        if (form.detail5Model3DData) {
+          updateData.detail5Model3DData = form.detail5Model3DData;
+          updateData.detail5Model3DName = form.detail5Model3DName;
+        }
+        if (form.detail6Model3DData) {
+          updateData.detail6Model3DData = form.detail6Model3DData;
+          updateData.detail6Model3DName = form.detail6Model3DName;
+        }
         
         await onUpdateKit(editingKit.id, updateData);
       } else {
@@ -413,6 +514,30 @@ export default function KitsTab({
           createData.detail6MimeType = form.detail6MimeType;
           createData.detail6Label = form.detail6Label || null;
         }
+        if (form.detail1Model3DData) {
+          createData.detail1Model3DData = form.detail1Model3DData;
+          createData.detail1Model3DName = form.detail1Model3DName;
+        }
+        if (form.detail2Model3DData) {
+          createData.detail2Model3DData = form.detail2Model3DData;
+          createData.detail2Model3DName = form.detail2Model3DName;
+        }
+        if (form.detail3Model3DData) {
+          createData.detail3Model3DData = form.detail3Model3DData;
+          createData.detail3Model3DName = form.detail3Model3DName;
+        }
+        if (form.detail4Model3DData) {
+          createData.detail4Model3DData = form.detail4Model3DData;
+          createData.detail4Model3DName = form.detail4Model3DName;
+        }
+        if (form.detail5Model3DData) {
+          createData.detail5Model3DData = form.detail5Model3DData;
+          createData.detail5Model3DName = form.detail5Model3DName;
+        }
+        if (form.detail6Model3DData) {
+          createData.detail6Model3DData = form.detail6Model3DData;
+          createData.detail6Model3DName = form.detail6Model3DName;
+        }
         
         await onCreateKit(createData);
       }
@@ -440,7 +565,7 @@ export default function KitsTab({
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    field: 'imageData' | 'logoData' | 'model3DData' | 'detail1Data' | 'detail2Data' | 'detail3Data' | 'detail4Data' | 'detail5Data' | 'detail6Data'
+    field: 'imageData' | 'logoData' | 'model3DData' | 'detail1Data' | 'detail2Data' | 'detail3Data' | 'detail4Data' | 'detail5Data' | 'detail6Data' | 'detail1Model3DData' | 'detail2Model3DData' | 'detail3Model3DData' | 'detail4Model3DData' | 'detail5Model3DData' | 'detail6Model3DData'
   ) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -458,6 +583,14 @@ export default function KitsTab({
             return { ...prev, imageData: data, imageMimeType: mimeType };
           } else if (field === 'logoData') {
             return { ...prev, logoData: data, logoMimeType: mimeType };
+          } else if (field.endsWith('Model3DData')) {
+            // Per i modelli 3D dei dettagli, impostiamo sia data che name
+            const nameField = field.replace('Data', 'Name') as keyof KitForm;
+            return {
+              ...prev,
+              [field]: data,
+              [nameField]: file.name
+            };
           } else {
             // Per i dettagli, impostiamo sia data che mimeType
             const mimeTypeField = field.replace('Data', 'MimeType') as keyof KitForm;
@@ -475,12 +608,41 @@ export default function KitsTab({
   };
 
   // Helper per ottenere l'URL dell'immagine con cache buster
-  const getImagePreviewUrl = (kitId: string, type: 'image' | 'logo' | 'model3d' | 'detail', detailNum?: number, updatedAt?: string | Date) => {
+  const getImagePreviewUrl = (kitId: string, type: 'image' | 'logo' | 'model3d' | 'detail' | 'detail-model3d', detailNum?: number, updatedAt?: string | Date) => {
     const cacheBuster = updatedAt ? `?t=${new Date(updatedAt).getTime()}` : '';
     if (type === 'detail' && detailNum) {
       return `/api/kits/${kitId}/detail/${detailNum}${cacheBuster}`;
     }
+    if (type === 'detail-model3d' && detailNum) {
+      return `/api/kits/${kitId}/detail/${detailNum}/model3d${cacheBuster}`;
+    }
     return `/api/kits/${kitId}/${type}${cacheBuster}`;
+  };
+
+  // Helper to get hasDetailModel3D flag from kit
+  const getHasDetailModel3D = (kit: Kit, num: number): boolean => {
+    switch (num) {
+      case 1: return !!kit.hasDetail1Model3D;
+      case 2: return !!kit.hasDetail2Model3D;
+      case 3: return !!kit.hasDetail3Model3D;
+      case 4: return !!kit.hasDetail4Model3D;
+      case 5: return !!kit.hasDetail5Model3D;
+      case 6: return !!kit.hasDetail6Model3D;
+      default: return false;
+    }
+  };
+
+  // Helper to get hasDetail flag from kit
+  const getHasDetail = (kit: Kit, num: number): boolean => {
+    switch (num) {
+      case 1: return !!kit.hasDetail1;
+      case 2: return !!kit.hasDetail2;
+      case 3: return !!kit.hasDetail3;
+      case 4: return !!kit.hasDetail4;
+      case 5: return !!kit.hasDetail5;
+      case 6: return !!kit.hasDetail6;
+      default: return false;
+    }
   };
 
   return (
@@ -636,7 +798,7 @@ export default function KitsTab({
 
       {/* Kit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-2xl sm:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl sm:max-w-4xl lg:max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-3 sm:pb-4">
             <DialogTitle className="text-lg sm:text-xl">
               {editingKit ? 'Modifica Kit' : 'Nuovo Kit'}
@@ -703,33 +865,8 @@ export default function KitsTab({
               </p>
             </div>
             
-            {/* File upload - 3 colonne */}
+            {/* File upload - 3 colonne: Logo, Immagine Kit, Modello 3D */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Immagine Kit */}
-              <div className="space-y-2">
-                <Label>Immagine Kit</Label>
-                <Input
-                  key={`image-${editingKit?.id || 'new'}`}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e, 'imageData')}
-                  disabled={uploading}
-                />
-                {form.imageData ? (
-                  <div className="flex items-center gap-2 mt-1">
-                    <img src={`data:${form.imageMimeType};base64,${form.imageData}`} alt="Kit" className="w-10 h-10 rounded object-cover border" />
-                    <span className="text-xs text-muted-foreground">Nuovo file</span>
-                  </div>
-                ) : editingKit?.hasImage ? (
-                  <div className="flex items-center gap-2 mt-1">
-                    <img src={getImagePreviewUrl(editingKit.id, 'image', undefined, editingKit.updatedAt)} alt="Kit" className="w-10 h-10 rounded object-cover border" />
-                    <span className="text-xs text-muted-foreground">File presente - carica un nuovo file per sostituirlo</span>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Nessun file selezionato</p>
-                )}
-              </div>
-              
               {/* Logo */}
               <div className="space-y-2">
                 <Label>Logo</Label>
@@ -749,6 +886,31 @@ export default function KitsTab({
                   <div className="flex items-center gap-2 mt-1">
                     <img src={getImagePreviewUrl(editingKit.id, 'logo', undefined, editingKit.updatedAt)} alt="Logo" className="w-10 h-10 rounded object-contain border bg-white p-1" />
                     <span className="text-xs text-muted-foreground">File presente</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Nessun file selezionato</p>
+                )}
+              </div>
+              
+              {/* Immagine Kit */}
+              <div className="space-y-2">
+                <Label>Immagine Kit</Label>
+                <Input
+                  key={`image-${editingKit?.id || 'new'}`}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, 'imageData')}
+                  disabled={uploading}
+                />
+                {form.imageData ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <img src={`data:${form.imageMimeType};base64,${form.imageData}`} alt="Kit" className="w-10 h-10 rounded object-cover border" />
+                    <span className="text-xs text-muted-foreground">Nuovo file</span>
+                  </div>
+                ) : editingKit?.hasImage ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <img src={getImagePreviewUrl(editingKit.id, 'image', undefined, editingKit.updatedAt)} alt="Kit" className="w-10 h-10 rounded object-cover border" />
+                    <span className="text-xs text-muted-foreground">File presente - carica un nuovo file per sostituirlo</span>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">Nessun file selezionato</p>
@@ -779,198 +941,366 @@ export default function KitsTab({
               </div>
             </div>
             
-            {/* Detail Images Section */}
+            {/* Detail Images Section - Reorganized with bordered cards */}
             <div className="border-t pt-4 mt-4">
-              <h4 className="text-sm font-semibold mb-3">Immagini Dettagli</h4>
+              <h4 className="text-sm font-semibold mb-3">Dettagli Kit</h4>
               <p className="text-xs text-muted-foreground mb-4">
-                Carica le immagini dei dettagli del kit (colletto, logo, guanti, calzini, ecc.)
+                Per ogni dettaglio, inserisci la descrizione, l&apos;immagine e opzionalmente un modello 3D.
               </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-4">
                 {/* Detail 1 */}
-                <div className="space-y-2">
-                  <Label className="text-xs">Dettaglio 1 (Sinistra alto)</Label>
-                  <Input
-                    type="text"
-                    placeholder="Es: Colletto"
-                    value={form.detail1Label}
-                    onChange={(e) => setForm({ ...form, detail1Label: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    key={`detail1-${editingKit?.id || 'new'}`}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'detail1Data')}
-                    disabled={uploading}
-                    className="h-8 text-xs"
-                  />
-                  {form.detail1Data ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={`data:${form.detail1MimeType};base64,${form.detail1Data}`} alt="Detail 1" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">Nuovo</span>
+                <div className="border rounded-lg p-4">
+                  <h5 className="text-xs font-semibold mb-3 text-muted-foreground">Dettaglio 1 {form.detail1Label ? `- ${form.detail1Label}` : ''}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descrizione</Label>
+                      <Input
+                        type="text"
+                        placeholder="Es: Colletto"
+                        value={form.detail1Label}
+                        onChange={(e) => setForm({ ...form, detail1Label: e.target.value })}
+                        className="h-8 text-xs"
+                      />
                     </div>
-                  ) : editingKit?.hasDetail1 ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={getImagePreviewUrl(editingKit.id, 'detail', 1, editingKit.updatedAt)} alt="Detail 1" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">File presente</span>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Immagine</Label>
+                      <Input
+                        key={`detail1-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'detail1Data')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail1Data ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={`data:${form.detail1MimeType};base64,${form.detail1Data}`} alt="Detail 1" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">Nuovo</span>
+                        </div>
+                      ) : editingKit && getHasDetail(editingKit, 1) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={getImagePreviewUrl(editingKit.id, 'detail', 1, editingKit.updatedAt)} alt="Detail 1" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">File presente</span>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Modello 3D</Label>
+                      <Input
+                        key={`detail1-model3d-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept=".glb,.gltf"
+                        onChange={(e) => handleFileUpload(e, 'detail1Model3DData')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail1Model3DData ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">Nuovo: {form.detail1Model3DName}</Badge>
+                        </div>
+                      ) : editingKit && getHasDetailModel3D(editingKit, 1) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">3D presente</Badge>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                
+
                 {/* Detail 2 */}
-                <div className="space-y-2">
-                  <Label className="text-xs">Dettaglio 2 (Sinistra centro)</Label>
-                  <Input
-                    type="text"
-                    placeholder="Es: Logo squadra"
-                    value={form.detail2Label}
-                    onChange={(e) => setForm({ ...form, detail2Label: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    key={`detail2-${editingKit?.id || 'new'}`}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'detail2Data')}
-                    disabled={uploading}
-                    className="h-8 text-xs"
-                  />
-                  {form.detail2Data ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={`data:${form.detail2MimeType};base64,${form.detail2Data}`} alt="Detail 2" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">Nuovo</span>
+                <div className="border rounded-lg p-4">
+                  <h5 className="text-xs font-semibold mb-3 text-muted-foreground">Dettaglio 2 {form.detail2Label ? `- ${form.detail2Label}` : ''}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descrizione</Label>
+                      <Input
+                        type="text"
+                        placeholder="Es: Logo squadra"
+                        value={form.detail2Label}
+                        onChange={(e) => setForm({ ...form, detail2Label: e.target.value })}
+                        className="h-8 text-xs"
+                      />
                     </div>
-                  ) : editingKit?.hasDetail2 ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={getImagePreviewUrl(editingKit.id, 'detail', 2, editingKit.updatedAt)} alt="Detail 2" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">File presente</span>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Immagine</Label>
+                      <Input
+                        key={`detail2-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'detail2Data')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail2Data ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={`data:${form.detail2MimeType};base64,${form.detail2Data}`} alt="Detail 2" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">Nuovo</span>
+                        </div>
+                      ) : editingKit && getHasDetail(editingKit, 2) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={getImagePreviewUrl(editingKit.id, 'detail', 2, editingKit.updatedAt)} alt="Detail 2" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">File presente</span>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Modello 3D</Label>
+                      <Input
+                        key={`detail2-model3d-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept=".glb,.gltf"
+                        onChange={(e) => handleFileUpload(e, 'detail2Model3DData')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail2Model3DData ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">Nuovo: {form.detail2Model3DName}</Badge>
+                        </div>
+                      ) : editingKit && getHasDetailModel3D(editingKit, 2) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">3D presente</Badge>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                
+
                 {/* Detail 3 */}
-                <div className="space-y-2">
-                  <Label className="text-xs">Dettaglio 3 (Sinistra basso)</Label>
-                  <Input
-                    type="text"
-                    placeholder="Es: Maniche"
-                    value={form.detail3Label}
-                    onChange={(e) => setForm({ ...form, detail3Label: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    key={`detail3-${editingKit?.id || 'new'}`}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'detail3Data')}
-                    disabled={uploading}
-                    className="h-8 text-xs"
-                  />
-                  {form.detail3Data ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={`data:${form.detail3MimeType};base64,${form.detail3Data}`} alt="Detail 3" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">Nuovo</span>
+                <div className="border rounded-lg p-4">
+                  <h5 className="text-xs font-semibold mb-3 text-muted-foreground">Dettaglio 3 {form.detail3Label ? `- ${form.detail3Label}` : ''}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descrizione</Label>
+                      <Input
+                        type="text"
+                        placeholder="Es: Maniche"
+                        value={form.detail3Label}
+                        onChange={(e) => setForm({ ...form, detail3Label: e.target.value })}
+                        className="h-8 text-xs"
+                      />
                     </div>
-                  ) : editingKit?.hasDetail3 ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={getImagePreviewUrl(editingKit.id, 'detail', 3, editingKit.updatedAt)} alt="Detail 3" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">File presente</span>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Immagine</Label>
+                      <Input
+                        key={`detail3-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'detail3Data')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail3Data ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={`data:${form.detail3MimeType};base64,${form.detail3Data}`} alt="Detail 3" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">Nuovo</span>
+                        </div>
+                      ) : editingKit && getHasDetail(editingKit, 3) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={getImagePreviewUrl(editingKit.id, 'detail', 3, editingKit.updatedAt)} alt="Detail 3" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">File presente</span>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Modello 3D</Label>
+                      <Input
+                        key={`detail3-model3d-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept=".glb,.gltf"
+                        onChange={(e) => handleFileUpload(e, 'detail3Model3DData')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail3Model3DData ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">Nuovo: {form.detail3Model3DName}</Badge>
+                        </div>
+                      ) : editingKit && getHasDetailModel3D(editingKit, 3) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">3D presente</Badge>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                
+
                 {/* Detail 4 */}
-                <div className="space-y-2">
-                  <Label className="text-xs">Dettaglio 4 (Destra alto)</Label>
-                  <Input
-                    type="text"
-                    placeholder="Es: Guanti"
-                    value={form.detail4Label}
-                    onChange={(e) => setForm({ ...form, detail4Label: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    key={`detail4-${editingKit?.id || 'new'}`}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'detail4Data')}
-                    disabled={uploading}
-                    className="h-8 text-xs"
-                  />
-                  {form.detail4Data ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={`data:${form.detail4MimeType};base64,${form.detail4Data}`} alt="Detail 4" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">Nuovo</span>
+                <div className="border rounded-lg p-4">
+                  <h5 className="text-xs font-semibold mb-3 text-muted-foreground">Dettaglio 4 {form.detail4Label ? `- ${form.detail4Label}` : ''}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descrizione</Label>
+                      <Input
+                        type="text"
+                        placeholder="Es: Guanti"
+                        value={form.detail4Label}
+                        onChange={(e) => setForm({ ...form, detail4Label: e.target.value })}
+                        className="h-8 text-xs"
+                      />
                     </div>
-                  ) : editingKit?.hasDetail4 ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={getImagePreviewUrl(editingKit.id, 'detail', 4, editingKit.updatedAt)} alt="Detail 4" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">File presente</span>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Immagine</Label>
+                      <Input
+                        key={`detail4-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'detail4Data')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail4Data ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={`data:${form.detail4MimeType};base64,${form.detail4Data}`} alt="Detail 4" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">Nuovo</span>
+                        </div>
+                      ) : editingKit && getHasDetail(editingKit, 4) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={getImagePreviewUrl(editingKit.id, 'detail', 4, editingKit.updatedAt)} alt="Detail 4" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">File presente</span>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Modello 3D</Label>
+                      <Input
+                        key={`detail4-model3d-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept=".glb,.gltf"
+                        onChange={(e) => handleFileUpload(e, 'detail4Model3DData')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail4Model3DData ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">Nuovo: {form.detail4Model3DName}</Badge>
+                        </div>
+                      ) : editingKit && getHasDetailModel3D(editingKit, 4) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">3D presente</Badge>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                
+
                 {/* Detail 5 */}
-                <div className="space-y-2">
-                  <Label className="text-xs">Dettaglio 5 (Destra centro)</Label>
-                  <Input
-                    type="text"
-                    placeholder="Es: Calzini"
-                    value={form.detail5Label}
-                    onChange={(e) => setForm({ ...form, detail5Label: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    key={`detail5-${editingKit?.id || 'new'}`}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'detail5Data')}
-                    disabled={uploading}
-                    className="h-8 text-xs"
-                  />
-                  {form.detail5Data ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={`data:${form.detail5MimeType};base64,${form.detail5Data}`} alt="Detail 5" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">Nuovo</span>
+                <div className="border rounded-lg p-4">
+                  <h5 className="text-xs font-semibold mb-3 text-muted-foreground">Dettaglio 5 {form.detail5Label ? `- ${form.detail5Label}` : ''}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descrizione</Label>
+                      <Input
+                        type="text"
+                        placeholder="Es: Calzini"
+                        value={form.detail5Label}
+                        onChange={(e) => setForm({ ...form, detail5Label: e.target.value })}
+                        className="h-8 text-xs"
+                      />
                     </div>
-                  ) : editingKit?.hasDetail5 ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={getImagePreviewUrl(editingKit.id, 'detail', 5, editingKit.updatedAt)} alt="Detail 5" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">File presente</span>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Immagine</Label>
+                      <Input
+                        key={`detail5-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'detail5Data')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail5Data ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={`data:${form.detail5MimeType};base64,${form.detail5Data}`} alt="Detail 5" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">Nuovo</span>
+                        </div>
+                      ) : editingKit && getHasDetail(editingKit, 5) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={getImagePreviewUrl(editingKit.id, 'detail', 5, editingKit.updatedAt)} alt="Detail 5" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">File presente</span>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Modello 3D</Label>
+                      <Input
+                        key={`detail5-model3d-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept=".glb,.gltf"
+                        onChange={(e) => handleFileUpload(e, 'detail5Model3DData')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail5Model3DData ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">Nuovo: {form.detail5Model3DName}</Badge>
+                        </div>
+                      ) : editingKit && getHasDetailModel3D(editingKit, 5) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">3D presente</Badge>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                
+
                 {/* Detail 6 */}
-                <div className="space-y-2">
-                  <Label className="text-xs">Dettaglio 6 (Destra basso)</Label>
-                  <Input
-                    type="text"
-                    placeholder="Es: Pantaloncini"
-                    value={form.detail6Label}
-                    onChange={(e) => setForm({ ...form, detail6Label: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    key={`detail6-${editingKit?.id || 'new'}`}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'detail6Data')}
-                    disabled={uploading}
-                    className="h-8 text-xs"
-                  />
-                  {form.detail6Data ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={`data:${form.detail6MimeType};base64,${form.detail6Data}`} alt="Detail 6" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">Nuovo</span>
+                <div className="border rounded-lg p-4">
+                  <h5 className="text-xs font-semibold mb-3 text-muted-foreground">Dettaglio 6 {form.detail6Label ? `- ${form.detail6Label}` : ''}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descrizione</Label>
+                      <Input
+                        type="text"
+                        placeholder="Es: Pantaloncini"
+                        value={form.detail6Label}
+                        onChange={(e) => setForm({ ...form, detail6Label: e.target.value })}
+                        className="h-8 text-xs"
+                      />
                     </div>
-                  ) : editingKit?.hasDetail6 ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <img src={getImagePreviewUrl(editingKit.id, 'detail', 6, editingKit.updatedAt)} alt="Detail 6" className="w-8 h-8 rounded object-cover border" />
-                      <span className="text-xs text-muted-foreground">File presente</span>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Immagine</Label>
+                      <Input
+                        key={`detail6-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'detail6Data')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail6Data ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={`data:${form.detail6MimeType};base64,${form.detail6Data}`} alt="Detail 6" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">Nuovo</span>
+                        </div>
+                      ) : editingKit && getHasDetail(editingKit, 6) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <img src={getImagePreviewUrl(editingKit.id, 'detail', 6, editingKit.updatedAt)} alt="Detail 6" className="w-8 h-8 rounded object-cover border" />
+                          <span className="text-xs text-muted-foreground">File presente</span>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Modello 3D</Label>
+                      <Input
+                        key={`detail6-model3d-${editingKit?.id || 'new'}`}
+                        type="file"
+                        accept=".glb,.gltf"
+                        onChange={(e) => handleFileUpload(e, 'detail6Model3DData')}
+                        disabled={uploading}
+                        className="h-8 text-xs"
+                      />
+                      {form.detail6Model3DData ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">Nuovo: {form.detail6Model3DName}</Badge>
+                        </div>
+                      ) : editingKit && getHasDetailModel3D(editingKit, 6) ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">3D presente</Badge>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

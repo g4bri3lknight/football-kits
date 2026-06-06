@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 // Funzione helper per rimuovere i dati binari dalla risposta
 const sanitizeKit = (kit: any) => {
-  const { imageData, logoData, model3DData, detail1Data, detail2Data, detail3Data, detail4Data, detail5Data, detail6Data, ...rest } = kit;
+  const { imageData, logoData, model3DData, detail1Data, detail2Data, detail3Data, detail4Data, detail5Data, detail6Data, detail1Model3DData, detail2Model3DData, detail3Model3DData, detail4Model3DData, detail5Model3DData, detail6Model3DData, ...rest } = kit;
   return rest;
 };
 
@@ -34,6 +34,13 @@ export async function GET(
         hasDetail4: true,
         hasDetail5: true,
         hasDetail6: true,
+        // Flag per la presenza di modelli 3D per dettagli
+        hasDetail1Model3D: true,
+        hasDetail2Model3D: true,
+        hasDetail3Model3D: true,
+        hasDetail4Model3D: true,
+        hasDetail5Model3D: true,
+        hasDetail6Model3D: true,
         // Labels dei dettagli
         detail1Label: true,
         detail2Label: true,
@@ -119,6 +126,18 @@ export async function PUT(
       detail6Data,
       detail6MimeType,
       detail6Label,
+      detail1Model3DData,
+      detail1Model3DName,
+      detail2Model3DData,
+      detail2Model3DName,
+      detail3Model3DData,
+      detail3Model3DName,
+      detail4Model3DData,
+      detail4Model3DName,
+      detail5Model3DData,
+      detail5Model3DName,
+      detail6Model3DData,
+      detail6Model3DName,
     } = body;
 
     // Build update data object
@@ -174,6 +193,38 @@ export async function PUT(
       updateData.hasDetail6 = !!detail6Data;
       updateData.detail6Data = detail6Data ? Buffer.from(detail6Data, 'base64') : null;
       updateData.detail6MimeType = detail6MimeType || null;
+    }
+
+    // Detail 3D model data
+    if (detail1Model3DData !== undefined) {
+      updateData.hasDetail1Model3D = !!detail1Model3DData;
+      updateData.detail1Model3DData = detail1Model3DData ? Buffer.from(detail1Model3DData, 'base64') : null;
+      updateData.detail1Model3DName = detail1Model3DName || null;
+    }
+    if (detail2Model3DData !== undefined) {
+      updateData.hasDetail2Model3D = !!detail2Model3DData;
+      updateData.detail2Model3DData = detail2Model3DData ? Buffer.from(detail2Model3DData, 'base64') : null;
+      updateData.detail2Model3DName = detail2Model3DName || null;
+    }
+    if (detail3Model3DData !== undefined) {
+      updateData.hasDetail3Model3D = !!detail3Model3DData;
+      updateData.detail3Model3DData = detail3Model3DData ? Buffer.from(detail3Model3DData, 'base64') : null;
+      updateData.detail3Model3DName = detail3Model3DName || null;
+    }
+    if (detail4Model3DData !== undefined) {
+      updateData.hasDetail4Model3D = !!detail4Model3DData;
+      updateData.detail4Model3DData = detail4Model3DData ? Buffer.from(detail4Model3DData, 'base64') : null;
+      updateData.detail4Model3DName = detail4Model3DName || null;
+    }
+    if (detail5Model3DData !== undefined) {
+      updateData.hasDetail5Model3D = !!detail5Model3DData;
+      updateData.detail5Model3DData = detail5Model3DData ? Buffer.from(detail5Model3DData, 'base64') : null;
+      updateData.detail5Model3DName = detail5Model3DName || null;
+    }
+    if (detail6Model3DData !== undefined) {
+      updateData.hasDetail6Model3D = !!detail6Model3DData;
+      updateData.detail6Model3DData = detail6Model3DData ? Buffer.from(detail6Model3DData, 'base64') : null;
+      updateData.detail6Model3DName = detail6Model3DName || null;
     }
 
     // Labels can always be updated

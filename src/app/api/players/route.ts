@@ -61,6 +61,13 @@ export async function GET() {
                 hasDetail4: true,
                 hasDetail5: true,
                 hasDetail6: true,
+                // Flag per la presenza di modelli 3D per dettagli
+                hasDetail1Model3D: true,
+                hasDetail2Model3D: true,
+                hasDetail3Model3D: true,
+                hasDetail4Model3D: true,
+                hasDetail5Model3D: true,
+                hasDetail6Model3D: true,
                 // Labels dei dettagli
                 detail1Label: true,
                 detail2Label: true,

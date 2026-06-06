@@ -6,7 +6,7 @@ import { Kit, Player, PlayerKit } from '@/types';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FramerDialog } from '@/components/ui/framer-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Shirt, ThumbsUp, ThumbsDown, Share2, Facebook, Twitter, MessageCircle, Link2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shirt, ThumbsUp, ThumbsDown, Share2, Facebook, Twitter, MessageCircle, Link2, Check, ChevronLeft, ChevronRight, Box, X } from 'lucide-react';
 import KitViewer3D from '@/components/KitViewer3D';
 import { HoverTooltip } from '@/components/HoverTooltip';
 import { KitComments } from '@/components/KitComments';
@@ -30,11 +30,13 @@ interface SelectedDetail {
   label: string | null;
   index: number;
   side: 'left' | 'right';
+  hasModel3D?: boolean;
 }
 
 interface HoverDetail {
   url: string;
   label: string | null;
+  hasModel3D?: boolean;
 }
 
 const truncateName = (name: string, maxLength: number = 8) => {
@@ -315,12 +317,12 @@ export function KitDialog({
 
   const handleDetailMouseLeave = useCallback(() => setHoveredDetail(null), []);
 
-  const handleDetailClick = useCallback((detail: { url: string; label: string | null }, index: number, side: 'left' | 'right') => {
+  const handleDetailClick = useCallback((detail: { url: string | null; label: string | null; hasModel3D?: boolean; detailNum: number }, side: 'left' | 'right') => {
     if (detail.url) {
       if (selectedDetail?.url === detail.url) {
         setSelectedDetail(null);
       } else {
-        setSelectedDetail({ url: detail.url, label: detail.label, index, side });
+        setSelectedDetail({ url: detail.url, label: detail.label, index: detail.detailNum, side, hasModel3D: detail.hasModel3D });
       }
     }
   }, [selectedDetail]);
@@ -328,15 +330,15 @@ export function KitDialog({
   const handleCentralAreaClick = useCallback(() => setSelectedDetail(null), []);
 
   const leftDetails = selectedKit ? [
-    { url: selectedKit.hasDetail1 ? getKitImageUrl(selectedKit.id, 'detail', 1, selectedKit.updatedAt) : null, label: selectedKit.detail1Label },
-    { url: selectedKit.hasDetail2 ? getKitImageUrl(selectedKit.id, 'detail', 2, selectedKit.updatedAt) : null, label: selectedKit.detail2Label },
-    { url: selectedKit.hasDetail3 ? getKitImageUrl(selectedKit.id, 'detail', 3, selectedKit.updatedAt) : null, label: selectedKit.detail3Label },
+    { url: selectedKit.hasDetail1 ? getKitImageUrl(selectedKit.id, 'detail', 1, selectedKit.updatedAt) : null, label: selectedKit.detail1Label, hasModel3D: !!selectedKit.hasDetail1Model3D, detailNum: 1 },
+    { url: selectedKit.hasDetail2 ? getKitImageUrl(selectedKit.id, 'detail', 2, selectedKit.updatedAt) : null, label: selectedKit.detail2Label, hasModel3D: !!selectedKit.hasDetail2Model3D, detailNum: 2 },
+    { url: selectedKit.hasDetail3 ? getKitImageUrl(selectedKit.id, 'detail', 3, selectedKit.updatedAt) : null, label: selectedKit.detail3Label, hasModel3D: !!selectedKit.hasDetail3Model3D, detailNum: 3 },
   ] : [];
 
   const rightDetails = selectedKit ? [
-    { url: selectedKit.hasDetail4 ? getKitImageUrl(selectedKit.id, 'detail', 4, selectedKit.updatedAt) : null, label: selectedKit.detail4Label },
-    { url: selectedKit.hasDetail5 ? getKitImageUrl(selectedKit.id, 'detail', 5, selectedKit.updatedAt) : null, label: selectedKit.detail5Label },
-    { url: selectedKit.hasDetail6 ? getKitImageUrl(selectedKit.id, 'detail', 6, selectedKit.updatedAt) : null, label: selectedKit.detail6Label },
+    { url: selectedKit.hasDetail4 ? getKitImageUrl(selectedKit.id, 'detail', 4, selectedKit.updatedAt) : null, label: selectedKit.detail4Label, hasModel3D: !!selectedKit.hasDetail4Model3D, detailNum: 4 },
+    { url: selectedKit.hasDetail5 ? getKitImageUrl(selectedKit.id, 'detail', 5, selectedKit.updatedAt) : null, label: selectedKit.detail5Label, hasModel3D: !!selectedKit.hasDetail5Model3D, detailNum: 5 },
+    { url: selectedKit.hasDetail6 ? getKitImageUrl(selectedKit.id, 'detail', 6, selectedKit.updatedAt) : null, label: selectedKit.detail6Label, hasModel3D: !!selectedKit.hasDetail6Model3D, detailNum: 6 },
   ] : [];
 
   return (
@@ -465,18 +467,23 @@ export function KitDialog({
                         }}
                         onMouseEnter={() => { if (detail.url) handleDetailMouseEnter(detail); }}
                         onMouseLeave={() => handleDetailMouseLeave()}
-                        onClick={(e) => { e.stopPropagation(); handleDetailClick(detail, index, 'left'); }}
+                        onClick={(e) => { e.stopPropagation(); handleDetailClick(detail, 'left'); }}
                       >
                         {detail.url ? (
                           <>
                             <motion.img
                               layoutId={detail.url}
                               src={detail.url}
-                              alt={detail.label || `Dettaglio ${index + 1}`}
+                              alt={detail.label || `Dettaglio ${detail.detailNum}`}
                               className="max-w-full max-h-full object-contain p-1"
                               style={{ opacity: selectedDetail?.url === detail.url ? 0 : 1 }}
                               transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                             />
+                            {detail.hasModel3D && (
+                              <div className="absolute top-1 right-1 bg-black/70 rounded-sm p-0.5">
+                                <Box className="w-3 h-3 text-white" />
+                              </div>
+                            )}
                             {detail.label && (
                               <div 
                                 className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg transition-transform"
@@ -513,25 +520,47 @@ export function KitDialog({
                   <AnimatePresence>
                     {selectedDetail ? (
                       <>
-                        <motion.img
-                          key={selectedDetail.url}
-                          layoutId={selectedDetail.url}
-                          src={selectedDetail.url}
-                          alt={selectedDetail.label || 'Dettaglio selezionato'}
-                          className="absolute inset-0 m-auto max-w-full max-h-full object-contain p-4 z-10"
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                        />
+                        {selectedDetail.hasModel3D ? (
+                          <div className="absolute inset-0" onClick={(e) => e.stopPropagation()}>
+                            <KitViewer3D
+                              modelUrl={`/api/kits/${selectedKit?.id}/detail/${selectedDetail.index}/model3d`}
+                              config={viewerConfig}
+                              className="w-full h-full"
+                            />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedDetail(null); }}
+                              className="absolute top-3 right-3 z-30 p-2 rounded-lg backdrop-blur-md bg-black/50 border border-white/20 hover:bg-black/70 transition-colors"
+                            >
+                              <X className="w-5 h-5 text-white" />
+                            </button>
+                          </div>
+                        ) : (
+                          <motion.img
+                            key={selectedDetail.url}
+                            layoutId={selectedDetail.url}
+                            src={selectedDetail.url}
+                            alt={selectedDetail.label || 'Dettaglio selezionato'}
+                            className="absolute inset-0 m-auto max-w-full max-h-full object-contain p-4 z-10"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                          />
+                        )}
                         {selectedDetail.label && (
                           <motion.div 
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute bottom-2 left-2 right-2 bg-background/80 backdrop-blur-sm py-1 px-2 rounded-lg z-20"
+                            className={`absolute bg-background/80 backdrop-blur-sm py-1 px-2 rounded-lg z-20 ${
+                              selectedDetail.hasModel3D
+                                ? 'bottom-3 left-3 right-[150px]'
+                                : 'bottom-2 left-2 right-2'
+                            }`}
                           >
-                            <p className="text-center text-foreground text-sm">
+                            <p className={`text-foreground text-sm truncate ${
+                              selectedDetail.hasModel3D ? 'text-left' : 'text-center'
+                            }`}>
                               {selectedDetail.label}
                             </p>
                           </motion.div>
@@ -550,7 +579,7 @@ export function KitDialog({
                         transition={{ duration: 0.3 }}
                         src={getKitImageUrl(selectedKit.id, 'image', undefined, selectedKit.updatedAt)}
                         alt={selectedKit.name}
-                        className="max-w-full max-h-full object-contain"
+                        className="absolute inset-0 m-auto max-w-full max-h-full object-contain p-4"
                       />
                     ) : null}
                   </AnimatePresence>
@@ -581,18 +610,23 @@ export function KitDialog({
                         }}
                         onMouseEnter={() => { if (detail.url) handleDetailMouseEnter(detail); }}
                         onMouseLeave={() => handleDetailMouseLeave()}
-                        onClick={(e) => { e.stopPropagation(); handleDetailClick(detail, index, 'right'); }}
+                        onClick={(e) => { e.stopPropagation(); handleDetailClick(detail, 'right'); }}
                       >
                         {detail.url ? (
                           <>
                             <motion.img
                               layoutId={detail.url}
                               src={detail.url}
-                              alt={detail.label || `Dettaglio ${index + 4}`}
+                              alt={detail.label || `Dettaglio ${detail.detailNum}`}
                               className="max-w-full max-h-full object-contain p-1"
                               style={{ opacity: selectedDetail?.url === detail.url ? 0 : 1 }}
                               transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                             />
+                            {detail.hasModel3D && (
+                              <div className="absolute top-1 right-1 bg-black/70 rounded-sm p-0.5">
+                                <Box className="w-3 h-3 text-white" />
+                              </div>
+                            )}
                             {detail.label && (
                               <div 
                                 className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm py-0.5 px-1 rounded-b-lg transition-transform"

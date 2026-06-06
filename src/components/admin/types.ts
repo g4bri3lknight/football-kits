@@ -45,6 +45,13 @@ export interface Kit {
   hasDetail4?: boolean;
   hasDetail5?: boolean;
   hasDetail6?: boolean;
+  // Flag per la presenza di modelli 3D per dettagli
+  hasDetail1Model3D?: boolean;
+  hasDetail2Model3D?: boolean;
+  hasDetail3Model3D?: boolean;
+  hasDetail4Model3D?: boolean;
+  hasDetail5Model3D?: boolean;
+  hasDetail6Model3D?: boolean;
   // Labels dei dettagli
   detail1Label?: string;
   detail2Label?: string;
