@@ -207,7 +207,7 @@ body {
   top: var(--header-only-h);
   left: 0;
   right: 0;
-  bottom: var(--footer-h);
+  bottom: 0;
   z-index: 0;
   background-repeat: no-repeat;
   background-position: center;

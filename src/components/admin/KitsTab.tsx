@@ -70,6 +70,7 @@ interface KitForm {
   logoMimeType: string | null;
   model3DData: string | null;
   model3DName: string | null;
+  removeModel3D: boolean;
   // Detail images
   detail1Data: string | null;
   detail1MimeType: string | null;
@@ -93,16 +94,22 @@ interface KitForm {
   // Detail 3D models
   detail1Model3DData: string | null;
   detail1Model3DName: string | null;
+  removeDetail1Model3D: boolean;
   detail2Model3DData: string | null;
   detail2Model3DName: string | null;
+  removeDetail2Model3D: boolean;
   detail3Model3DData: string | null;
   detail3Model3DName: string | null;
+  removeDetail3Model3D: boolean;
   detail4Model3DData: string | null;
   detail4Model3DName: string | null;
+  removeDetail4Model3D: boolean;
   detail5Model3DData: string | null;
   detail5Model3DName: string | null;
+  removeDetail5Model3D: boolean;
   detail6Model3DData: string | null;
   detail6Model3DName: string | null;
+  removeDetail6Model3D: boolean;
 }
 
 // Helper per convertire File in base64
@@ -156,6 +163,7 @@ export default function KitsTab({
     logoMimeType: null,
     model3DData: null,
     model3DName: null,
+    removeModel3D: false,
     detail1Data: null,
     detail1MimeType: null,
     detail2Data: null,
@@ -176,16 +184,22 @@ export default function KitsTab({
     detail6Label: '',
     detail1Model3DData: null,
     detail1Model3DName: null,
+    removeDetail1Model3D: false,
     detail2Model3DData: null,
     detail2Model3DName: null,
+    removeDetail2Model3D: false,
     detail3Model3DData: null,
     detail3Model3DName: null,
+    removeDetail3Model3D: false,
     detail4Model3DData: null,
     detail4Model3DName: null,
+    removeDetail4Model3D: false,
     detail5Model3DData: null,
     detail5Model3DName: null,
+    removeDetail5Model3D: false,
     detail6Model3DData: null,
     detail6Model3DName: null,
+    removeDetail6Model3D: false,
   });
 
   const filteredKits = kits.filter(kit =>
@@ -207,6 +221,7 @@ export default function KitsTab({
       logoMimeType: null,
       model3DData: null,
       model3DName: null,
+      removeModel3D: false,
       detail1Data: null,
       detail1MimeType: null,
       detail2Data: null,
@@ -227,16 +242,22 @@ export default function KitsTab({
       detail6Label: DETAIL_DEFAULT_LABELS[5],
       detail1Model3DData: null,
       detail1Model3DName: null,
+      removeDetail1Model3D: false,
       detail2Model3DData: null,
       detail2Model3DName: null,
+      removeDetail2Model3D: false,
       detail3Model3DData: null,
       detail3Model3DName: null,
+      removeDetail3Model3D: false,
       detail4Model3DData: null,
       detail4Model3DName: null,
+      removeDetail4Model3D: false,
       detail5Model3DData: null,
       detail5Model3DName: null,
+      removeDetail5Model3D: false,
       detail6Model3DData: null,
       detail6Model3DName: null,
+      removeDetail6Model3D: false,
     });
     setDialogOpen(true);
   };
@@ -256,6 +277,7 @@ export default function KitsTab({
       logoMimeType: null,
       model3DData: null,
       model3DName: null,
+      removeModel3D: false,
       detail1Data: null,
       detail1MimeType: null,
       detail2Data: null,
@@ -276,16 +298,22 @@ export default function KitsTab({
       detail6Label: kit.detail6Label || '',
       detail1Model3DData: null,
       detail1Model3DName: null,
+      removeDetail1Model3D: false,
       detail2Model3DData: null,
       detail2Model3DName: null,
+      removeDetail2Model3D: false,
       detail3Model3DData: null,
       detail3Model3DName: null,
+      removeDetail3Model3D: false,
       detail4Model3DData: null,
       detail4Model3DName: null,
+      removeDetail4Model3D: false,
       detail5Model3DData: null,
       detail5Model3DName: null,
+      removeDetail5Model3D: false,
       detail6Model3DData: null,
       detail6Model3DName: null,
+      removeDetail6Model3D: false,
     });
     setDialogOpen(true);
   };
@@ -303,6 +331,7 @@ export default function KitsTab({
       logoMimeType: null,
       model3DData: null,
       model3DName: null,
+      removeModel3D: false,
       detail1Data: null,
       detail1MimeType: null,
       detail2Data: null,
@@ -323,16 +352,22 @@ export default function KitsTab({
       detail6Label: '',
       detail1Model3DData: null,
       detail1Model3DName: null,
+      removeDetail1Model3D: false,
       detail2Model3DData: null,
       detail2Model3DName: null,
+      removeDetail2Model3D: false,
       detail3Model3DData: null,
       detail3Model3DName: null,
+      removeDetail3Model3D: false,
       detail4Model3DData: null,
       detail4Model3DName: null,
+      removeDetail4Model3D: false,
       detail5Model3DData: null,
       detail5Model3DName: null,
+      removeDetail5Model3D: false,
       detail6Model3DData: null,
       detail6Model3DName: null,
+      removeDetail6Model3D: false,
     });
     setDialogOpen(false);
   };
@@ -410,6 +445,10 @@ export default function KitsTab({
           updateData.model3DData = form.model3DData;
           updateData.model3DName = form.model3DName;
         }
+        if (form.removeModel3D) {
+          updateData.model3DData = '';
+          updateData.model3DName = '';
+        }
         if (form.detail1Data) {
           updateData.detail1Data = form.detail1Data;
           updateData.detail1MimeType = form.detail1MimeType;
@@ -438,25 +477,49 @@ export default function KitsTab({
           updateData.detail1Model3DData = form.detail1Model3DData;
           updateData.detail1Model3DName = form.detail1Model3DName;
         }
+        if (form.removeDetail1Model3D) {
+          updateData.detail1Model3DData = '';
+          updateData.detail1Model3DName = '';
+        }
         if (form.detail2Model3DData) {
           updateData.detail2Model3DData = form.detail2Model3DData;
           updateData.detail2Model3DName = form.detail2Model3DName;
+        }
+        if (form.removeDetail2Model3D) {
+          updateData.detail2Model3DData = '';
+          updateData.detail2Model3DName = '';
         }
         if (form.detail3Model3DData) {
           updateData.detail3Model3DData = form.detail3Model3DData;
           updateData.detail3Model3DName = form.detail3Model3DName;
         }
+        if (form.removeDetail3Model3D) {
+          updateData.detail3Model3DData = '';
+          updateData.detail3Model3DName = '';
+        }
         if (form.detail4Model3DData) {
           updateData.detail4Model3DData = form.detail4Model3DData;
           updateData.detail4Model3DName = form.detail4Model3DName;
+        }
+        if (form.removeDetail4Model3D) {
+          updateData.detail4Model3DData = '';
+          updateData.detail4Model3DName = '';
         }
         if (form.detail5Model3DData) {
           updateData.detail5Model3DData = form.detail5Model3DData;
           updateData.detail5Model3DName = form.detail5Model3DName;
         }
+        if (form.removeDetail5Model3D) {
+          updateData.detail5Model3DData = '';
+          updateData.detail5Model3DName = '';
+        }
         if (form.detail6Model3DData) {
           updateData.detail6Model3DData = form.detail6Model3DData;
           updateData.detail6Model3DName = form.detail6Model3DName;
+        }
+        if (form.removeDetail6Model3D) {
+          updateData.detail6Model3DData = '';
+          updateData.detail6Model3DName = '';
         }
         
         await onUpdateKit(editingKit.id, updateData);
@@ -921,19 +984,50 @@ export default function KitsTab({
               <div className="space-y-2">
                 <Label>Modello 3D</Label>
                 <Input
-                  key={`model3d-${editingKit?.id || 'new'}`}
+                  key={`model3d-${editingKit?.id || 'new'}${form.removeModel3D ? '-removed' : ''}`}
                   type="file"
                   accept=".glb,.gltf"
-                  onChange={(e) => handleFileUpload(e, 'model3DData')}
+                  onChange={(e) => { handleFileUpload(e, 'model3DData'); setForm(f => ({ ...f, removeModel3D: false })); }}
                   disabled={uploading}
                 />
                 {form.model3DData ? (
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">Nuovo: {form.model3DName}</Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-destructive hover:text-destructive"
+                      onClick={() => setForm(f => ({ ...f, model3DData: null, model3DName: null }))}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
-                ) : editingKit?.hasModel3D ? (
+                ) : editingKit?.hasModel3D && !form.removeModel3D ? (
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">3D presente</Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-destructive hover:text-destructive"
+                      onClick={() => setForm(f => ({ ...f, removeModel3D: true }))}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : form.removeModel3D ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs text-destructive border-destructive">Sarà rimosso al salvataggio</Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setForm(f => ({ ...f, removeModel3D: false }))}
+                    >
+                      Annulla
+                    </Button>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">Nessun file selezionato</p>
@@ -988,20 +1082,27 @@ export default function KitsTab({
                     <div className="space-y-1.5">
                       <Label className="text-xs">Modello 3D</Label>
                       <Input
-                        key={`detail1-model3d-${editingKit?.id || 'new'}`}
+                        key={`detail1-model3d-${editingKit?.id || 'new'}${form.removeDetail1Model3D ? '-removed' : ''}`}
                         type="file"
                         accept=".glb,.gltf"
-                        onChange={(e) => handleFileUpload(e, 'detail1Model3DData')}
+                        onChange={(e) => { handleFileUpload(e, 'detail1Model3DData'); setForm(f => ({ ...f, removeDetail1Model3D: false })); }}
                         disabled={uploading}
                         className="h-8 text-xs"
                       />
                       {form.detail1Model3DData ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">Nuovo: {form.detail1Model3DName}</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, detail1Model3DData: null, detail1Model3DName: null }))}><Trash2 className="w-3 h-3" /></Button>
                         </div>
-                      ) : editingKit && getHasDetailModel3D(editingKit, 1) ? (
+                      ) : editingKit && getHasDetailModel3D(editingKit, 1) && !form.removeDetail1Model3D ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">3D presente</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, removeDetail1Model3D: true }))}><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      ) : form.removeDetail1Model3D ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs text-destructive border-destructive">Rimosso</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setForm(f => ({ ...f, removeDetail1Model3D: false }))}>Annulla</Button>
                         </div>
                       ) : null}
                     </div>
@@ -1047,20 +1148,27 @@ export default function KitsTab({
                     <div className="space-y-1.5">
                       <Label className="text-xs">Modello 3D</Label>
                       <Input
-                        key={`detail2-model3d-${editingKit?.id || 'new'}`}
+                        key={`detail2-model3d-${editingKit?.id || 'new'}${form.removeDetail2Model3D ? '-removed' : ''}`}
                         type="file"
                         accept=".glb,.gltf"
-                        onChange={(e) => handleFileUpload(e, 'detail2Model3DData')}
+                        onChange={(e) => { handleFileUpload(e, 'detail2Model3DData'); setForm(f => ({ ...f, removeDetail2Model3D: false })); }}
                         disabled={uploading}
                         className="h-8 text-xs"
                       />
                       {form.detail2Model3DData ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">Nuovo: {form.detail2Model3DName}</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, detail2Model3DData: null, detail2Model3DName: null }))}><Trash2 className="w-3 h-3" /></Button>
                         </div>
-                      ) : editingKit && getHasDetailModel3D(editingKit, 2) ? (
+                      ) : editingKit && getHasDetailModel3D(editingKit, 2) && !form.removeDetail2Model3D ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">3D presente</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, removeDetail2Model3D: true }))}><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      ) : form.removeDetail2Model3D ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs text-destructive border-destructive">Rimosso</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setForm(f => ({ ...f, removeDetail2Model3D: false }))}>Annulla</Button>
                         </div>
                       ) : null}
                     </div>
@@ -1106,20 +1214,27 @@ export default function KitsTab({
                     <div className="space-y-1.5">
                       <Label className="text-xs">Modello 3D</Label>
                       <Input
-                        key={`detail3-model3d-${editingKit?.id || 'new'}`}
+                        key={`detail3-model3d-${editingKit?.id || 'new'}${form.removeDetail3Model3D ? '-removed' : ''}`}
                         type="file"
                         accept=".glb,.gltf"
-                        onChange={(e) => handleFileUpload(e, 'detail3Model3DData')}
+                        onChange={(e) => { handleFileUpload(e, 'detail3Model3DData'); setForm(f => ({ ...f, removeDetail3Model3D: false })); }}
                         disabled={uploading}
                         className="h-8 text-xs"
                       />
                       {form.detail3Model3DData ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">Nuovo: {form.detail3Model3DName}</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, detail3Model3DData: null, detail3Model3DName: null }))}><Trash2 className="w-3 h-3" /></Button>
                         </div>
-                      ) : editingKit && getHasDetailModel3D(editingKit, 3) ? (
+                      ) : editingKit && getHasDetailModel3D(editingKit, 3) && !form.removeDetail3Model3D ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">3D presente</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, removeDetail3Model3D: true }))}><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      ) : form.removeDetail3Model3D ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs text-destructive border-destructive">Rimosso</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setForm(f => ({ ...f, removeDetail3Model3D: false }))}>Annulla</Button>
                         </div>
                       ) : null}
                     </div>
@@ -1165,20 +1280,27 @@ export default function KitsTab({
                     <div className="space-y-1.5">
                       <Label className="text-xs">Modello 3D</Label>
                       <Input
-                        key={`detail4-model3d-${editingKit?.id || 'new'}`}
+                        key={`detail4-model3d-${editingKit?.id || 'new'}${form.removeDetail4Model3D ? '-removed' : ''}`}
                         type="file"
                         accept=".glb,.gltf"
-                        onChange={(e) => handleFileUpload(e, 'detail4Model3DData')}
+                        onChange={(e) => { handleFileUpload(e, 'detail4Model3DData'); setForm(f => ({ ...f, removeDetail4Model3D: false })); }}
                         disabled={uploading}
                         className="h-8 text-xs"
                       />
                       {form.detail4Model3DData ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">Nuovo: {form.detail4Model3DName}</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, detail4Model3DData: null, detail4Model3DName: null }))}><Trash2 className="w-3 h-3" /></Button>
                         </div>
-                      ) : editingKit && getHasDetailModel3D(editingKit, 4) ? (
+                      ) : editingKit && getHasDetailModel3D(editingKit, 4) && !form.removeDetail4Model3D ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">3D presente</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, removeDetail4Model3D: true }))}><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      ) : form.removeDetail4Model3D ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs text-destructive border-destructive">Rimosso</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setForm(f => ({ ...f, removeDetail4Model3D: false }))}>Annulla</Button>
                         </div>
                       ) : null}
                     </div>
@@ -1224,20 +1346,27 @@ export default function KitsTab({
                     <div className="space-y-1.5">
                       <Label className="text-xs">Modello 3D</Label>
                       <Input
-                        key={`detail5-model3d-${editingKit?.id || 'new'}`}
+                        key={`detail5-model3d-${editingKit?.id || 'new'}${form.removeDetail5Model3D ? '-removed' : ''}`}
                         type="file"
                         accept=".glb,.gltf"
-                        onChange={(e) => handleFileUpload(e, 'detail5Model3DData')}
+                        onChange={(e) => { handleFileUpload(e, 'detail5Model3DData'); setForm(f => ({ ...f, removeDetail5Model3D: false })); }}
                         disabled={uploading}
                         className="h-8 text-xs"
                       />
                       {form.detail5Model3DData ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">Nuovo: {form.detail5Model3DName}</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, detail5Model3DData: null, detail5Model3DName: null }))}><Trash2 className="w-3 h-3" /></Button>
                         </div>
-                      ) : editingKit && getHasDetailModel3D(editingKit, 5) ? (
+                      ) : editingKit && getHasDetailModel3D(editingKit, 5) && !form.removeDetail5Model3D ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">3D presente</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, removeDetail5Model3D: true }))}><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      ) : form.removeDetail5Model3D ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs text-destructive border-destructive">Rimosso</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setForm(f => ({ ...f, removeDetail5Model3D: false }))}>Annulla</Button>
                         </div>
                       ) : null}
                     </div>
@@ -1283,20 +1412,27 @@ export default function KitsTab({
                     <div className="space-y-1.5">
                       <Label className="text-xs">Modello 3D</Label>
                       <Input
-                        key={`detail6-model3d-${editingKit?.id || 'new'}`}
+                        key={`detail6-model3d-${editingKit?.id || 'new'}${form.removeDetail6Model3D ? '-removed' : ''}`}
                         type="file"
                         accept=".glb,.gltf"
-                        onChange={(e) => handleFileUpload(e, 'detail6Model3DData')}
+                        onChange={(e) => { handleFileUpload(e, 'detail6Model3DData'); setForm(f => ({ ...f, removeDetail6Model3D: false })); }}
                         disabled={uploading}
                         className="h-8 text-xs"
                       />
                       {form.detail6Model3DData ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">Nuovo: {form.detail6Model3DName}</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, detail6Model3DData: null, detail6Model3DName: null }))}><Trash2 className="w-3 h-3" /></Button>
                         </div>
-                      ) : editingKit && getHasDetailModel3D(editingKit, 6) ? (
+                      ) : editingKit && getHasDetailModel3D(editingKit, 6) && !form.removeDetail6Model3D ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">3D presente</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-destructive hover:text-destructive" onClick={() => setForm(f => ({ ...f, removeDetail6Model3D: true }))}><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      ) : form.removeDetail6Model3D ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs text-destructive border-destructive">Rimosso</Badge>
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setForm(f => ({ ...f, removeDetail6Model3D: false }))}>Annulla</Button>
                         </div>
                       ) : null}
                     </div>

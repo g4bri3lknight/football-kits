@@ -790,7 +790,7 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer ref={footerRef} className="bg-background border-t py-3 px-4 mt-auto footer">
+      <footer ref={footerRef} className="fixed bottom-0 left-0 right-0 backdrop-blur-md bg-black/70 border-t border-white/10 py-3 px-4 footer z-20">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
           <p>© 2026 GK Retro Kits. Tutti i diritti riservati.</p>
         </div>
