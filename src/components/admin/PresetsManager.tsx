@@ -36,6 +36,8 @@ import {
   X,
   Bookmark,
   CircleCheck,
+  RefreshCw,
+  Pencil,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { HoverTooltip } from '@/components/HoverTooltip';
@@ -99,6 +101,16 @@ export default function PresetsManager({
   // Delete confirmation
   const [presetToDelete, setPresetToDelete] = useState<Preset | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Update config confirmation (sovrascrive config di un preset esistente con le impostazioni correnti)
+  const [presetToUpdate, setPresetToUpdate] = useState<Preset | null>(null);
+  const [updating, setUpdating] = useState(false);
+
+  // Rename dialog
+  const [presetToRename, setPresetToRename] = useState<Preset | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   // Import state
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -297,6 +309,94 @@ export default function PresetsManager({
       setDeleting(false);
     }
   }, [adminToken, presetToDelete, toast, fetchPresets]);
+
+  // ============================================================================
+  // Update existing preset config (sovrascrive la config di un preset con le impostazioni correnti)
+  // ============================================================================
+  const handleUpdatePresetConfig = useCallback(async () => {
+    if (!presetToUpdate) return;
+
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/viewer3d-presets/${presetToUpdate.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminToken,
+          config: currentConfig,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.details || 'Errore nell\'aggiornamento');
+
+      toast({ title: 'Successo', description: `Configurazione del preset "${presetToUpdate.name}" aggiornata` });
+      setPresetToUpdate(null);
+      fetchPresets();
+    } catch (err: any) {
+      console.error('Error updating preset config:', err);
+      toast({
+        title: 'Errore',
+        description: err.message || 'Impossibile aggiornare il preset',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdating(false);
+    }
+  }, [adminToken, presetToUpdate, currentConfig, toast, fetchPresets]);
+
+  // ============================================================================
+  // Rename existing preset (aggiorna solo il nome)
+  // ============================================================================
+  const handleRenamePreset = useCallback(async () => {
+    if (!presetToRename) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed) {
+      toast({ title: 'Attenzione', description: 'Inserisci un nome valido' });
+      return;
+    }
+
+    setRenaming(true);
+    try {
+      const res = await fetch(`/api/viewer3d-presets/${presetToRename.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminToken,
+          name: trimmed,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.details || 'Errore nella rinomina');
+
+      toast({ title: 'Successo', description: `Preset rinominato in "${trimmed}"` });
+      setPresetToRename(null);
+      setRenameValue('');
+      fetchPresets();
+    } catch (err: any) {
+      console.error('Error renaming preset:', err);
+      toast({
+        title: 'Errore',
+        description: err.message || 'Impossibile rinominare il preset',
+        variant: 'destructive',
+      });
+    } finally {
+      setRenaming(false);
+    }
+  }, [adminToken, presetToRename, renameValue, toast, fetchPresets]);
+
+  // Apre il dialog di rename precompilando il nome attuale
+  const handleOpenRename = useCallback((preset: Preset) => {
+    setPresetToRename(preset);
+    setRenameValue(preset.name);
+  }, []);
+
+  // Focus sull'input di rename quando il dialog si apre
+  useEffect(() => {
+    if (presetToRename && renameInputRef.current) {
+      const t = setTimeout(() => renameInputRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [presetToRename]);
 
   // ============================================================================
   // Export preset
@@ -596,6 +696,16 @@ export default function PresetsManager({
                     <Play className="w-3.5 h-3.5" />
                   </Button>
                   </HoverTooltip>
+                  <HoverTooltip text="Aggiorna config con impostazioni correnti" side="top">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
+                    onClick={() => setPresetToUpdate(preset)}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </Button>
+                  </HoverTooltip>
                   <HoverTooltip text="Applica a kit..." side="top">
                   <Button
                     variant="ghost"
@@ -604,6 +714,16 @@ export default function PresetsManager({
                     onClick={() => handleOpenBulkApply(preset)}
                   >
                     <CheckSquare className="w-3.5 h-3.5" />
+                  </Button>
+                  </HoverTooltip>
+                  <HoverTooltip text="Rinomina preset" side="top">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-accent"
+                    onClick={() => handleOpenRename(preset)}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
                   </Button>
                   </HoverTooltip>
                   <HoverTooltip text="Esporta JSON" side="top">
@@ -769,6 +889,80 @@ export default function PresetsManager({
                 <Play className="w-3.5 h-3.5" />
               )}
               Applica
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update config confirmation dialog */}
+      <AlertDialog open={!!presetToUpdate} onOpenChange={(open) => !open && setPresetToUpdate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm">Aggiorna configurazione preset</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Sovrascrivere la configurazione del preset &quot;{presetToUpdate?.name}&quot; con le impostazioni correnti?
+              L&apos;azione sostituisce la configurazione salvata e non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-7 text-xs" disabled={updating}>
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-7 text-xs bg-amber-600 hover:bg-amber-700"
+              onClick={handleUpdatePresetConfig}
+              disabled={updating}
+            >
+              {updating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              Aggiorna
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rename dialog */}
+      <Dialog open={!!presetToRename} onOpenChange={(open) => { if (!open) { setPresetToRename(null); setRenameValue(''); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Rinomina preset</DialogTitle>
+            <DialogDescription className="text-xs">
+              Inserisci il nuovo nome per il preset &quot;{presetToRename?.name}&quot;.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            ref={renameInputRef}
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleRenamePreset();
+              if (e.key === 'Escape') {
+                setPresetToRename(null);
+                setRenameValue('');
+              }
+            }}
+            placeholder="Nuovo nome preset..."
+            className="h-8 text-sm"
+            disabled={renaming}
+            maxLength={100}
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => { setPresetToRename(null); setRenameValue(''); }}
+              disabled={renaming}
+            >
+              Annulla
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+              onClick={handleRenamePreset}
+              disabled={renaming || !renameValue.trim()}
+            >
+              {renaming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Salva
             </Button>
           </DialogFooter>
         </DialogContent>
