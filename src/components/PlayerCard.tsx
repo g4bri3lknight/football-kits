@@ -22,6 +22,8 @@ import {
 interface PlayerCardProps {
   player: Player;
   kitSeasonFilter: string;
+  leagueNationFilter?: string;
+  leagueNameFilter?: string;
   kitTeamFilter: string;
   onPlayerClick: (player: Player) => void;
   onKitClick: (kit: Player['PlayerKit'][0]['Kit'], player: Player) => void;
@@ -137,12 +139,14 @@ function KitTooltip({ hoveredKit }: { hoveredKit: HoveredKit }) {
 export function PlayerCard({
   player,
   kitSeasonFilter,
+  leagueNationFilter = '',
+  leagueNameFilter = '',
   kitTeamFilter,
   onPlayerClick,
   onKitClick,
   index = 0
 }: PlayerCardProps) {
-  const filteredKits = filterPlayerKits(player, kitSeasonFilter, kitTeamFilter);
+  const filteredKits = filterPlayerKits(player, kitSeasonFilter, kitTeamFilter, leagueNationFilter, leagueNameFilter);
   const sortedKits = sortKitsBySeason(filteredKits);
 
   // Check if player has a visible status

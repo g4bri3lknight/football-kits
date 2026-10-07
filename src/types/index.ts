@@ -61,6 +61,18 @@ export interface Kit {
   dislikes: number;
   updatedAt?: string | Date;
   status?: ContentStatus;
+  // Campionato del kit (opzionale)
+  League?: KitLeague | null;
+}
+
+// Dati pubblici del campionato di un kit (il logo si legge da /api/leagues/[id]/logo)
+export interface KitLeague {
+  id: string;
+  name: string;
+  season: string;
+  nation: string;
+  hasLogo: boolean;
+  updatedAt?: string | Date;
 }
 
 export interface PlayerKit {

@@ -75,6 +75,16 @@ export async function GET() {
                 detail4Label: true,
                 detail5Label: true,
                 detail6Label: true,
+                League: {
+                  select: {
+                    id: true,
+                    name: true,
+                    season: true,
+                    nation: true,
+                    hasLogo: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },

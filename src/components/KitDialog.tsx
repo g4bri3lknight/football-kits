@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Kit, Player, PlayerKit } from '@/types';
+import { Kit, KitLeague, Player, PlayerKit } from '@/types';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FramerDialog } from '@/components/ui/framer-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -59,6 +59,12 @@ const getKitImageUrl = (kitId: string, type: 'image' | 'logo' | 'model3d' | 'det
     return `/api/kits/${kitId}/detail/${detailNum}${cacheBuster}`;
   }
   return `/api/kits/${kitId}/${type}${cacheBuster}`;
+};
+
+// URL del logo del campionato; "t" cambia a ogni modifica per evitare la cache del browser
+const getLeagueLogoUrl = (league: KitLeague) => {
+  const cacheBuster = league.updatedAt ? `?t=${new Date(league.updatedAt).getTime()}` : '';
+  return `/api/leagues/${league.id}/logo${cacheBuster}`;
 };
 
 const getPlayerImageUrl = (playerId: string, updatedAt?: string | Date) => {
@@ -387,7 +393,25 @@ export function KitDialog({
 
               {/* Titolo centrato */}
               <DialogTitle className="text-xl sm:text-2xl flex items-center gap-2 sm:gap-3 flex-1 justify-center flex-wrap">
-                <span className="truncate max-w-[120px] sm:max-w-none">{selectedKit?.name}</span>
+                {/* Se il kit ha un campionato: logo + stagione del campionato.
+                    Altrimenti (kit senza campionato) il titolo resta il nome del kit. */}
+                {selectedKit?.League ? (
+                  <span
+                    className="flex items-center gap-2 sm:gap-3 shrink-0"
+                    title={`${selectedKit.League.name} · ${selectedKit.League.nation}`}
+                  >
+                    {selectedKit.League.hasLogo && (
+                      <img
+                        src={getLeagueLogoUrl(selectedKit.League)}
+                        alt={selectedKit.League.name}
+                        className="h-8 sm:h-10 w-auto max-w-[64px] sm:max-w-[88px] object-contain"
+                      />
+                    )}
+                    <span>{selectedKit.League.season}</span>
+                  </span>
+                ) : (
+                  <span className="truncate max-w-[120px] sm:max-w-none">{selectedKit?.name}</span>
+                )}
               </DialogTitle>
 
               {/* Kit successivo */}

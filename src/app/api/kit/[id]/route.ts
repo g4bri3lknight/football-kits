@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { resolveLeagueId } from '@/lib/leagues';
 
 // Permetti payload fino a 50MB per il caricamento di file
 export const maxDuration = 60; // 60 secondi di timeout
@@ -10,7 +11,7 @@ const sanitizeKit = (kit: any) => {
   return rest;
 };
 
-// GET /api/kits/[id] - Ottieni un kit specifico
+// GET /api/kit/[id] - Ottieni un kit specifico
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,6 +29,7 @@ export async function GET(
         dislikes: true,
         updatedAt: true,
         status: true,
+        leagueId: true,
         // Flag per la presenza di file
         hasImage: true,
         hasLogo: true,
@@ -93,7 +95,7 @@ export async function GET(
   }
 }
 
-// PUT /api/kits/[id] - Aggiorna un kit
+// PUT /api/kit/[id] - Aggiorna un kit
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -144,6 +146,7 @@ export async function PUT(
       detail6Model3DData,
       detail6Model3DName,
       status,
+      leagueId,
     } = body;
 
     // Build update data object
@@ -157,6 +160,27 @@ export async function PUT(
     // Status can be updated
     if (status !== undefined) {
       updateData.status = status;
+    }
+
+    // Campionato: se presente deve esistere nella tabella League (vuoto/null = rimuovi)
+    // Se il kit ha un campionato (nuovo o già assegnato), la sua stagione sovrascrive Kit.name.
+    let leagueSeason: string | null = null;
+    if (leagueId !== undefined) {
+      const resolved = await resolveLeagueId(leagueId);
+      if (!resolved.ok) {
+        return NextResponse.json({ error: resolved.error }, { status: 400 });
+      }
+      updateData.leagueId = resolved.leagueId;
+      leagueSeason = resolved.season;
+    } else {
+      const current = await db.kit.findUnique({ where: { id }, select: { leagueId: true } });
+      if (current?.leagueId) {
+        const resolved = await resolveLeagueId(current.leagueId);
+        if (resolved.ok) leagueSeason = resolved.season;
+      }
+    }
+    if (leagueSeason) {
+      updateData.name = leagueSeason;
     }
 
     // Aggiungi solo i campi che sono stati forniti (per non sovrascrivere i dati esistenti)
@@ -261,7 +285,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/kits/[id] - Elimina un kit
+// DELETE /api/kit/[id] - Elimina un kit
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

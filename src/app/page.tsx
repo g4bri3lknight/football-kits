@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, User as UserIcon, Menu, Clock } from 'lucide-react';
+import { Search, User as UserIcon, Menu, Clock, SlidersHorizontal, X } from 'lucide-react';
 import Flag from 'react-world-flags';
 
 import { Nation, Player, Kit, PlayerKit } from '@/types';
@@ -84,6 +84,10 @@ export default function Home() {
   // Nazione di default del filtro (Italia, se presente tra i giocatori), altrimenti 'all'
   const [defaultNationId, setDefaultNationId] = useState('all');
   const [kitSeasonFilter, setKitSeasonFilter] = useState('');
+  // Nome della nazione del campionato del kit ('' = tutte)
+  const [leagueNationFilter, setLeagueNationFilter] = useState('');
+  // Nome del campionato del kit ('' = tutti)
+  const [leagueNameFilter, setLeagueNameFilter] = useState('');
   const [kitTeamFilter, setKitTeamFilter] = useState('');
   
   // UI states
@@ -110,6 +114,37 @@ export default function Home() {
     const usedIds = new Set(players.map(p => p.nationId).filter(Boolean));
     return nations.filter(n => usedIds.has(n.id));
   }, [nations, players]);
+
+  // Tutti i campionati usati da almeno un kit
+  const availableLeagueNames = useMemo(() => {
+    const names = new Set<string>();
+    players.forEach(p => p.PlayerKit.forEach(pk => {
+      if (pk.Kit?.League) names.add(pk.Kit.League.name);
+    }));
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [players]);
+
+  // Nazioni dei campionati usati da almeno un kit (se è scelto un campionato, solo le sue), con bandiera se la nazione esiste
+  const availableLeagueNations = useMemo(() => {
+    const names = new Set<string>();
+    players.forEach(p => p.PlayerKit.forEach(pk => {
+      const league = pk.Kit?.League;
+      if (league?.nation && (!leagueNameFilter || league.name === leagueNameFilter)) names.add(league.nation);
+    }));
+    return Array.from(names)
+      .sort((a, b) => a.localeCompare(b))
+      .map(name => ({ name, nation: nations.find(n => n.name === name) }));
+  }, [nations, players, leagueNameFilter]);
+
+  // Cambio campionato: la nazione campionato si azzera solo se non è tra quelle del nuovo campionato
+  const handleLeagueNameChange = (value: string) => {
+    setLeagueNameFilter(value);
+    if (value && leagueNationFilter) {
+      const stillValid = players.some(p => p.PlayerKit.some(pk =>
+        pk.Kit?.League?.name === value && pk.Kit.League.nation === leagueNationFilter));
+      if (!stillValid) setLeagueNationFilter('');
+    }
+  };
 
   // Set CSS custom properties for header and tab bar heights
   useEffect(() => {
@@ -300,15 +335,8 @@ export default function Home() {
       const matchesNation = playerNationFilter === 'all' || player.nationId === playerNationFilter;
       
       // Se ci sono filtri kit attivi, verifica che il giocatore abbia almeno un kit che rispetta i filtri
-      const hasMatchingKit = !kitSeasonFilter && !kitTeamFilter || 
-        player.PlayerKit.some(pk => {
-          if (!pk.Kit?.name || !pk.Kit?.team) return false;
-          const matchesSeason = !kitSeasonFilter || 
-            pk.Kit.name.toLowerCase().includes(kitSeasonFilter.toLowerCase());
-          const matchesTeam = !kitTeamFilter || 
-            pk.Kit.team.toLowerCase().includes(kitTeamFilter.toLowerCase());
-          return matchesSeason && matchesTeam;
-        });
+      const hasMatchingKit = !kitSeasonFilter && !kitTeamFilter && !leagueNationFilter && !leagueNameFilter ||
+        filterPlayerKits(player, kitSeasonFilter, kitTeamFilter, leagueNationFilter, leagueNameFilter).length > 0;
       
       return matchesSearch && matchesNation && hasMatchingKit;
     });
@@ -330,7 +358,7 @@ export default function Home() {
     });
     
     setFilteredPlayers(sorted);
-  }, [searchQuery, playerNationFilter, kitSeasonFilter, kitTeamFilter, players]);
+  }, [searchQuery, playerNationFilter, kitSeasonFilter, kitTeamFilter, leagueNationFilter, leagueNameFilter, players]);
 
   const fetchData = async () => {
     try {
@@ -411,7 +439,7 @@ export default function Home() {
   };
 
   const handleKitClick = (kit: Kit, player: Player) => {
-    const kits = sortKitsBySeason(filterPlayerKits(player, kitSeasonFilter, kitTeamFilter));
+    const kits = sortKitsBySeason(filterPlayerKits(player, kitSeasonFilter, kitTeamFilter, leagueNationFilter, leagueNameFilter));
     const index = kits.findIndex(pk => pk.Kit?.id === kit.id);
     setSelectedKit(kit);
     setSelectedKitPlayer(player);
@@ -446,14 +474,34 @@ export default function Home() {
     }
   };
 
+  // Pannello filtri desktop (collassabile). La ricerca resta sempre visibile e non conta nel badge.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount =
+    (playerNationFilter !== defaultNationId ? 1 : 0) + (leagueNationFilter ? 1 : 0) + (leagueNameFilter ? 1 : 0) + (kitSeasonFilter ? 1 : 0) + (kitTeamFilter ? 1 : 0);
+
+  // Chip dei filtri attivi (la ricerca è già visibile; l'Italia di default non conta)
+  const activeChips = [
+    playerNationFilter !== defaultNationId && {
+      key: 'nation',
+      label: `Giocatore: ${playerNationFilter === 'all' ? 'Tutte' : nations.find(n => n.id === playerNationFilter)?.name ?? ''}`,
+      clear: () => setPlayerNationFilter(defaultNationId),
+    },
+    leagueNameFilter && { key: 'league', label: leagueNameFilter, clear: () => setLeagueNameFilter('') },
+    leagueNationFilter && { key: 'leagueNation', label: `Campionato: ${leagueNationFilter}`, clear: () => setLeagueNationFilter('') },
+    kitSeasonFilter && { key: 'season', label: `Stagione: ${kitSeasonFilter}`, clear: () => setKitSeasonFilter('') },
+    kitTeamFilter && { key: 'team', label: kitTeamFilter, clear: () => setKitTeamFilter('') },
+  ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
+
   const resetFilters = () => {
     setSearchQuery('');
     setPlayerNationFilter(defaultNationId);
     setKitSeasonFilter('');
     setKitTeamFilter('');
+    setLeagueNationFilter('');
+    setLeagueNameFilter('');
   };
 
-  const hasActiveFilters = playerNationFilter !== defaultNationId || kitSeasonFilter || kitTeamFilter || searchQuery;
+  const hasActiveFilters = playerNationFilter !== defaultNationId || leagueNationFilter || leagueNameFilter || kitSeasonFilter || kitTeamFilter || searchQuery;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted">
@@ -563,28 +611,6 @@ export default function Home() {
                 suppressHydrationWarning
               />
             </div>
-
-            {/* Nationality filter */}
-            <div className="w-full max-w-[220px]">
-              <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
-                <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== 'all' ? '!border-white' : 'border-white/20'}`}>
-                  <span className={playerNationFilter === 'all' ? 'text-white/70' : 'text-white'}>
-                    {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le nazionalità</SelectItem>
-                  {availableNations.map((nation) => (
-                    <SelectItem key={nation.id} value={nation.id} className="gap-2">
-                      <span className="flex items-center gap-2">
-                        <Flag code={convertAlpha3ToAlpha2(nation.code)} className="w-4 h-3 object-cover" />
-                        {nation.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           {/* Tab buttons */}
@@ -613,40 +639,161 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Right filters - Desktop */}
-          <div className="hidden lg:flex items-center gap-3 flex-1">
-            {/* Season filter */}
-            <div className="relative w-full max-w-[220px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-              <Input
-                type="text"
-                placeholder="Filtra per stagione..."
-                value={kitSeasonFilter}
-                onChange={(e) => setKitSeasonFilter(e.target.value)}
-                className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
-                suppressHydrationWarning
-              />
-            </div>
+          {/* Right - Desktop: tasto filtri con badge */}
+          <div className="hidden lg:flex items-center gap-2 flex-1 min-w-0">
+            <Button
+              variant="outline"
+              onClick={() => setFiltersOpen((o) => !o)}
+              aria-expanded={filtersOpen}
+              aria-controls="filters-panel"
+              className={`relative whitespace-nowrap backdrop-blur-md bg-black/70 hover:bg-black/80 ${activeFilterCount > 0 || filtersOpen ? '!border-white' : 'border-white/20'}`}
+            >
+              <SlidersHorizontal className="w-4 h-4 mr-2" />
+              Filtri
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-[#cd2127] text-white text-xs font-bold flex items-center justify-center shadow">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
 
-            {/* Team filter */}
-            <div className="relative w-full max-w-[220px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-              <Input
-                type="text"
-                placeholder="Filtra per squadra/nazionale..."
-                value={kitTeamFilter}
-                onChange={(e) => setKitTeamFilter(e.target.value)}
-                className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
-                suppressHydrationWarning
-              />
-            </div>
-
-            {/* Reset button */}
-            {hasActiveFilters && (
-              <Button variant="outline" size="default" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/70 border-white/20 hover:bg-black/80 flex-shrink-0">
-                Resetta filtri
-              </Button>
+            {/* Chip dei filtri attivi: una riga, scorrevole in orizzontale */}
+            {activeChips.length > 0 && (
+              <div
+                className="flex items-center gap-1.5 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                onWheel={(e) => { if (e.deltaY) e.currentTarget.scrollLeft += e.deltaY; }}
+              >
+                {activeChips.map((chip) => (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    onClick={chip.clear}
+                    title="Rimuovi filtro"
+                    className="flex-shrink-0 inline-flex items-center gap-1 h-7 pl-2.5 pr-1.5 rounded-full border border-white/30 bg-black/60 text-xs text-white hover:bg-black/80 whitespace-nowrap"
+                  >
+                    {chip.label}
+                    <X className="w-3.5 h-3.5 text-white/70" />
+                  </button>
+                ))}
+              </div>
             )}
+          </div>
+        </div>
+
+        {/* Pannello filtri collassabile - Desktop */}
+        <div
+          id="filters-panel"
+          inert={!filtersOpen}
+          className={`hidden lg:grid transition-[grid-template-rows] duration-300 ease-in-out ${filtersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+        >
+          <div className="overflow-hidden">
+            <div className="flex items-end justify-center gap-3 px-4 pt-1 pb-3">
+              {/* Nationality filter */}
+              <div className="w-full max-w-[240px] space-y-1">
+                <label className="text-xs text-white/70">Nazionalità giocatore</label>
+                <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
+                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== defaultNationId ? '!border-white' : 'border-white/20'}`}>
+                    <span className={playerNationFilter === 'all' ? 'text-white/70' : 'text-white'}>
+                      {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le nazionalità</SelectItem>
+                    {availableNations.map((nation) => (
+                      <SelectItem key={nation.id} value={nation.id} className="gap-2">
+                        <span className="flex items-center gap-2">
+                          <Flag code={convertAlpha3ToAlpha2(nation.code)} className="w-4 h-3 object-cover" />
+                          {nation.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* League filter */}
+              <div className="w-full max-w-[240px] space-y-1">
+                <label className="text-xs text-white/70">Campionato</label>
+                <Select value={leagueNameFilter || 'all'} onValueChange={(v) => handleLeagueNameChange(v === 'all' ? '' : v)}>
+                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${leagueNameFilter ? '!border-white' : 'border-white/20'}`}>
+                    <span className={leagueNameFilter ? 'text-white' : 'text-white/70'}>
+                      {leagueNameFilter || 'Tutti i campionati'}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i campionati</SelectItem>
+                    {availableLeagueNames.map((name) => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* League nation filter */}
+              <div className="w-full max-w-[240px] space-y-1">
+                <label className="text-xs text-white/70">Nazionalità campionato</label>
+                <Select value={leagueNationFilter || 'all'} onValueChange={(v) => setLeagueNationFilter(v === 'all' ? '' : v)}>
+                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${leagueNationFilter ? '!border-white' : 'border-white/20'}`}>
+                    <span className={leagueNationFilter ? 'text-white' : 'text-white/70'}>
+                      {leagueNationFilter || 'Tutte le nazionalità'}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le nazionalità</SelectItem>
+                    {availableLeagueNations.map(({ name, nation }) => (
+                      <SelectItem key={name} value={name} className="gap-2">
+                        <span className="flex items-center gap-2">
+                          {nation && <Flag code={convertAlpha3ToAlpha2(nation.code)} className="w-4 h-3 object-cover" />}
+                          {name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Season filter */}
+              <div className="w-full max-w-[240px] space-y-1">
+                <label className="text-xs text-white/70">Stagione</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+                  <Input
+                    type="text"
+                    placeholder="Filtra per stagione..."
+                    value={kitSeasonFilter}
+                    onChange={(e) => setKitSeasonFilter(e.target.value)}
+                    className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
+                    suppressHydrationWarning
+                  />
+                </div>
+              </div>
+
+              {/* Team filter */}
+              <div className="w-full max-w-[240px] space-y-1">
+                <label className="text-xs text-white/70">Squadra/Nazionale</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+                  <Input
+                    type="text"
+                    placeholder="Filtra per squadra/nazionale..."
+                    value={kitTeamFilter}
+                    onChange={(e) => setKitTeamFilter(e.target.value)}
+                    className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
+                    suppressHydrationWarning
+                  />
+                </div>
+              </div>
+
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/70 border-white/20 hover:bg-black/80 flex-shrink-0">
+                  Resetta filtri
+                </Button>
+              )}
+              <Button onClick={() => setFiltersOpen(false)} className="whitespace-nowrap bg-[#cd2127] hover:bg-[#cd2127]/90 text-white flex-shrink-0">
+                <X className="w-4 h-4 mr-1.5" />
+                Chiudi
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -676,6 +823,7 @@ export default function Home() {
               </div>
 
               {/* Nationality filter */}
+              <label className="text-xs text-muted-foreground">Nazionalità giocatore</label>
               <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
                 <SelectTrigger className="w-full">
                   <span className={playerNationFilter === 'all' ? 'text-muted-foreground' : ''}>
@@ -689,6 +837,43 @@ export default function Home() {
                       <span className="flex items-center gap-2">
                         <Flag code={convertAlpha3ToAlpha2(nation.code)} className="w-4 h-3 object-cover" />
                         {nation.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* League filter */}
+              <label className="text-xs text-muted-foreground">Campionato</label>
+              <Select value={leagueNameFilter || 'all'} onValueChange={(v) => handleLeagueNameChange(v === 'all' ? '' : v)}>
+                <SelectTrigger className="w-full">
+                  <span className={leagueNameFilter ? '' : 'text-muted-foreground'}>
+                    {leagueNameFilter || 'Tutti i campionati'}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i campionati</SelectItem>
+                  {availableLeagueNames.map((name) => (
+                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* League nation filter */}
+              <label className="text-xs text-muted-foreground">Nazionalità campionato</label>
+              <Select value={leagueNationFilter || 'all'} onValueChange={(v) => setLeagueNationFilter(v === 'all' ? '' : v)}>
+                <SelectTrigger className="w-full">
+                  <span className={leagueNationFilter ? '' : 'text-muted-foreground'}>
+                    {leagueNationFilter || 'Tutte le nazionalità'}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le nazionalità</SelectItem>
+                  {availableLeagueNations.map(({ name, nation }) => (
+                    <SelectItem key={name} value={name} className="gap-2">
+                      <span className="flex items-center gap-2">
+                        {nation && <Flag code={convertAlpha3ToAlpha2(nation.code)} className="w-4 h-3 object-cover" />}
+                        {name}
                       </span>
                     </SelectItem>
                   ))}
@@ -760,6 +945,8 @@ export default function Home() {
                       key={player.id}
                       player={player}
                       kitSeasonFilter={kitSeasonFilter}
+                      leagueNationFilter={leagueNationFilter}
+                      leagueNameFilter={leagueNameFilter}
                       kitTeamFilter={kitTeamFilter}
                       onPlayerClick={setSelectedPlayer}
                       onKitClick={handleKitClick}

@@ -40,6 +40,14 @@ interface TimelineKit {
   likes: number;
   dislikes: number;
   updatedAt: string;
+  League?: {
+    id: string;
+    name: string;
+    season: string;
+    nation: string;
+    hasLogo: boolean;
+    updatedAt?: string;
+  } | null;
   player: {
     id: string;
     name: string;
@@ -276,6 +284,7 @@ export function TimelineDialog({ open, onClose, onKitClick }: TimelineDialogProp
       dislikes: kit.dislikes,
       updatedAt: new Date(kit.updatedAt),
       createdAt: new Date(kit.updatedAt),
+      League: kit.League ?? null,
     };
     
     const playerData: Player = {

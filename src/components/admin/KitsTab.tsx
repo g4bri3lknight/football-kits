@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -46,7 +46,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Kit, ContentStatus, CONTENT_STATUS_LABELS } from './types';
+import { Kit, League, ContentStatus, CONTENT_STATUS_LABELS } from './types';
+import LeagueCombobox from './LeagueCombobox';
 import { translateKitType, getKitTypeColor } from './utils';
 
 interface KitsTabProps {
@@ -63,6 +64,7 @@ interface KitForm {
   team: string;
   type: string;
   status: ContentStatus;
+  leagueId: string; // id del campionato, '' = nessuno
   // Dati immagine in base64
   imageData: string | null;
   imageMimeType: string | null;
@@ -150,6 +152,7 @@ export default function KitsTab({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingKit, setEditingKit] = useState<Kit | null>(null);
   const [saving, setSaving] = useState(false);
+  const [leagues, setLeagues] = useState<League[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState('');
   const [form, setForm] = useState<KitForm>({
@@ -157,6 +160,7 @@ export default function KitsTab({
     team: '',
     type: 'goalkeeper',
     status: 'NON_IMPOSTATO',
+    leagueId: '',
     imageData: null,
     imageMimeType: null,
     logoData: null,
@@ -202,6 +206,40 @@ export default function KitsTab({
     removeDetail6Model3D: false,
   });
 
+  // Campionati per la select e per la colonna in tabella (riletti anche all'apertura del dialog)
+  const fetchLeagues = async () => {
+    try {
+      const response = await fetch('/api/leagues');
+      if (!response.ok) throw new Error('Failed to fetch leagues');
+      setLeagues(await response.json());
+    } catch (error) {
+      console.error('Error loading leagues:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeagues();
+  }, []);
+
+  // Se è scelto un campionato, la stagione del kit è quella del campionato (campo bloccato)
+  const selectedLeague = leagues.find((l) => l.id === form.leagueId);
+  const effectiveSeason = selectedLeague ? selectedLeague.season : form.name;
+
+  const handleLeagueChange = (leagueId: string) => {
+    const league = leagues.find((l) => l.id === leagueId);
+    setForm((prev) => ({
+      ...prev,
+      leagueId,
+      // La stagione del kit viene sovrascritta; se il campionato viene tolto resta l'ultimo valore
+      ...(league ? { name: league.season } : {}),
+    }));
+  };
+
+  const getLeagueLabel = (leagueId?: string | null) => {
+    const league = leagues.find((l) => l.id === leagueId);
+    return league ? `${league.name} · ${league.season}` : null;
+  };
+
   const filteredKits = kits.filter(kit =>
     kit.name.toLowerCase().includes(search.season.toLowerCase()) &&
     kit.team.toLowerCase().includes(search.team.toLowerCase()) &&
@@ -209,12 +247,14 @@ export default function KitsTab({
   );
 
   const handleOpenNewDialog = () => {
+    fetchLeagues();
     setEditingKit(null);
     setForm({
       name: '',
       team: '',
       type: 'goalkeeper',
       status: 'NON_IMPOSTATO',
+      leagueId: '',
       imageData: null,
       imageMimeType: null,
       logoData: null,
@@ -263,12 +303,14 @@ export default function KitsTab({
   };
 
   const handleOpenEditDialog = (kit: Kit) => {
+    fetchLeagues();
     setEditingKit(kit);
     setForm({
       name: kit.name,
       team: kit.team,
       type: kit.type,
       status: kit.status || 'NON_IMPOSTATO',
+      leagueId: kit.leagueId || '',
       // Quando modifichi, non carichiamo i dati binari esistenti
       // L'utente può caricare un nuovo file se vuole sostituire
       imageData: null,
@@ -325,6 +367,7 @@ export default function KitsTab({
       team: '',
       type: 'goalkeeper',
       status: 'NON_IMPOSTATO',
+      leagueId: '',
       imageData: null,
       imageMimeType: null,
       logoData: null,
@@ -373,7 +416,7 @@ export default function KitsTab({
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.team || !form.type) {
+    if (!effectiveSeason || !form.team || !form.type) {
       toast({
         title: 'Errore',
         description: 'Stagione, squadra/nazionale e tipo sono obbligatori',
@@ -420,10 +463,11 @@ export default function KitsTab({
         // Quando modifichi, includi solo i campi binary che hanno nuovi valori
         // per NON sovrascrivere i dati esistenti
         const updateData: any = {
-          name: form.name,
+          name: effectiveSeason,
           team: form.team,
           type: form.type,
           status: form.status,
+          leagueId: form.leagueId || null,
           detail1Label: form.detail1Label || null,
           detail2Label: form.detail2Label || null,
           detail3Label: form.detail3Label || null,
@@ -528,10 +572,11 @@ export default function KitsTab({
         
         // Per nuovo kit, invia solo i campi necessari
         const createData: any = {
-          name: form.name,
+          name: effectiveSeason,
           team: form.team,
           type: form.type,
           status: form.status,
+          leagueId: form.leagueId || null,
         };
         
         // Aggiungi file solo se presenti
@@ -757,12 +802,13 @@ export default function KitsTab({
       {/* Kits Table */}
       <Card className="flex-1 min-h-0 overflow-hidden">
         <CardContent className="p-0 h-full overflow-auto">
-          <Table className="min-w-[700px]">
+          <Table className="min-w-[850px]">
             <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>
                 <TableHead className="text-xs">Stagione</TableHead>
                 <TableHead className="text-xs">Squadra</TableHead>
                 <TableHead className="text-xs">Tipo</TableHead>
+                <TableHead className="text-xs">Campionato</TableHead>
                 <TableHead className="text-xs">Stato</TableHead>
                 <TableHead className="text-xs">Immagine</TableHead>
                 <TableHead className="text-xs">Logo</TableHead>
@@ -773,7 +819,7 @@ export default function KitsTab({
               <TableBody>
                 {filteredKits.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={9} className="text-center text-gray-500 py-8">
                       {(search.season || search.team || search.type) ? 'Nessun risultato trovato' : 'Nessun kit presente'}
                     </TableCell>
                   </TableRow>
@@ -786,6 +832,9 @@ export default function KitsTab({
                         <Badge className={getKitTypeColor(kit.type)}>
                           {translateKitType(kit.type)}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {getLeagueLabel(kit.leagueId) ?? <span className="text-gray-400">-</span>}
                       </TableCell>
                       <TableCell>
                         {kit.status && kit.status !== 'NON_IMPOSTATO' ? (
@@ -871,16 +920,31 @@ export default function KitsTab({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6">
+            {/* Campionato (select con ricerca, alimentata dalla tabella Campionati) */}
+            <div className="space-y-2 max-w-xl">
+              <Label htmlFor="kit-league">Campionato</Label>
+              <LeagueCombobox
+                id="kit-league"
+                leagues={leagues}
+                value={form.leagueId}
+                onChange={handleLeagueChange}
+              />
+            </div>
+
             {/* Dati principali */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Stagione *</Label>
                 <Input
                   id="name"
-                  value={form.name}
+                  value={effectiveSeason}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="2024/2025"
+                  disabled={!!selectedLeague}
                 />
+                {selectedLeague && (
+                  <p className="text-xs text-muted-foreground">Presa dal campionato selezionato</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="team">Squadra/Nazionale *</Label>

@@ -47,14 +47,23 @@ export const sortKitsBySeason = (kits: PlayerKit[]) => {
   });
 };
 
-export const filterPlayerKits = (player: Player, kitSeasonFilter: string, kitTeamFilter: string) => {
+// leagueNationFilter / leagueNameFilter: nazione e nome del campionato ('' = nessun filtro); i kit senza campionato non passano
+export const filterPlayerKits = (
+  player: Player,
+  kitSeasonFilter: string,
+  kitTeamFilter: string,
+  leagueNationFilter: string = '',
+  leagueNameFilter: string = ''
+) => {
   return player.PlayerKit.filter(pk => {
     if (!pk.Kit?.name || !pk.Kit?.team) return false;
     const matchesSeason = !kitSeasonFilter ||
       pk.Kit.name.toLowerCase().includes(kitSeasonFilter.toLowerCase());
     const matchesTeam = !kitTeamFilter ||
       pk.Kit.team.toLowerCase().includes(kitTeamFilter.toLowerCase());
-    return matchesSeason && matchesTeam;
+    const matchesLeagueNation = !leagueNationFilter || pk.Kit.League?.nation === leagueNationFilter;
+    const matchesLeagueName = !leagueNameFilter || pk.Kit.League?.name === leagueNameFilter;
+    return matchesSeason && matchesTeam && matchesLeagueNation && matchesLeagueName;
   });
 };
 

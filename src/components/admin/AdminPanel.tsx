@@ -25,6 +25,7 @@ import {
   Shirt,
   Link2,
   Globe,
+  Trophy,
   Eye,
   ThumbsUp,
   MessageSquare,
@@ -47,6 +48,7 @@ import PlayersTab from './PlayersTab';
 import KitsTab from './KitsTab';
 import AssociationsTab from './AssociationsTab';
 import NationsTab from './NationsTab';
+import LeaguesTab from './LeaguesTab';
 import CommentsTab from './CommentsTab';
 import VisiteStats from './VisiteStats';
 import VotiKitStats from './VotiKitStats';
@@ -81,6 +83,7 @@ const menuItems: MenuItem[] = [
       { id: 'kits', label: 'Kit', icon: <Shirt className="w-4 h-4" /> },
       { id: 'associations', label: 'Associazioni', icon: <Link2 className="w-4 h-4" /> },
       { id: 'nations', label: 'Nazionalità', icon: <Globe className="w-4 h-4" /> },
+      { id: 'leagues', label: 'Campionati', icon: <Trophy className="w-4 h-4" /> },
     ],
   },
   {
@@ -560,6 +563,8 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
         );
       case 'nations':
         return <NationsTab />;
+      case 'leagues':
+        return <LeaguesTab adminToken={adminToken} />;
       case 'viewer3d':
         return <Viewer3DTab ref={viewer3DRef} adminToken={adminToken} onStateChange={handleViewer3DStateChange} />;
       case 'comments':
@@ -576,6 +581,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       case 'kits': return 'Gestione Kit';
       case 'associations': return 'Gestione Associazioni';
       case 'nations': return 'Gestione Nazionalità';
+      case 'leagues': return 'Gestione Campionati';
       case 'viewer3d': return 'Configurazione Viewer 3D';
       case 'comments': return 'Gestione Commenti';
       default: return 'Dashboard';

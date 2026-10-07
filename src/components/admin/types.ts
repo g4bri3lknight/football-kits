@@ -26,6 +26,16 @@ export interface Nation {
   flag: string;
 }
 
+export interface League {
+  id: string;
+  season: string;
+  name: string;
+  nation: string;
+  hasLogo?: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
 export interface Kit {
   id: string;
   name: string;
@@ -35,6 +45,7 @@ export interface Kit {
   dislikes: number;
   updatedAt?: string | Date;
   status?: ContentStatus;
+  leagueId?: string | null;
   // Flag per la presenza di file
   hasImage?: boolean;
   hasLogo?: boolean;

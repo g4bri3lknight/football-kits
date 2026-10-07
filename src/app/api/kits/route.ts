@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { resolveLeagueId } from '@/lib/leagues';
 
 // Funzione helper per generare un ID
 const generateId = () => {
@@ -28,6 +29,7 @@ export async function GET() {
         dislikes: true,
         updatedAt: true,
         status: true,
+        leagueId: true,
         // Flag per la presenza di file
         hasImage: true,
         hasLogo: true,
@@ -105,6 +107,19 @@ export async function POST(request: NextRequest) {
     // Status (optional, defaults to NON_IMPOSTATO)
     if (body.status) {
       data.status = body.status;
+    }
+
+    // Campionato (opzionale): deve esistere nella tabella League
+    if (body.leagueId !== undefined) {
+      const resolved = await resolveLeagueId(body.leagueId);
+      if (!resolved.ok) {
+        return NextResponse.json({ error: resolved.error }, { status: 400 });
+      }
+      data.leagueId = resolved.leagueId;
+      // La stagione del kit coincide sempre con quella del campionato
+      if (resolved.season) {
+        data.name = resolved.season;
+      }
     }
 
     // Binary fields: only include if the client actually sent them

@@ -65,6 +65,16 @@ export async function GET() {
             detail6Label: true,
             likes: true,
             dislikes: true,
+            League: {
+              select: {
+                id: true,
+                name: true,
+                season: true,
+                nation: true,
+                hasLogo: true,
+                updatedAt: true,
+              },
+            },
           },
         },
         Player: {
@@ -112,6 +122,14 @@ export async function GET() {
       likes: number;
       dislikes: number;
       updatedAt: Date;
+      League: {
+        id: string;
+        name: string;
+        season: string;
+        nation: string;
+        hasLogo: boolean;
+        updatedAt: Date;
+      } | null;
       player: {
         id: string;
         name: string;
@@ -162,6 +180,7 @@ export async function GET() {
           likes: pk.Kit.likes,
           dislikes: pk.Kit.dislikes,
           updatedAt: pk.Kit.updatedAt,
+          League: pk.Kit.League,
           player: {
             id: pk.Player.id,
             name: pk.Player.name,
