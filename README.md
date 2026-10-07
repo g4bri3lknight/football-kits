@@ -102,6 +102,26 @@ ADMIN_PASSWORD="your-password-here"
 
 ⚠️ **Importante**: Cambia `ADMIN_PASSWORD` in produzione!
 
+## Accesso Admin (scorciatoie)
+
+Nell'interfaccia pubblica non è presente alcun tasto "Admin". L'area admin si raggiunge con una scorciatoia, valida sia in **Home** sia in **Timeline**:
+
+| Dispositivo | Scorciatoia |
+|-------------|-------------|
+| Desktop | `Ctrl` + `Shift` + `L` |
+| Mobile | 5 tocchi rapidi sul logo nell'header (ogni tocco entro 0,6 secondi dal precedente) |
+
+Se esiste già una sessione admin valida si viene portati alla dashboard, altrimenti alla pagina di login.
+
+### Come modificare le scorciatoie
+
+Entrambe sono definite in `src/app/page.tsx`, subito dopo la funzione `handleAdminClick`:
+
+- **Desktop** – nell'`useEffect` con il listener `keydown`. La condizione controlla i modificatori (`e.ctrlKey`, `e.shiftKey`, `e.altKey`, `e.metaKey`) e il tasto (`e.code === 'KeyL'`). Per usare un'altra lettera cambia `'KeyL'` (ad esempio `'KeyK'`); per cambiare i modificatori modifica i controlli corrispondenti. `e.code` identifica il tasto fisico, quindi non dipende dal layout della tastiera.
+- **Mobile** – nella funzione `handleLogoTap`. Il numero di tocchi richiesti è il valore in `t.count >= 5`, mentre l'intervallo massimo tra due tocchi (in millisecondi) è il `600` nel confronto `now - t.last < 600`.
+
+⚠️ **Nota di sicurezza**: le scorciatoie nascondono soltanto l'ingresso all'area admin. La protezione reale è l'autenticazione (`ADMIN_USERNAME` / `ADMIN_PASSWORD`), quindi usa sempre credenziali robuste.
+
 ## Script Disponibili
 
 ```bash

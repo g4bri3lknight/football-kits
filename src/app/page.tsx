@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Separator } from '@/components/ui/separator';
-import { Search, User as UserIcon, Settings, Menu, Clock } from 'lucide-react';
+import { Search, User as UserIcon, Menu, Clock } from 'lucide-react';
 import Flag from 'react-world-flags';
 
 import { Nation, Player, Kit, PlayerKit } from '@/types';
@@ -82,6 +81,8 @@ export default function Home() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [playerNationFilter, setPlayerNationFilter] = useState('all');
+  // Nazione di default del filtro (Italia, se presente tra i giocatori), altrimenti 'all'
+  const [defaultNationId, setDefaultNationId] = useState('all');
   const [kitSeasonFilter, setKitSeasonFilter] = useState('');
   const [kitTeamFilter, setKitTeamFilter] = useState('');
   
@@ -103,6 +104,12 @@ export default function Home() {
   const [currentKitIndex, setCurrentKitIndex] = useState<number>(0);
   const [playerKitsList, setPlayerKitsList] = useState<PlayerKit[]>([]);
   const [activeTab, setActiveTab] = useState('home');
+
+  // Solo le nazionalità con almeno un giocatore
+  const availableNations = useMemo(() => {
+    const usedIds = new Set(players.map(p => p.nationId).filter(Boolean));
+    return nations.filter(n => usedIds.has(n.id));
+  }, [nations, players]);
 
   // Set CSS custom properties for header and tab bar heights
   useEffect(() => {
@@ -346,6 +353,17 @@ export default function Home() {
       }
       if (Array.isArray(nationsData)) {
         setNations(nationsData);
+        // Default filtro: Italia (solo se ha almeno un giocatore, altrimenti la lista sarebbe vuota)
+        if (Array.isArray(playersData)) {
+          const italy = nationsData.find((n: Nation) =>
+            ['ITA', 'IT'].includes(String(n.code).toUpperCase()) ||
+            ['italia', 'italy'].includes(String(n.name).toLowerCase())
+          );
+          if (italy && playersData.some((p: Player) => p.nationId === italy.id)) {
+            setDefaultNationId(italy.id);
+            setPlayerNationFilter(italy.id);
+          }
+        }
       } else {
         console.error('Nations data is not an array:', nationsData);
         setNations([]);
@@ -364,6 +382,31 @@ export default function Home() {
       window.location.href = `/admin/dashboard?t=${encodeURIComponent(token)}`;
     } else {
       window.location.href = '/admin/login';
+    }
+  };
+
+  // Scorciatoia per accedere all'area admin: Ctrl + Shift + L (funziona in Home e Timeline)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && e.code === 'KeyL') {
+        e.preventDefault();
+        handleAdminClick();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // Gesto per accedere all'area admin da mobile: 5 tocchi rapidi sul logo
+  const logoTapsRef = useRef({ count: 0, last: 0 });
+  const handleLogoTap = () => {
+    const now = Date.now();
+    const t = logoTapsRef.current;
+    t.count = now - t.last < 600 ? t.count + 1 : 1;
+    t.last = now;
+    if (t.count >= 5) {
+      t.count = 0;
+      handleAdminClick();
     }
   };
 
@@ -405,12 +448,12 @@ export default function Home() {
 
   const resetFilters = () => {
     setSearchQuery('');
-    setPlayerNationFilter('all');
+    setPlayerNationFilter(defaultNationId);
     setKitSeasonFilter('');
     setKitTeamFilter('');
   };
 
-  const hasActiveFilters = playerNationFilter !== 'all' || kitSeasonFilter || kitTeamFilter || searchQuery;
+  const hasActiveFilters = playerNationFilter !== defaultNationId || kitSeasonFilter || kitTeamFilter || searchQuery;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted">
@@ -469,7 +512,11 @@ export default function Home() {
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
             <div className="flex items-center gap-3 sm:gap-4">
-              <div className="overflow-hidden flex-shrink-0 flex items-center justify-center">
+              <div
+                className="overflow-hidden flex-shrink-0 flex items-center justify-center select-none"
+                style={{ touchAction: 'manipulation' }}
+                onClick={handleLogoTap}
+              >
                 <img
                   src="logo/logo.png"
                   alt="GK retro Kits"
@@ -489,89 +536,6 @@ export default function Home() {
             >
               <Menu className="w-5 h-5" />
             </Button>
-
-            {/* Desktop: Admin Button */}
-            <div className="hidden lg:flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={handleAdminClick}
-                className="flex-shrink-0 gap-2 backdrop-blur-md bg-black/50 border-white/20 hover:bg-black/70"
-              >
-                <Settings className="w-5 h-5" />
-                <span>Admin</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Filters - Desktop */}
-          <div className="hidden lg:flex flex-wrap items-start gap-3 mt-6">
-              {/* Search player */}
-              <div className="relative flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-                <Input
-                  type="text"
-                  placeholder="Cerca giocatore..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${searchQuery ? '!border-white' : 'border-white/20'}`}
-                  suppressHydrationWarning
-                />
-              </div>
-
-              {/* Nationality filter */}
-              <div className="flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
-                <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
-                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== 'all' ? '!border-white' : 'border-white/20'}`}>
-                    <span className={playerNationFilter === 'all' ? 'text-white/70' : 'text-white'}>
-                      {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
-                    </span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tutte le nazionalità</SelectItem>
-                    {nations.map((nation) => (
-                      <SelectItem key={nation.id} value={nation.id} className="gap-2">
-                        <span className="flex items-center gap-2">
-                          <Flag code={convertAlpha3ToAlpha2(nation.code)} className="w-4 h-3 object-cover" />
-                          {nation.name}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Season filter */}
-              <div className="relative flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-                <Input
-                  type="text"
-                  placeholder="Filtra per stagione..."
-                  value={kitSeasonFilter}
-                  onChange={(e) => setKitSeasonFilter(e.target.value)}
-                  className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
-                  suppressHydrationWarning
-                />
-              </div>
-
-              {/* Team filter */}
-              <div className="relative flex-1 min-w-[200px] lg:min-w-[220px] xl:min-w-[240px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-                <Input
-                  type="text"
-                  placeholder="Filtra per squadra/nazionale..."
-                  value={kitTeamFilter}
-                  onChange={(e) => setKitTeamFilter(e.target.value)}
-                  className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
-                  suppressHydrationWarning
-                />
-              </div>
-
-              {/* Reset button */}
-              {hasActiveFilters && (
-                <Button variant="outline" size="default" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/70 border-white/20 hover:bg-black/80">
-                  Resetta filtri
-                </Button>
-              )}
           </div>
 
         </div>
@@ -584,8 +548,47 @@ export default function Home() {
         className="sticky z-30 bg-black/70 backdrop-blur-md border-b border-white/10"
         style={{ top: 'var(--header-only-h, 0px)' }}
       >
-        <div className="flex items-center justify-center py-1.5">
-          <div className="bg-black/60 border border-white/20 h-10 rounded-lg p-0.5 gap-1 inline-flex items-center">
+        <div className="flex items-center justify-center gap-4 py-1.5 px-4">
+          {/* Left filters - Desktop */}
+          <div className="hidden lg:flex items-center gap-3 flex-1 justify-end">
+            {/* Search player */}
+            <div className="relative w-full max-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+              <Input
+                type="text"
+                placeholder="Cerca giocatore..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${searchQuery ? '!border-white' : 'border-white/20'}`}
+                suppressHydrationWarning
+              />
+            </div>
+
+            {/* Nationality filter */}
+            <div className="w-full max-w-[220px]">
+              <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
+                <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== 'all' ? '!border-white' : 'border-white/20'}`}>
+                  <span className={playerNationFilter === 'all' ? 'text-white/70' : 'text-white'}>
+                    {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le nazionalità</SelectItem>
+                  {availableNations.map((nation) => (
+                    <SelectItem key={nation.id} value={nation.id} className="gap-2">
+                      <span className="flex items-center gap-2">
+                        <Flag code={convertAlpha3ToAlpha2(nation.code)} className="w-4 h-3 object-cover" />
+                        {nation.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Tab buttons */}
+          <div className="bg-black/60 border border-white/20 h-10 rounded-lg p-0.5 gap-1 inline-flex items-center flex-shrink-0">
             <button
               onClick={() => setActiveTab('home')}
               className={`px-6 py-1.5 text-sm font-bold transition-all rounded-lg inline-flex items-center ${
@@ -609,6 +612,42 @@ export default function Home() {
               Timeline
             </button>
           </div>
+
+          {/* Right filters - Desktop */}
+          <div className="hidden lg:flex items-center gap-3 flex-1">
+            {/* Season filter */}
+            <div className="relative w-full max-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+              <Input
+                type="text"
+                placeholder="Filtra per stagione..."
+                value={kitSeasonFilter}
+                onChange={(e) => setKitSeasonFilter(e.target.value)}
+                className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
+                suppressHydrationWarning
+              />
+            </div>
+
+            {/* Team filter */}
+            <div className="relative w-full max-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+              <Input
+                type="text"
+                placeholder="Filtra per squadra/nazionale..."
+                value={kitTeamFilter}
+                onChange={(e) => setKitTeamFilter(e.target.value)}
+                className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
+                suppressHydrationWarning
+              />
+            </div>
+
+            {/* Reset button */}
+            {hasActiveFilters && (
+              <Button variant="outline" size="default" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/70 border-white/20 hover:bg-black/80 flex-shrink-0">
+                Resetta filtri
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -619,21 +658,6 @@ export default function Home() {
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
           <div className="mt-6 flex flex-col gap-4 px-2">
-            {/* Admin Button */}
-            <RippleButton
-              variant="outline"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleAdminClick();
-              }}
-              className="w-full justify-start gap-2"
-            >
-              <Settings className="w-4 h-4" />
-              Pannello Admin
-            </RippleButton>
-
-            <Separator />
-
             {/* Filters */}
             <div className="space-y-4 p-2">
               <h3 className="font-semibold text-sm text-muted-foreground">Filtri</h3>
@@ -660,7 +684,7 @@ export default function Home() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le nazionalità</SelectItem>
-                  {nations.map((nation) => (
+                  {availableNations.map((nation) => (
                     <SelectItem key={nation.id} value={nation.id} className="gap-2">
                       <span className="flex items-center gap-2">
                         <Flag code={convertAlpha3ToAlpha2(nation.code)} className="w-4 h-3 object-cover" />
