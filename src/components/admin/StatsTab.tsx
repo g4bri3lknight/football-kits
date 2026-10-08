@@ -18,6 +18,7 @@ import {
 import { Eye, TrendingUp, Calendar, Globe, RefreshCw, Trash2, Loader2, ThumbsUp, ThumbsDown, Shirt, Trophy, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getImageUrl } from '@/lib/image-url';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface PageViewStats {
   totalViews: number;
@@ -59,7 +60,7 @@ export default function StatsTab() {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/page-views?period=${period}`);
+      const res = await adminFetch(`/api/page-views?period=${period}`);
       const data = await res.json();
       setStats(data);
     } catch (error) {
@@ -77,7 +78,7 @@ export default function StatsTab() {
   const fetchKitStats = async () => {
     setKitLoading(true);
     try {
-      const res = await fetch('/api/stats/kits');
+      const res = await adminFetch('/api/stats/kits');
       const data = await res.json();
       
       if (data.error) {
@@ -121,7 +122,7 @@ export default function StatsTab() {
   const handleReset = async () => {
     setResetting(true);
     try {
-      const res = await fetch('/api/page-views', {
+      const res = await adminFetch('/api/page-views', {
         method: 'DELETE',
       });
       

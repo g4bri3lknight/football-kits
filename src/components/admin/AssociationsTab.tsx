@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { getImageUrl } from '@/lib/image-url';
 import {
   Card,
   CardContent,
@@ -318,8 +317,8 @@ export default function AssociationsTab({
                       }`}
                       onClick={() => setForm({ ...form, playerId: player.id })}
                     >
-                      {player.image && (
-                        <img src={getImageUrl(player.image)} alt={player.name} className="w-8 h-8 rounded-lg object-cover ring-1 ring-border/50" />
+                      {player.hasImage && (
+                        <img src={`/api/players/${player.id}/image`} alt={player.name} className="w-8 h-8 rounded-lg object-cover ring-1 ring-border/50" />
                       )}
                       <div>
                         <div className="font-medium">{getPlayerDisplayName(player)}</div>
@@ -371,8 +370,8 @@ export default function AssociationsTab({
                       }`}
                       onClick={() => setForm({ ...form, kitId: kit.id })}
                     >
-                      {kit.imageUrl && (
-                        <img src={getImageUrl(kit.imageUrl)} alt={kit.name} className="w-8 h-8 rounded object-cover" />
+                      {kit.hasImage && (
+                        <img src={`/api/kits/${kit.id}/image`} alt={kit.name} className="w-8 h-8 rounded object-cover" />
                       )}
                       <div className="flex-1">
                         <div className="font-medium">{kit.name} - {kit.team}</div>

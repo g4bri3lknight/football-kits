@@ -33,7 +33,8 @@ export async function GET(
       },
     });
 
-    if (!kit || !kit[fields.data]) {
+    const kitRow = kit as Record<string, any> | null;
+    if (!kitRow || !kitRow[fields.data]) {
       return NextResponse.json({ error: 'Detail 3D model not found' }, { status: 404 });
     }
 
@@ -41,11 +42,11 @@ export async function GET(
       ? 'no-cache, no-store, must-revalidate'
       : 'public, max-age=60';
 
-    return new NextResponse(kit[fields.data], {
+    return new NextResponse(kitRow[fields.data], {
       status: 200,
       headers: {
         'Content-Type': 'model/gltf-binary',
-        'Content-Disposition': `inline; filename="${kit[fields.name] || 'detail-model.glb'}"`,
+        'Content-Disposition': `inline; filename="${kitRow[fields.name] || 'detail-model.glb'}"`,
         'Cache-Control': cacheControl,
       },
     });

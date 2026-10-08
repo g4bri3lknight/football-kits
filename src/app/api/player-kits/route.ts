@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 
 // Funzione helper per generare un ID
 const generateId = () => {
@@ -46,6 +47,10 @@ const playerSelectWithoutBinary = {
   createdAt: true,
   updatedAt: true,
   hasImage: true,
+  hasFullImage: true,
+  cropX: true,
+  cropY: true,
+  cropSize: true,
   status: true,
   Nation: true,
 } as const;
@@ -84,6 +89,9 @@ export async function GET() {
 
 // POST /api/player-kits - Associa un kit a un giocatore
 export async function POST(request: NextRequest) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const { playerId, kitId } = body;

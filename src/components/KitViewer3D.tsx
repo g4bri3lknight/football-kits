@@ -3,7 +3,7 @@
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, ContactShadows, Environment } from '@react-three/drei';
 import { EffectComposer, SMAA, ToneMapping, Vignette, Bloom, N8AO, BrightnessContrast, HueSaturation, ChromaticAberration, DepthOfField, TiltShift2, Noise, DotScreen, Pixelation, Scanline, Glitch } from '@react-three/postprocessing';
-import { Suspense, useEffect, useRef, useState, useCallback } from 'react';
+import { Suspense, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Shirt, Maximize2, Minimize2, RotateCw, HelpCircle, MousePointer2, Move, ZoomIn, RotateCcw, AlertTriangle, Loader2, X } from 'lucide-react';
@@ -782,7 +782,7 @@ export default function KitViewer3D({
   config: externalConfig,
 }: KitViewer3DProps) {
   // Prova a usare il context, ma fallback se non disponibile
-  let contextConfig: ConvertedConfig | null = null;
+  let contextConfig: Partial<ConvertedConfig> | null = null;
   let contextLoading = false;
 
   try {
@@ -794,7 +794,22 @@ export default function KitViewer3D({
   }
 
   // Usa config esterna > context > fallback
-  const config = externalConfig || contextConfig || FALLBACK_CONFIG;
+  // Unisce (gruppo per gruppo) la config ricevuta sopra i default, così nessun gruppo di effetti può mancare
+  const config = useMemo(() => {
+    const src = (externalConfig || contextConfig || {}) as Record<string, unknown>;
+    const base = FALLBACK_CONFIG as unknown as Record<string, unknown>;
+    const out: Record<string, unknown> = { ...base };
+    for (const key of Object.keys(src)) {
+      const v = src[key];
+      const b = base[key];
+      if (v === undefined || v === null) continue;
+      out[key] =
+        b && typeof b === 'object' && !Array.isArray(b) && typeof v === 'object' && !Array.isArray(v)
+          ? { ...(b as object), ...(v as object) }
+          : v;
+    }
+    return out as unknown as ConvertedConfig;
+  }, [externalConfig, contextConfig]);
 
   const [resetKey, setResetKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);

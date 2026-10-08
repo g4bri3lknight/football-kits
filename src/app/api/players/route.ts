@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 
 // Force dynamic rendering to avoid caching
 export const dynamic = 'force-dynamic';
@@ -14,11 +15,18 @@ const generateId = () => {
 
 // Funzione helper per rimuovere i dati binari dalla risposta
 const sanitizePlayer = (player: any) => {
-  const { imageData, ...rest } = player;
+  const { imageData, fullImageData, ...rest } = player;
   return {
     ...rest,
     hasImage: !!imageData,
+    hasFullImage: !!fullImageData,
   };
+};
+
+// Legge e valida le coordinate del ritaglio (frazioni 0..1 della larghezza della foto intera)
+const parseCrop = (body: any) => {
+  const n = (v: any) => (typeof v === 'number' && isFinite(v) ? Math.max(0, Math.min(v, 10)) : null);
+  return { cropX: n(body.cropX), cropY: n(body.cropY), cropSize: n(body.cropSize) };
 };
 
 // GET /api/players - Ottieni tutti i giocatori
@@ -34,6 +42,10 @@ export async function GET() {
         biography: true,
         updatedAt: true,
         hasImage: true,
+        hasFullImage: true,
+        cropX: true,
+        cropY: true,
+        cropSize: true,
         status: true,
         Nation: true,
         PlayerKit: {
@@ -112,9 +124,14 @@ export async function GET() {
 
 // POST /api/players - Crea un nuovo giocatore
 export async function POST(request: NextRequest) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const { name, surname, nationId, imageData, imageMimeType, biography, status } = body;
+    const { fullImageData, fullImageMimeType } = body;
+    const crop = parseCrop(body);
 
     if (!name || !surname) {
       return NextResponse.json(
@@ -148,6 +165,13 @@ export async function POST(request: NextRequest) {
         hasImage: !!imageData,
         imageData: imageData ? Buffer.from(imageData, 'base64') : null,
         imageMimeType: imageMimeType || null,
+        // Foto intera opzionale (solo se c'è anche la miniatura del volto)
+        hasFullImage: !!(imageData && fullImageData),
+        fullImageData: imageData && fullImageData ? Buffer.from(fullImageData, 'base64') : null,
+        fullImageMimeType: imageData && fullImageData ? (fullImageMimeType || 'image/jpeg') : null,
+        cropX: imageData && fullImageData ? crop.cropX : null,
+        cropY: imageData && fullImageData ? crop.cropY : null,
+        cropSize: imageData && fullImageData ? crop.cropSize : null,
         biography: biography || null,
         status: status || 'NON_IMPOSTATO',
         updatedAt: new Date(),

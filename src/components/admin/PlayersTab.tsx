@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { PlayerPhotoField, PlayerPhotoFieldHandle } from './PlayerPhotoField';
 import {
   Select,
   SelectContent,
@@ -66,25 +67,7 @@ interface PlayerForm {
   nationId: string;
   biography: string;
   status: ContentStatus;
-  // Dati immagine in base64
-  imageData: string | null;
-  imageMimeType: string | null;
 }
-
-// Helper per convertire File in base64
-const fileToBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // Rimuovi il prefisso "data:mime;base64,"
-      const base64 = result.split(',')[1];
-      resolve({ data: base64, mimeType: file.type });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
 
 // Status badge colors for table display
 const getStatusBadgeStyle = (status?: ContentStatus) => {
@@ -125,10 +108,9 @@ export default function PlayersTab({
     nationId: '',
     biography: '',
     status: 'NON_IMPOSTATO',
-    imageData: null,
-    imageMimeType: null,
   });
   const [nationSearch, setNationSearch] = useState('');
+  const photoRef = useRef<PlayerPhotoFieldHandle>(null);
 
   const filteredPlayers = players.filter(player => {
     const matchesName = player.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -146,8 +128,6 @@ export default function PlayersTab({
       nationId: '',
       biography: '',
       status: 'NON_IMPOSTATO',
-      imageData: null,
-      imageMimeType: null,
     });
     setNationSearch('');
     setDialogOpen(true);
@@ -161,10 +141,6 @@ export default function PlayersTab({
       nationId: player.nationId || '',
       biography: player.biography || '',
       status: player.status || 'NON_IMPOSTATO',
-      // Quando modifichi, non carichiamo i dati binari esistenti
-      // L'utente può caricare un nuovo file se vuole sostituire
-      imageData: null,
-      imageMimeType: null,
     });
     setNationSearch('');
     setDialogOpen(true);
@@ -178,8 +154,6 @@ export default function PlayersTab({
       nationId: '',
       biography: '',
       status: 'NON_IMPOSTATO',
-      imageData: null,
-      imageMimeType: null,
     });
     setNationSearch('');
     setDialogOpen(false);
@@ -197,6 +171,8 @@ export default function PlayersTab({
 
     setSaving(true);
     try {
+      // Foto: null = non modificata; altrimenti miniatura del volto + (opzionale) foto intera con ritaglio
+      const photo = await photoRef.current?.getPayload();
       if (editingPlayer) {
         // Quando modifichi, includi solo i campi binary che hanno nuovi valori
         const updateData: any = {
@@ -207,11 +183,8 @@ export default function PlayersTab({
           status: form.status,
         };
 
-        // Aggiungi l'immagine solo se è stata caricata
-        if (form.imageData) {
-          updateData.imageData = form.imageData;
-          updateData.imageMimeType = form.imageMimeType;
-        }
+        // Aggiungi le immagini solo se sono state modificate
+        if (photo) Object.assign(updateData, photo);
 
         await onUpdatePlayer(editingPlayer.id, updateData);
       } else {
@@ -221,8 +194,13 @@ export default function PlayersTab({
           nationId: form.nationId || null,
           biography: form.biography || null,
           status: form.status,
-          imageData: form.imageData,
-          imageMimeType: form.imageMimeType,
+          imageData: photo?.imageData ?? null,
+          imageMimeType: photo?.imageMimeType ?? null,
+          fullImageData: photo?.fullImageData ?? null,
+          fullImageMimeType: photo?.fullImageMimeType ?? null,
+          cropX: photo?.cropX ?? null,
+          cropY: photo?.cropY ?? null,
+          cropSize: photo?.cropSize ?? null,
         });
       }
       handleCloseDialog();
@@ -230,22 +208,6 @@ export default function PlayersTab({
       console.error('Error saving player:', error);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      try {
-        const { data, mimeType } = await fileToBase64(file);
-        setForm(prev => ({
-          ...prev,
-          imageData: data,
-          imageMimeType: mimeType,
-        }));
-      } catch (error) {
-        console.error('File reading failed:', error);
-      }
     }
   };
 
@@ -385,7 +347,7 @@ export default function PlayersTab({
 
       {/* Player Dialog */}
       <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="w-[95vw] max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl">
               {editingPlayer ? 'Modifica Giocatore' : 'Nuovo Giocatore'}
@@ -432,36 +394,8 @@ export default function PlayersTab({
                 </SelectContent>
               </Select>
             </div>
-            {/* Immagine */}
-            <div className="space-y-1.5">
-              <Label>Immagine Giocatore</Label>
-              <Input
-                key={`image-${editingPlayer?.id || 'new'}`}
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                disabled={uploading}
-              />
-              {form.imageData ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <img
-                    src={`data:${form.imageMimeType};base64,${form.imageData}`}
-                    alt="Preview"
-                    className="w-8 h-8 rounded object-cover border"
-                  />
-                  <span className="text-xs text-muted-foreground">Nuovo file</span>
-                </div>
-              ) : editingPlayer?.hasImage ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <img
-                    src={getPlayerImageUrl(editingPlayer.id, editingPlayer.updatedAt)}
-                    alt="Current"
-                    className="w-8 h-8 rounded object-cover border"
-                  />
-                  <span className="text-xs text-muted-foreground">File presente</span>
-                </div>
-              ) : null}
-            </div>
+            {/* Foto: figura intera + selettore del volto */}
+            <PlayerPhotoField ref={photoRef} player={editingPlayer} disabled={uploading || saving} />
             {/* Nazione - occupa 2 colonne */}
             <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="nation">

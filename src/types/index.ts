@@ -11,7 +11,7 @@ export interface Nation {
   id: string;
   name: string;
   code: string;
-  flag?: string;
+  flag?: string | null;
 }
 
 export interface Player {
@@ -21,8 +21,14 @@ export interface Player {
   nationId?: string | null;
   Nation?: Nation | null;
   hasImage?: boolean;
+  // Foto intera opzionale; la miniatura (hasImage) è il ritaglio del volto
+  hasFullImage?: boolean;
+  cropX?: number | null;
+  cropY?: number | null;
+  cropSize?: number | null;
   biography?: string;
   updatedAt?: string | Date;
+  createdAt?: string | Date;
   status?: ContentStatus;
   PlayerKit: PlayerKit[];
 }
@@ -60,6 +66,7 @@ export interface Kit {
   likes: number;
   dislikes: number;
   updatedAt?: string | Date;
+  createdAt?: string | Date;
   status?: ContentStatus;
   // Campionato del kit (opzionale)
   League?: KitLeague | null;

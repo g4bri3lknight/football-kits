@@ -59,6 +59,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { adminFetch } from '@/lib/admin-fetch';
 
 // ============================================================================
 // Tipo per la configurazione
@@ -485,7 +486,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
 
     // Carica configurazione
     useEffect(() => {
-      fetch('/api/viewer3d-config')
+      adminFetch('/api/viewer3d-config')
         .then(res => res.json())
         .then(data => {
           const merged = { ...defaultConfig, ...data };
@@ -502,7 +503,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
     // Carica kit con modello 3D
     const fetchKits = useCallback(() => {
       setLoadingKits(true);
-      fetch('/api/kits')
+      adminFetch('/api/kits')
         .then(res => res.json())
         .then(data => {
           const kitsWithModel = data.filter((k: any) => k.hasModel3D);
@@ -539,7 +540,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
     // Quando si seleziona un kit, carica la sua config per-kit (se esiste)
     useEffect(() => {
       if (!selectedKitId) { setHasKitConfig(false); return; }
-      fetch(`/api/kits/${selectedKitId}/viewer3d-config`)
+      adminFetch(`/api/kits/${selectedKitId}/viewer3d-config`)
         .then(res => res.json())
         .then(data => {
           if (data && data.found !== false) {
@@ -549,7 +550,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
             setHasKitConfig(true);
           } else {
             // Nessuna config per-kit → ricarica globale
-            fetch('/api/viewer3d-config')
+            adminFetch('/api/viewer3d-config')
               .then(res => res.json())
               .then(globalData => { const merged = { ...defaultConfig, ...globalData }; setConfig(merged); setOriginalConfig(merged); })
               .catch(() => {});
@@ -580,7 +581,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
       }
 
       setSavingGlobal(true);
-      fetch('/api/viewer3d-config', {
+      adminFetch('/api/viewer3d-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...config, adminToken }),
@@ -612,7 +613,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
       }
       if (!selectedKitId) return;
 
-      fetch(`/api/kits/${selectedKitId}/viewer3d-config`, {
+      adminFetch(`/api/kits/${selectedKitId}/viewer3d-config`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminToken }),
@@ -626,7 +627,7 @@ const Viewer3DTab = forwardRef<Viewer3DTabRef, Viewer3DTabProps>(
         .then(() => {
           setHasKitConfig(false);
           // Ricarica la config globale
-          fetch('/api/viewer3d-config')
+          adminFetch('/api/viewer3d-config')
             .then(res => res.json())
             .then(globalData => {
               const merged = { ...defaultConfig, ...globalData };

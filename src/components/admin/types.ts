@@ -14,6 +14,11 @@ export interface Player {
   nationId?: string | null;
   Nation?: any;
   hasImage?: boolean;
+  // Foto intera opzionale; la miniatura (hasImage) è il ritaglio del volto
+  hasFullImage?: boolean;
+  cropX?: number | null;
+  cropY?: number | null;
+  cropSize?: number | null;
   biography?: string;
   updatedAt?: string | Date;
   status?: ContentStatus;

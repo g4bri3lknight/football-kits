@@ -49,6 +49,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Kit, League, ContentStatus, CONTENT_STATUS_LABELS } from './types';
 import LeagueCombobox from './LeagueCombobox';
 import { translateKitType, getKitTypeColor } from './utils';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface KitsTabProps {
   kits: Kit[];
@@ -209,7 +210,7 @@ export default function KitsTab({
   // Campionati per la select e per la colonna in tabella (riletti anche all'apertura del dialog)
   const fetchLeagues = async () => {
     try {
-      const response = await fetch('/api/leagues');
+      const response = await adminFetch('/api/leagues');
       if (!response.ok) throw new Error('Failed to fetch leagues');
       setLeagues(await response.json());
     } catch (error) {

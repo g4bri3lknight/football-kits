@@ -22,7 +22,7 @@ const CONFIG = {
 };
 
 // Genera bytes casuali con un pattern PNG header per simulare un'immagine
-const generateImageBytes = (sizeBytes: number): Buffer => {
+const generateImageBytes = (sizeBytes: number): Uint8Array<ArrayBuffer> => {
   const pngHeader = Buffer.from([
     0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
     0x00, 0x00, 0x00, 0x0D,
@@ -34,11 +34,11 @@ const generateImageBytes = (sizeBytes: number): Buffer => {
     padding[i] = (i * 17 + 43) % 256;
   }
   
-  return Buffer.concat([pngHeader, padding]);
+  return new Uint8Array(Buffer.concat([pngHeader, padding]));
 };
 
 // Genera bytes per un file GLB (modello 3D)
-const generateGLBBytes = (sizeBytes: number): Buffer => {
+const generateGLBBytes = (sizeBytes: number): Uint8Array<ArrayBuffer> => {
   const glbHeader = Buffer.alloc(12);
   glbHeader.writeUInt32LE(0x46546C67, 0);
   glbHeader.writeUInt32LE(2, 4);
@@ -69,7 +69,7 @@ const generateGLBBytes = (sizeBytes: number): Buffer => {
     binData[i] = (i * 23 + 67) % 256;
   }
   
-  return Buffer.concat([glbHeader, jsonChunkHeader, jsonData, binChunkHeader, binData]);
+  return new Uint8Array(Buffer.concat([glbHeader, jsonChunkHeader, jsonData, binChunkHeader, binData]));
 };
 
 const firstNames = ['Marco', 'Luca', 'Andrea', 'Francesco', 'Alessandro', 'Matteo', 'Lorenzo', 'Davide', 'Simone', 'Federico'];

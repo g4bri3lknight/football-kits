@@ -407,7 +407,7 @@ export default function Home() {
     const token = getStoredToken();
     
     if (token) {
-      window.location.href = `/admin/dashboard?t=${encodeURIComponent(token)}`;
+      window.location.href = '/admin/dashboard';
     } else {
       window.location.href = '/admin/login';
     }
@@ -580,7 +580,7 @@ export default function Home() {
               variant="outline"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden flex-shrink-0 backdrop-blur-md bg-black/50 border-white/20 hover:bg-black/70"
+              className="lg:hidden flex-shrink-0 backdrop-blur-xl bg-black/80 border-white/20 hover:bg-black/90"
             >
               <Menu className="w-5 h-5" />
             </Button>
@@ -593,7 +593,7 @@ export default function Home() {
       {/* Tab Bar - sticky below header */}
       <div
         ref={tabBarRef}
-        className="sticky z-30 bg-black/70 backdrop-blur-md border-b border-white/10"
+        className="sticky z-30 bg-black/80 backdrop-blur-xl border-b border-white/10"
         style={{ top: 'var(--header-only-h, 0px)' }}
       >
         <div className="flex items-center justify-center gap-4 py-1.5 px-4">
@@ -607,7 +607,7 @@ export default function Home() {
                 placeholder="Cerca giocatore..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${searchQuery ? '!border-white' : 'border-white/20'}`}
+                className={`pl-10 backdrop-blur-xl bg-black/80 focus-visible:border-white focus-visible:ring-0 ${searchQuery ? '!border-white' : 'border-white/20'}`}
                 suppressHydrationWarning
               />
             </div>
@@ -646,7 +646,7 @@ export default function Home() {
               onClick={() => setFiltersOpen((o) => !o)}
               aria-expanded={filtersOpen}
               aria-controls="filters-panel"
-              className={`relative whitespace-nowrap backdrop-blur-md bg-black/70 hover:bg-black/80 ${activeFilterCount > 0 || filtersOpen ? '!border-white' : 'border-white/20'}`}
+              className={`relative whitespace-nowrap backdrop-blur-xl bg-black/80 hover:bg-black/90 ${activeFilterCount > 0 || filtersOpen ? '!border-white' : 'border-white/20'}`}
             >
               <SlidersHorizontal className="w-4 h-4 mr-2" />
               Filtri
@@ -692,7 +692,7 @@ export default function Home() {
               <div className="w-full max-w-[240px] space-y-1">
                 <label className="text-xs text-white/70">Nazionalità giocatore</label>
                 <Select value={playerNationFilter} onValueChange={setPlayerNationFilter}>
-                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== defaultNationId ? '!border-white' : 'border-white/20'}`}>
+                  <SelectTrigger className={`w-full backdrop-blur-xl bg-black/80 focus-visible:border-white focus-visible:ring-0 ${playerNationFilter !== defaultNationId ? '!border-white' : 'border-white/20'}`}>
                     <span className={playerNationFilter === 'all' ? 'text-white/70' : 'text-white'}>
                       {playerNationFilter === 'all' ? 'Tutte le nazionalità' : nations.find(n => n.id === playerNationFilter)?.name}
                     </span>
@@ -715,7 +715,7 @@ export default function Home() {
               <div className="w-full max-w-[240px] space-y-1">
                 <label className="text-xs text-white/70">Campionato</label>
                 <Select value={leagueNameFilter || 'all'} onValueChange={(v) => handleLeagueNameChange(v === 'all' ? '' : v)}>
-                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${leagueNameFilter ? '!border-white' : 'border-white/20'}`}>
+                  <SelectTrigger className={`w-full backdrop-blur-xl bg-black/80 focus-visible:border-white focus-visible:ring-0 ${leagueNameFilter ? '!border-white' : 'border-white/20'}`}>
                     <span className={leagueNameFilter ? 'text-white' : 'text-white/70'}>
                       {leagueNameFilter || 'Tutti i campionati'}
                     </span>
@@ -733,7 +733,7 @@ export default function Home() {
               <div className="w-full max-w-[240px] space-y-1">
                 <label className="text-xs text-white/70">Nazionalità campionato</label>
                 <Select value={leagueNationFilter || 'all'} onValueChange={(v) => setLeagueNationFilter(v === 'all' ? '' : v)}>
-                  <SelectTrigger className={`w-full backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${leagueNationFilter ? '!border-white' : 'border-white/20'}`}>
+                  <SelectTrigger className={`w-full backdrop-blur-xl bg-black/80 focus-visible:border-white focus-visible:ring-0 ${leagueNationFilter ? '!border-white' : 'border-white/20'}`}>
                     <span className={leagueNationFilter ? 'text-white' : 'text-white/70'}>
                       {leagueNationFilter || 'Tutte le nazionalità'}
                     </span>
@@ -762,7 +762,7 @@ export default function Home() {
                     placeholder="Filtra per stagione..."
                     value={kitSeasonFilter}
                     onChange={(e) => setKitSeasonFilter(e.target.value)}
-                    className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
+                    className={`pl-10 backdrop-blur-xl bg-black/80 focus-visible:border-white focus-visible:ring-0 ${kitSeasonFilter ? '!border-white' : 'border-white/20'}`}
                     suppressHydrationWarning
                   />
                 </div>
@@ -778,14 +778,14 @@ export default function Home() {
                     placeholder="Filtra per squadra/nazionale..."
                     value={kitTeamFilter}
                     onChange={(e) => setKitTeamFilter(e.target.value)}
-                    className={`pl-10 backdrop-blur-md bg-black/70 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
+                    className={`pl-10 backdrop-blur-xl bg-black/80 focus-visible:border-white focus-visible:ring-0 ${kitTeamFilter ? '!border-white' : 'border-white/20'}`}
                     suppressHydrationWarning
                   />
                 </div>
               </div>
 
               {hasActiveFilters && (
-                <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-md bg-black/70 border-white/20 hover:bg-black/80 flex-shrink-0">
+                <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap backdrop-blur-xl bg-black/80 border-white/20 hover:bg-black/90 flex-shrink-0">
                   Resetta filtri
                 </Button>
               )}
@@ -1001,7 +1001,7 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer ref={footerRef} className="fixed bottom-0 left-0 right-0 backdrop-blur-md bg-black/70 border-t border-white/10 py-3 px-4 footer z-20">
+      <footer ref={footerRef} className="fixed bottom-0 left-0 right-0 backdrop-blur-xl bg-black/80 border-t border-white/10 py-3 px-4 footer z-20">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
           <p>© 2026 GK Retro Kits. Tutti i diritti riservati.</p>
         </div>

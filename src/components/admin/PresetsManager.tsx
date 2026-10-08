@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { HoverTooltip } from '@/components/HoverTooltip';
+import { adminFetch } from '@/lib/admin-fetch';
 
 // ============================================================================
 // Types
@@ -140,7 +141,7 @@ export default function PresetsManager({
   const fetchPresets = useCallback(async () => {
     setLoadingPresets(true);
     try {
-      const res = await fetch('/api/viewer3d-presets');
+      const res = await adminFetch('/api/viewer3d-presets');
       if (!res.ok) throw new Error('Errore nel caricamento dei preset');
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
@@ -177,7 +178,7 @@ export default function PresetsManager({
   const fetchKitConfigs = useCallback(async () => {
     setLoadingKitConfigs(true);
     try {
-      const res = await fetch('/api/kits/viewer3d-configs');
+      const res = await adminFetch('/api/kits/viewer3d-configs');
       if (!res.ok) throw new Error();
       const data = await res.json();
       setKitConfigsMap(data);
@@ -226,7 +227,7 @@ export default function PresetsManager({
 
     setSaving(true);
     try {
-      const res = await fetch('/api/viewer3d-presets', {
+      const res = await adminFetch('/api/viewer3d-presets', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -287,7 +288,7 @@ export default function PresetsManager({
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/viewer3d-presets/${presetToDelete.id}`, {
+      const res = await adminFetch(`/api/viewer3d-presets/${presetToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminToken }),
@@ -318,7 +319,7 @@ export default function PresetsManager({
 
     setUpdating(true);
     try {
-      const res = await fetch(`/api/viewer3d-presets/${presetToUpdate.id}`, {
+      const res = await adminFetch(`/api/viewer3d-presets/${presetToUpdate.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -357,7 +358,7 @@ export default function PresetsManager({
 
     setRenaming(true);
     try {
-      const res = await fetch(`/api/viewer3d-presets/${presetToRename.id}`, {
+      const res = await adminFetch(`/api/viewer3d-presets/${presetToRename.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -426,7 +427,7 @@ export default function PresetsManager({
           throw new Error('Il file non contiene i campi "name" e "config" richiesti');
         }
 
-        const res = await fetch('/api/viewer3d-presets', {
+        const res = await adminFetch('/api/viewer3d-presets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -517,7 +518,7 @@ export default function PresetsManager({
 
     setApplying(true);
     try {
-      const res = await fetch(`/api/viewer3d-presets/${presetToApply.id}/apply`, {
+      const res = await adminFetch(`/api/viewer3d-presets/${presetToApply.id}/apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

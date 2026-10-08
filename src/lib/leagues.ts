@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
-import { verifyAuthToken } from '@/lib/auth';
+import { isAdminRequest } from '@/lib/auth';
 
 // Dimensione massima del logo (dopo la decodifica da base64)
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
@@ -19,12 +19,7 @@ export interface LeagueInput {
 // Campi da non restituire mai nelle risposte (contengono il binario)
 export const LEAGUE_OMIT_BLOB = { logoData: true } as const;
 
-// Verifica che la richiesta contenga un token admin valido (header "Authorization: Bearer <token>")
-export function isAdminRequest(request: NextRequest): boolean {
-  const header = request.headers.get('authorization') || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-  return !!token && verifyAuthToken(token);
-}
+export { isAdminRequest };
 
 // Valida e normalizza i dati di un campionato.
 // La nazione deve già esistere nella tabella Nation: viene salvato il suo nome

@@ -87,6 +87,7 @@ export async function GET() {
             createdAt: true,
             updatedAt: true,
             hasImage: true,
+            hasFullImage: true,
             status: true,
             Nation: true,
           },

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Globe, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { adminFetch } from '@/lib/admin-fetch';
 
 export default function NationsTab() {
   const { toast } = useToast();
@@ -25,7 +26,7 @@ export default function NationsTab() {
 
   const fetchNationsCount = async () => {
     try {
-      const response = await fetch('/api/nations');
+      const response = await adminFetch('/api/nations');
       if (!response.ok) throw new Error('Failed to fetch nations');
       const nations = await response.json();
       setNationsCount(nations.length);
@@ -44,7 +45,7 @@ export default function NationsTab() {
   const handlePopulate = async () => {
     setPopulating(true);
     try {
-      const response = await fetch('/api/nations', {
+      const response = await adminFetch('/api/nations', {
         method: 'POST',
       });
 
@@ -87,7 +88,7 @@ export default function NationsTab() {
 
     setDeleting(true);
     try {
-      const response = await fetch('/api/nations', {
+      const response = await adminFetch('/api/nations', {
         method: 'DELETE',
       });
 

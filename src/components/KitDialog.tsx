@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { Kit, KitLeague, Player, PlayerKit } from '@/types';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FramerDialog } from '@/components/ui/framer-dialog';
@@ -73,7 +74,7 @@ const getPlayerImageUrl = (playerId: string, updatedAt?: string | Date) => {
 };
 
 // Content stagger animation
-const contentVariants = {
+const contentVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -81,13 +82,13 @@ const contentVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },
   visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 350, damping: 28 } }
 };
 
 // Vote button animation
-const voteButtonVariants = {
+const voteButtonVariants: Variants = {
   initial: { scale: 1 },
   hover: { scale: 1.08 },
   tap: { scale: 0.95 }
@@ -317,18 +318,18 @@ export function KitDialog({
     }
   };
 
-  const handleDetailMouseEnter = useCallback((detail: { url: string; label: string | null }) => {
-    if (detail.url && !isMouseDown) setHoveredDetail(detail);
+  const handleDetailMouseEnter = useCallback((detail: { url: string | null; label?: string | null; hasModel3D?: boolean }) => {
+    if (detail.url && !isMouseDown) setHoveredDetail({ url: detail.url, label: detail.label ?? null, hasModel3D: detail.hasModel3D });
   }, [isMouseDown]);
 
   const handleDetailMouseLeave = useCallback(() => setHoveredDetail(null), []);
 
-  const handleDetailClick = useCallback((detail: { url: string | null; label: string | null; hasModel3D?: boolean; detailNum: number }, side: 'left' | 'right') => {
+  const handleDetailClick = useCallback((detail: { url: string | null; label?: string | null; hasModel3D?: boolean; detailNum: number }, side: 'left' | 'right') => {
     if (detail.url) {
       if (selectedDetail?.url === detail.url) {
         setSelectedDetail(null);
       } else {
-        setSelectedDetail({ url: detail.url, label: detail.label, index: detail.detailNum, side, hasModel3D: detail.hasModel3D });
+        setSelectedDetail({ url: detail.url, label: detail.label ?? null, index: detail.detailNum, side, hasModel3D: detail.hasModel3D });
       }
     }
   }, [selectedDetail]);

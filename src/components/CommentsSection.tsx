@@ -655,7 +655,7 @@ export function CommentsSection() {
             <AlertDialogDescription>
               Sei sicuro di voler cancellare questo commento? Questa azione non può essere annullata.
               {commentToDelete && comments.find(c => c.id === commentToDelete)?.Replies && 
-                comments.find(c => c.id === commentToDelete)?.Replies!.length > 0 && (
+                (comments.find(c => c.id === commentToDelete)?.Replies?.length ?? 0) > 0 && (
                 <span className="block mt-2 text-red-500 font-medium">
                   Verranno cancellate anche tutte le risposte a questo commento.
                 </span>

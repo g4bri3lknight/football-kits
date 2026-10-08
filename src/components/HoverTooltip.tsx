@@ -23,7 +23,7 @@ export function HoverTooltip({ children, text, side = 'top', offset = 6, noPorta
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => { setMounted(true); }, []);
 

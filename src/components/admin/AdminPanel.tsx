@@ -54,8 +54,9 @@ import VisiteStats from './VisiteStats';
 import VotiKitStats from './VotiKitStats';
 import Viewer3DTab, { Viewer3DTabRef } from './Viewer3DTab';
 import { cn } from '@/lib/utils';
+import { adminFetch } from '@/lib/admin-fetch';
 interface ExtendedAdminPanelProps extends AdminPanelProps {
-  adminToken: string;
+  adminToken?: string;
 }
 // Menu item types
 interface MenuItem {
@@ -138,7 +139,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   }, []);
   const fetchNickname = async () => {
     try {
-      const response = await fetch('/api/admin/nickname');
+      const response = await adminFetch('/api/admin/nickname');
       const data = await response.json();
       setNickname(data.nickname || '');
     } catch (error) {
@@ -157,7 +158,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
     
     setSavingNickname(true);
     try {
-      const response = await fetch('/api/admin/nickname', {
+      const response = await adminFetch('/api/admin/nickname', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -209,10 +210,10 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   const fetchData = async () => {
     try {
       const [playersRes, kitsRes, playerKitsRes, nationsRes] = await Promise.all([
-        fetch('/api/players'),
-        fetch('/api/kits'),
-        fetch('/api/player-kits'),
-        fetch('/api/nations'),
+        adminFetch('/api/players'),
+        adminFetch('/api/kits'),
+        adminFetch('/api/player-kits'),
+        adminFetch('/api/nations'),
       ]);
       const [playersData, kitsData, playerKitsData, nationsData] = await Promise.all([
         playersRes.json(),
@@ -241,7 +242,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', folder);
-      const response = await fetch('/api/upload', {
+      const response = await adminFetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -263,7 +264,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   // Player CRUD operations
   const handleCreatePlayer = async (playerData: any) => {
     try {
-      const response = await fetch('/api/players', {
+      const response = await adminFetch('/api/players', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(playerData),
@@ -294,7 +295,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   };
   const handleUpdatePlayer = async (playerId: string, playerData: any) => {
     try {
-      const response = await fetch(`/api/players/${playerId}`, {
+      const response = await adminFetch(`/api/players/${playerId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(playerData),
@@ -334,7 +335,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   };
   const handleDeletePlayer = async (playerId: string) => {
     try {
-      await fetch(`/api/players/${playerId}`, { method: 'DELETE' });
+      await adminFetch(`/api/players/${playerId}`, { method: 'DELETE' });
       setPlayers(players.filter((p) => p.id !== playerId));
       toast({
         title: 'Successo',
@@ -353,7 +354,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   // Kit CRUD operations
   const handleCreateKit = async (kitData: any) => {
     try {
-      const response = await fetch('/api/kits', {
+      const response = await adminFetch('/api/kits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(kitData),
@@ -386,7 +387,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   };
   const handleUpdateKit = async (kitId: string, kitData: any) => {
     try {
-      const response = await fetch(`/api/kit/${kitId}`, {
+      const response = await adminFetch(`/api/kit/${kitId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(kitData),
@@ -419,7 +420,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   };
   const handleDeleteKit = async (kitId: string) => {
     try {
-      await fetch(`/api/kit/${kitId}`, { method: 'DELETE' });
+      await adminFetch(`/api/kit/${kitId}`, { method: 'DELETE' });
       setKits(kits.filter((k) => k.id !== kitId));
       toast({
         title: 'Successo',
@@ -438,7 +439,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   // PlayerKit operations
   const handleCreatePlayerKit = async (data: { playerId: string; kitId: string }) => {
     try {
-      const response = await fetch('/api/player-kits', {
+      const response = await adminFetch('/api/player-kits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -466,7 +467,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   };
   const handleDeletePlayerKit = async (id: string) => {
     try {
-      await fetch(`/api/player-kits/${id}`, { method: 'DELETE' });
+      await adminFetch(`/api/player-kits/${id}`, { method: 'DELETE' });
       setPlayerKits(playerKits.filter((pk) => pk.id !== id));
       toast({
         title: 'Successo',
@@ -484,7 +485,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
   };
   const handleUpdatePlayerKit = async (id: string, data: { playerId: string; kitId: string }) => {
     try {
-      const response = await fetch(`/api/player-kits/${id}`, {
+      const response = await adminFetch(`/api/player-kits/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -564,11 +565,11 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
       case 'nations':
         return <NationsTab />;
       case 'leagues':
-        return <LeaguesTab adminToken={adminToken} />;
+        return <LeaguesTab adminToken={adminToken ?? ""} />;
       case 'viewer3d':
-        return <Viewer3DTab ref={viewer3DRef} adminToken={adminToken} onStateChange={handleViewer3DStateChange} />;
+        return <Viewer3DTab ref={viewer3DRef} adminToken={adminToken ?? ""} onStateChange={handleViewer3DStateChange} />;
       case 'comments':
-        return <CommentsTab adminToken={adminToken} adminNickname={nickname} />;
+        return <CommentsTab adminToken={adminToken ?? ""} adminNickname={nickname} />;
       default:
         return <VisiteStats />;
     }
@@ -872,7 +873,7 @@ function AdminPanelContent({ onClose, onUpdate, adminToken }: ExtendedAdminPanel
     </div>
   );
 }
-export default function AdminPanel(props: AdminPanelProps) {
+export default function AdminPanel(props: ExtendedAdminPanelProps) {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">

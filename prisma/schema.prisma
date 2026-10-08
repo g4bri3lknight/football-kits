@@ -154,6 +154,15 @@ model Player {
   imageData     Bytes?
   imageMimeType String?
 
+  // Foto intera (figura intera/mezzobusto) opzionale: imageData resta la miniatura ritagliata sul volto.
+  // cropX/cropY/cropSize sono il quadrato del volto, come frazioni della larghezza della foto intera.
+  hasFullImage      Boolean   @default(false)
+  fullImageData     Bytes?
+  fullImageMimeType String?
+  cropX             Float?
+  cropY             Float?
+  cropSize          Float?
+
   Nation        Nation?       @relation(fields: [nationId], references: [id])
   PlayerKit     PlayerKit[]
 }

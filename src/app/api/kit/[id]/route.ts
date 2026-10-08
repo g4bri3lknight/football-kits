@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { resolveLeagueId } from '@/lib/leagues';
+import { requireAdmin } from '@/lib/auth';
 
 // Permetti payload fino a 50MB per il caricamento di file
 export const maxDuration = 60; // 60 secondi di timeout
@@ -100,6 +101,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -290,6 +294,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     await db.kit.delete({

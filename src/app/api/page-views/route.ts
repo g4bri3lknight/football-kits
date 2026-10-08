@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 
 // GET - Recupera statistiche visite
 export async function GET(request: NextRequest) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'all';
@@ -108,7 +112,10 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE - Resetta tutte le statistiche
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     await db.pageView.deleteMany();
     

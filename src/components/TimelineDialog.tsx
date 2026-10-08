@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Shirt, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { Kit, Player } from '@/types';
 import { TimelineSkeleton } from '@/components/ui/skeleton-shimmer';
 
@@ -81,7 +82,7 @@ const getKitImageUrl = (kitId: string, type: 'image' | 'logo', updatedAt?: strin
 };
 
 // Animation variants for internal content
-const headerVariants = {
+const headerVariants: Variants = {
   hidden: { opacity: 0, y: -20 },
   visible: { 
     opacity: 1, 
@@ -90,7 +91,7 @@ const headerVariants = {
   }
 };
 
-const statsVariants = {
+const statsVariants: Variants = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: { 
     opacity: 1, 
@@ -99,12 +100,12 @@ const statsVariants = {
   }
 };
 
-const statItemVariants = {
+const statItemVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 350, damping: 25 } }
 };
 
-const yearNavVariants = {
+const yearNavVariants: Variants = {
   hidden: { opacity: 0, x: -20 },
   visible: { 
     opacity: 1, 
@@ -113,7 +114,7 @@ const yearNavVariants = {
   }
 };
 
-const yearButtonVariants = {
+const yearButtonVariants: Variants = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: { 
     opacity: 1, 
@@ -122,7 +123,7 @@ const yearButtonVariants = {
   }
 };
 
-const yearGroupVariants = {
+const yearGroupVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { 
     opacity: 1,
@@ -130,7 +131,7 @@ const yearGroupVariants = {
   }
 };
 
-const yearMarkerVariants = {
+const yearMarkerVariants: Variants = {
   hidden: { opacity: 0, scale: 0, rotate: -180 },
   visible: { 
     opacity: 1, 
@@ -140,7 +141,7 @@ const yearMarkerVariants = {
   }
 };
 
-const kitCardVariants = {
+const kitCardVariants: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.9 },
   visible: { 
     opacity: 1, 
@@ -273,12 +274,12 @@ export function TimelineDialog({ open, onClose, onKitClick }: TimelineDialogProp
       hasDetail4: kit.hasDetail4,
       hasDetail5: kit.hasDetail5,
       hasDetail6: kit.hasDetail6,
-      detail1Label: kit.detail1Label,
-      detail2Label: kit.detail2Label,
-      detail3Label: kit.detail3Label,
-      detail4Label: kit.detail4Label,
-      detail5Label: kit.detail5Label,
-      detail6Label: kit.detail6Label,
+      detail1Label: kit.detail1Label ?? undefined,
+      detail2Label: kit.detail2Label ?? undefined,
+      detail3Label: kit.detail3Label ?? undefined,
+      detail4Label: kit.detail4Label ?? undefined,
+      detail5Label: kit.detail5Label ?? undefined,
+      detail6Label: kit.detail6Label ?? undefined,
       status: kit.status as 'NON_IMPOSTATO' | 'NUOVO' | 'AGGIORNATO',
       likes: kit.likes,
       dislikes: kit.dislikes,
@@ -290,11 +291,11 @@ export function TimelineDialog({ open, onClose, onKitClick }: TimelineDialogProp
     const playerData: Player = {
       id: kit.player.id,
       name: kit.player.name,
-      surname: kit.player.surname,
+      surname: kit.player.surname ?? undefined,
       hasImage: kit.player.hasImage,
       status: kit.player.status as 'NON_IMPOSTATO' | 'NUOVO' | 'AGGIORNATO',
-      biography: kit.player.biography,
-      nationId: kit.player.nationId,
+      biography: kit.player.biography ?? undefined,
+      nationId: kit.player.nationId ?? undefined,
       Nation: kit.player.Nation,
       updatedAt: new Date(),
       createdAt: new Date(),

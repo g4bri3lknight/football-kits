@@ -13,8 +13,6 @@ import Flag from 'react-world-flags';
 import { convertAlpha3ToAlpha2 } from '@/lib/country-codes';
 import {
   getPlayerDisplayName,
-  getKitTypeColor,
-  translateKitType,
   sortKitsBySeason,
   filterPlayerKits
 } from '@/lib/player-utils';
@@ -45,6 +43,12 @@ const getPlayerImageUrl = (playerId: string, updatedAt?: string | Date) => {
 const getKitImageUrl = (kitId: string, type: 'image' | 'logo', updatedAt?: string | Date) => {
   const cacheBuster = updatedAt ? `?t=${new Date(updatedAt).getTime()}` : '';
   return `/api/kits/${kitId}/${type}${cacheBuster}`;
+};
+
+// URL del logo del campionato; "t" cambia a ogni modifica per evitare la cache del browser
+const getLeagueLogoUrl = (league: { id: string; updatedAt?: string | Date }) => {
+  const cacheBuster = league.updatedAt ? `?t=${new Date(league.updatedAt).getTime()}` : '';
+  return `/api/leagues/${league.id}/logo${cacheBuster}`;
 };
 
 // Status badge colors
@@ -119,11 +123,17 @@ function KitTooltip({ hoveredKit }: { hoveredKit: HoveredKit }) {
       style={{ top, left, transform: 'translateX(-50%)' }}
     >
       <div className="bg-popover text-popover-foreground border rounded-md shadow-lg px-2.5 py-1.5 text-xs whitespace-nowrap text-center">
-        <p className="font-medium">{kit.name} - {kit.team}</p>
-        <div className="flex items-center justify-center gap-1 mt-1">
-          <span className={`text-[10px] px-1 py-0 rounded ${getKitTypeColor(kit.type)}`}>
-            {translateKitType(kit.type)}
-          </span>
+        <p className="font-medium">{kit.team}</p>
+        <div className="flex items-center justify-center gap-1.5 mt-1">
+          {kit.League?.hasLogo && (
+            <img
+              src={getLeagueLogoUrl(kit.League)}
+              alt={kit.League.name}
+              className="w-4 h-4 object-contain"
+            />
+          )}
+          {/* Stagione: quella del campionato (coincide con la stagione del kit) */}
+          <span className="text-[11px] text-muted-foreground">{kit.League?.season ?? kit.name}</span>
           {kit.status && kit.status !== 'NON_IMPOSTATO' && (
             <span className={`text-[10px] px-1 py-0 rounded ${getStatusBadgeStyle(kit.status)}`}>
               {CONTENT_STATUS_LABELS[kit.status]}
@@ -155,7 +165,7 @@ export function PlayerCard({
   // Tooltip state - gestito qui per renderizzare fuori dalla scroll area
   const [hoveredKit, setHoveredKit] = useState<HoveredKit | null>(null);
   const [mounted, setMounted] = useState(false);
-  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -188,7 +198,7 @@ export function PlayerCard({
       className="h-full"
     >
       <Card
-        className="overflow-hidden hover:shadow-xl active:shadow-xl transition-all duration-300 cursor-pointer border-2 transition-custom-color hover:transition-custom-color active:transition-custom-color backdrop-blur-md bg-black/70 relative card-glow h-full"
+        className="overflow-hidden hover:shadow-xl active:shadow-xl transition-all duration-300 cursor-pointer border-2 transition-custom-color hover:transition-custom-color active:transition-custom-color backdrop-blur-xl bg-black/80 relative card-glow h-full"
         onClick={() => onPlayerClick(player)}
       >
       {/* Status Badge - Top Right */}
@@ -223,7 +233,7 @@ export function PlayerCard({
                 {player.biography && (
                   <Badge variant="outline" className="text-xs">
                     <BookOpen className="w-3 h-3 mr-1" />
-                    Biografia disponibile
+                    Biografia
                   </Badge>
                 )}
               </div>

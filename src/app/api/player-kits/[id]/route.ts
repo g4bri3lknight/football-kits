@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 
 // Kit fields senza dati binari (Bytes)
 const kitSelectWithoutBinary = {
@@ -39,6 +40,10 @@ const playerSelectWithoutBinary = {
   createdAt: true,
   updatedAt: true,
   hasImage: true,
+  hasFullImage: true,
+  cropX: true,
+  cropY: true,
+  cropSize: true,
   status: true,
   Nation: true,
 } as const;
@@ -48,6 +53,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -123,6 +131,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     await db.playerKit.delete({

@@ -12,7 +12,7 @@ const AUTH_TOKEN_KEY = 'admin-auth-token';
 // Verifica il token tramite API
 async function verifyTokenViaAPI(token: string): Promise<boolean> {
   try {
-    const response = await fetch(`/api/admin/login?token=${encodeURIComponent(token)}`);
+    const response = await fetch('/api/admin/login', { headers: { Authorization: `Bearer ${token}` } });
     const data = await response.json();
     return data.authenticated === true;
   } catch {
@@ -94,6 +94,8 @@ function DashboardContent() {
           setToken(urlToken);
           setIsAuthenticated(true);
           setChecking(false);
+          // Il token non deve restare nell'indirizzo (cronologia, log, condivisione)
+          window.history.replaceState({}, '', '/admin/dashboard');
           return;
         }
       }
@@ -105,10 +107,7 @@ function DashboardContent() {
         if (isValid) {
           setToken(storedToken);
           setIsAuthenticated(true);
-          // Assicurati che l'URL abbia il token
-          if (!urlToken) {
-            router.replace(`/admin/dashboard?t=${encodeURIComponent(storedToken)}`);
-          }
+          if (urlToken) window.history.replaceState({}, '', '/admin/dashboard');
           setChecking(false);
           return;
         }
@@ -144,8 +143,8 @@ function DashboardContent() {
   };
 
   const handleBackToSite = () => {
-    // Torna alla home passando il token nell'URL
-    window.location.href = `/?t=${encodeURIComponent(token)}`;
+    // Il token resta in sessionStorage: non serve passarlo nell'URL
+    window.location.href = '/';
   };
 
   return (

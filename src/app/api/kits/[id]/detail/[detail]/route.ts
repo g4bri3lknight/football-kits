@@ -32,15 +32,13 @@ export async function GET(
       },
     });
 
-    // @ts-ignore - dynamic field access
-    if (!kit || !kit[fields.data]) {
+    const kitRow = kit as Record<string, any> | null;
+    if (!kitRow || !kitRow[fields.data]) {
       return NextResponse.json({ error: 'Detail image not found' }, { status: 404 });
     }
 
-    // @ts-ignore - dynamic field access
-    const buffer = Buffer.from(kit[fields.data]);
-    // @ts-ignore - dynamic field access
-    const mimeType = kit[fields.mimeType] || 'image/png';
+    const buffer = Buffer.from(kitRow[fields.data]);
+    const mimeType = kitRow[fields.mimeType] || 'image/png';
     
     return new NextResponse(buffer, {
       headers: {

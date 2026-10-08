@@ -71,6 +71,10 @@ export interface Viewer3DConfigData {
 
   // Background
   backgroundColor: string;
+
+  // Rotazione libera e post-processing (presenti nel DB; opzionali nel tipo, con default nell'hook)
+  cameraFreeRotation?: boolean;
+  [effectField: string]: unknown;
 }
 
 // Configurazione di default (corrisponde ai valori nel file config)
@@ -180,7 +184,11 @@ export function Viewer3DConfigProvider({ children }: Viewer3DConfigProviderProps
 
 // Hook per ottenere la configurazione con conversione automatica
 export function useViewerConfig() {
-  const { config, loading } = useViewer3DConfig();
+  const { config, loading, refetch } = useViewer3DConfig();
+
+  // Legge un campo opzionale del DB con valore di default
+  const num = (key: string, def: number): number => (typeof config[key] === 'number' ? (config[key] as number) : def);
+  const bool = (key: string, def: boolean): boolean => (typeof config[key] === 'boolean' ? (config[key] as boolean) : def);
 
   // Converte la configurazione dal formato DB al formato usato internamente
   const convertedConfig = {
@@ -191,6 +199,7 @@ export function useViewerConfig() {
       maxDistance: config.cameraMaxDistance,
     },
     rotation: {
+      freeRotation: Boolean(config.cameraFreeRotation),
       minPolarAngle: (config.rotationMinPolarAngle * Math.PI) / 180, // Converti in radianti
       maxPolarAngle: (config.rotationMaxPolarAngle * Math.PI) / 180,
     },
@@ -245,8 +254,20 @@ export function useViewerConfig() {
       vignetteOffset: config.effectsVignetteOffset,
       vignetteDarkness: config.effectsVignetteDarkness,
     },
+    bloom: { enabled: bool('bloomEnabled', false), intensity: num('bloomIntensity', 0.5), luminanceThreshold: num('bloomLuminanceThreshold', 0.9), luminanceSmoothing: num('bloomLuminanceSmoothing', 0.025) },
+    ao: { enabled: bool('aoEnabled', false), intensity: num('aoIntensity', 2), distance: num('aoDistance', 0.2), falloff: num('aoFalloff', 0.01) },
+    brightnessContrast: { enabled: bool('brightnessContrastEnabled', false), brightness: num('brightness', 0), contrast: num('contrast', 0) },
+    hueSaturation: { enabled: bool('hueSaturationEnabled', false), hue: num('hue', 0), saturation: num('saturation', 0) },
+    chromaticAberration: { enabled: bool('chromaticAberrationEnabled', false), offset: num('chromaticAberrationOffset', 0.002) },
+    depthOfField: { enabled: bool('depthOfFieldEnabled', false), focusDistance: num('depthOfFieldFocusDistance', 0.01), focalLength: num('depthOfFieldFocalLength', 0.02), bokehScale: num('depthOfFieldBokehScale', 3) },
+    tiltShift: { enabled: bool('tiltShiftEnabled', false), blur: num('tiltShiftBlur', 0.05), start: num('tiltShiftStart', 0.49), end: num('tiltShiftEnd', 0.5) },
+    noise: { enabled: bool('noiseEnabled', false), opacity: num('noiseOpacity', 0.05) },
+    dotScreen: { enabled: bool('dotScreenEnabled', false), angle: num('dotScreenAngle', 1.39), scale: num('dotScreenScale', 1) },
+    pixelation: { enabled: bool('pixelationEnabled', false), granularity: num('pixelationGranularity', 5) },
+    scanline: { enabled: bool('scanlineEnabled', false), density: num('scanlineDensity', 1.5), opacity: num('scanlineOpacity', 0.1) },
+    glitch: { enabled: bool('glitchEnabled', false), delay: num('glitchDelay', 3), duration: num('glitchDuration', 0.6), strength: num('glitchStrength', 0.3) },
     backgroundColor: config.backgroundColor,
   };
 
-  return { config: convertedConfig, rawConfig: config, loading };
+  return { config: convertedConfig, rawConfig: config, loading, refetch };
 }

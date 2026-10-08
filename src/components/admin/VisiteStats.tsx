@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Eye, TrendingUp, Calendar, Globe, RefreshCw, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface PageViewStats {
   totalViews: number;
@@ -38,7 +39,7 @@ export default function VisiteStats() {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/page-views?period=${period}`);
+      const res = await adminFetch(`/api/page-views?period=${period}`);
       const data = await res.json();
       setStats(data);
     } catch (error) {
@@ -56,7 +57,7 @@ export default function VisiteStats() {
   const handleReset = async () => {
     setResetting(true);
     try {
-      const res = await fetch('/api/page-views', {
+      const res = await adminFetch('/api/page-views', {
         method: 'DELETE',
       });
       

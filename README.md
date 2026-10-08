@@ -97,11 +97,30 @@ ADMIN_PASSWORD="your-password-here"
 | `DATABASE_URL` | Percorso del database SQLite |
 | `NEXT_PUBLIC_BASE_URL` | URL base del sito (per sitemap e SEO) |
 | `NEXT_PUBLIC_SITE_URL` | URL del sito (per Open Graph) |
-| `ADMIN_SECRET` | Chiave segreta per la sessione admin |
+| `ADMIN_SECRET` | Chiave con cui vengono firmati i token di sessione admin (usa una stringa lunga e casuale, es. `openssl rand -hex 32`). Cambiarla chiude tutte le sessioni aperte |
 | `ADMIN_USERNAME` | Username per l'accesso admin |
 | `ADMIN_PASSWORD` | Password per l'accesso admin |
 
 ⚠️ **Importante**: Cambia `ADMIN_PASSWORD` in produzione!
+
+## Protezione delle API
+
+Il token di sessione (valido 24 ore) è firmato con HMAC-SHA256 usando `ADMIN_SECRET` e non contiene il segreto; non viene più messo negli indirizzi delle pagine ma resta in `sessionStorage`. Le API che modificano i dati richiedono il token admin nell'header `Authorization: Bearer <token>` (il token si ottiene con `POST /api/admin/login`); senza token rispondono `401`.
+
+- **Riservate all'admin:** tutte le scritture su giocatori, kit, associazioni, nazionalità, campionati, viewer 3D, preset, upload e seed; la lettura delle statistiche (`GET /api/page-views`, `GET /api/stats/kits`) e la cancellazione delle visite.
+- **Pubbliche:** le letture usate dal sito (giocatori, kit, nazionalità, campionati, timeline, immagini), l'invio di una visita (`POST /api/page-views`), voti e commenti (per i commenti, modifica/eliminazione solo dell'autore o dell'admin).
+
+**Limite ai tentativi di login:** dopo 10 password errate dallo stesso indirizzo IP il login è bloccato per 15 minuti (anche con la password giusta). La pagina di login mostra i tentativi rimasti e il conto alla rovescia del blocco; un accesso riuscito azzera il contatore. Il contatore è in memoria, quindi si azzera al riavvio del server. Dietro un reverse proxy (es. Caddy) l'IP del client viene letto da `X-Forwarded-For`: il proxy deve impostarlo. Per cambiare numero di tentativi e durata modifica `MAX_ATTEMPTS` e `LOCK_MS` in `src/lib/login-limiter.ts`.
+
+Per proteggere una nuova route basta chiamare all'inizio dell'handler:
+
+```ts
+import { requireAdmin } from '@/lib/auth';
+const denied = requireAdmin(request);
+if (denied) return denied;
+```
+
+Nei componenti admin usa `adminFetch` (`src/lib/admin-fetch.ts`) al posto di `fetch`: aggiunge il token in automatico.
 
 ## Dati di test
 
@@ -134,6 +153,19 @@ Entrambe sono definite in `src/app/page.tsx`, subito dopo la funzione `handleAdm
 - **Mobile** – nella funzione `handleLogoTap`. Il numero di tocchi richiesti è il valore in `t.count >= 5`, mentre l'intervallo massimo tra due tocchi (in millisecondi) è il `600` nel confronto `now - t.last < 600`.
 
 ⚠️ **Nota di sicurezza**: le scorciatoie nascondono soltanto l'ingresso all'area admin. La protezione reale è l'autenticazione (`ADMIN_USERNAME` / `ADMIN_PASSWORD`), quindi usa sempre credenziali robuste.
+
+## Foto dei giocatori (figura intera + volto)
+
+Nel pannello admin, scheda **Giocatori**, la foto si carica una volta sola. Dopo il caricamento compare il selettore del volto:
+un quadrato da trascinare e ridimensionare (cerchio rosso) con le anteprime di biografia, card e liste.
+
+- La **miniatura** (ritaglio del volto, 320×320) è quella usata ovunque nell'app (`imageData`, `GET /api/players/[id]/image`).
+- La **foto intera** (max 1600 px sul lato lungo) si apre a schermo intero cliccando la miniatura nella biografia
+  (`GET /api/players/[id]/image/full`). Il visualizzatore supporta zoom (clic, rotellina, ＋/－), trascinamento ed Esc per chiudere.
+- Le coordinate del quadrato (`cropX`, `cropY`, `cropSize`, frazioni della larghezza) sono salvate: riaprendo il giocatore il ritaglio si può correggere senza ricaricare la foto.
+- **Usa tutta l'immagine**: la foto viene usata così com'è nelle miniature, senza foto intera.
+- Le foto già presenti continuano a funzionare. Su una foto esistente il tasto **Modifica ritaglio** la trasforma in foto intera + miniatura del volto.
+- Dopo aver aggiornato il codice esegui `npm run db:push` (aggiunge in modo non distruttivo le colonne `hasFullImage`, `fullImageData`, `fullImageMimeType`, `cropX`, `cropY`, `cropSize` a `Player`).
 
 ## Campionati
 
@@ -225,7 +257,8 @@ bun run lint         # Esegue ESLint
 ### Admin
 - `POST /api/admin/login` - Login
 - `POST /api/admin/logout` - Logout
-- `CRUD /api/players/[id]` - Gestione giocatori
+- `CRUD /api/players/[id]` - Gestione giocatori (accetta anche `fullImageData`, `fullImageMimeType`, `cropX`, `cropY`, `cropSize`)
+- `GET /api/players/[id]/image/full` - Foto intera del giocatore (pubblico)
 - `CRUD /api/kit/[id]` - Gestione kit
 - `CRUD /api/player-kits` - Associazioni
 - `GET /api/leagues` - Lista campionati (pubblico)

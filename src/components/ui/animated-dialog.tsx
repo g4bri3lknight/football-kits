@@ -1,11 +1,12 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ReactNode } from 'react';
 
 // Animation variants for dialog content
-const dialogVariants = {
+const dialogVariants: Variants = {
   hidden: { 
     opacity: 0, 
     scale: 0.95,
@@ -33,7 +34,7 @@ const dialogVariants = {
 };
 
 // Staggered children animation
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -44,7 +45,7 @@ const staggerContainer = {
   }
 };
 
-const staggerItem = {
+const staggerItem: Variants = {
   hidden: { opacity: 0, y: 15 },
   visible: { 
     opacity: 1, 
@@ -58,7 +59,7 @@ const staggerItem = {
 };
 
 // Fade in from bottom
-const slideUp = {
+const slideUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: { 
     opacity: 1, 
@@ -72,7 +73,7 @@ const slideUp = {
 };
 
 // Scale and fade
-const popIn = {
+const popIn: Variants = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: { 
     opacity: 1, 
@@ -198,7 +199,7 @@ export function AnimatedCounter({ value, className, style }: { value: number; cl
 }
 
 // Dropdown menu animation
-export const dropdownVariants = {
+export const dropdownVariants: Variants = {
   hidden: { 
     opacity: 0, 
     y: 10,

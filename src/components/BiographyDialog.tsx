@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { Player } from '@/types';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FramerDialog } from '@/components/ui/framer-dialog';
@@ -10,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { BookOpen, ExternalLink } from 'lucide-react';
+import { BookOpen, ExternalLink, Maximize2 } from 'lucide-react';
+import { PhotoViewer } from '@/components/PhotoViewer';
 import Flag from 'react-world-flags';
 import { convertAlpha3ToAlpha2 } from '@/lib/country-codes';
 import { getPlayerDisplayName, isUrl, renderTextWithLinks } from '@/lib/player-utils';
@@ -21,6 +23,12 @@ interface BiographyDialogProps {
   onOpen?: () => void;
 }
 
+// URL della foto intera (se presente); il parametro t cambia a ogni modifica del giocatore
+const getPlayerFullImageUrl = (playerId: string, updatedAt?: string | Date) => {
+  const cacheBuster = updatedAt ? `?t=${new Date(updatedAt).getTime()}` : '';
+  return `/api/players/${playerId}/image/full${cacheBuster}`;
+};
+
 // Helper per ottenere l'URL dell'immagine del giocatore
 const getPlayerImageUrl = (playerId: string, updatedAt?: string | Date) => {
   const cacheBuster = updatedAt ? `?t=${new Date(updatedAt).getTime()}` : '';
@@ -28,7 +36,7 @@ const getPlayerImageUrl = (playerId: string, updatedAt?: string | Date) => {
 };
 
 // Stagger animation for content
-const contentVariants = {
+const contentVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -39,7 +47,7 @@ const contentVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: { 
     opacity: 1, 
@@ -60,8 +68,22 @@ export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDi
     }
   }, [selectedPlayer, onOpen]);
 
+  // Visualizzatore a schermo intero della foto intera
+  const [viewerOpen, setViewerOpen] = useState(false);
+  useEffect(() => {
+    setViewerOpen(false);
+  }, [selectedPlayer?.id]);
+
+  const hasFullImage = !!selectedPlayer?.hasFullImage;
+
   return (
-    <FramerDialog open={!!selectedPlayer} onOpenChange={() => onClose()} className="w-[95vw] sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh] flex flex-col dialog-custom-color overflow-hidden">
+    <>
+    <FramerDialog
+      open={!!selectedPlayer}
+      onOpenChange={() => onClose()}
+      // Mentre il visualizzatore è aperto, clic e Esc non devono chiudere la biografia sottostante
+      onInteractOutside={(e) => { if (viewerOpen) e.preventDefault(); }}
+      onEscapeKeyDown={(e) => { if (viewerOpen) e.preventDefault(); }} className="w-[95vw] sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh] flex flex-col dialog-custom-color overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
@@ -87,16 +109,16 @@ export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDi
           animate="visible"
           className="flex flex-col sm:flex-row gap-6 flex-1 overflow-hidden"
         >
-          {/* Colonna sinistra: Immagine */}
-          <motion.div variants={itemVariants} className="flex-shrink-0 flex sm:block justify-center">
-            <div 
-              className="w-32 h-32 sm:w-40 sm:h-40 rounded-xl overflow-hidden bg-muted border-2 border-primary/20 shadow-xl biography-img-custom-border"
+          {/* Colonna sinistra: Immagine (miniatura sul volto; se c'è la foto intera si apre a schermo intero) */}
+          <motion.div variants={itemVariants} className="flex-shrink-0 flex flex-col items-center sm:items-start gap-1.5">
+            <div
+              className={`relative w-32 h-32 sm:w-40 sm:h-40 rounded-xl overflow-hidden bg-muted border-2 border-primary/20 shadow-xl biography-img-custom-border ${hasFullImage ? 'group' : ''}`}
             >
               {selectedPlayer?.hasImage ? (
                 <img
                   src={getPlayerImageUrl(selectedPlayer.id, selectedPlayer.updatedAt)}
                   alt={getPlayerDisplayName(selectedPlayer)}
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-cover transition-transform duration-200 ${hasFullImage ? 'group-hover:scale-105' : ''}`}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -107,7 +129,22 @@ export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDi
                   </Avatar>
                 </div>
               )}
+              {hasFullImage && (
+                <button
+                  type="button"
+                  aria-label="Apri la foto intera"
+                  onClick={() => setViewerOpen(true)}
+                  className="absolute inset-0 cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <span className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-white/40 bg-black/75 text-white">
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  </span>
+                </button>
+              )}
             </div>
+            {hasFullImage && (
+              <p className="hidden sm:block text-[11px] text-muted-foreground">Clicca per vedere la foto intera</p>
+            )}
           </motion.div>
 
           {/* Colonna destra: Contenuto */}
@@ -189,5 +226,14 @@ export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDi
           </motion.div>
         </motion.div>
       </FramerDialog>
+    {selectedPlayer && hasFullImage && (
+      <PhotoViewer
+        open={viewerOpen}
+        src={getPlayerFullImageUrl(selectedPlayer.id, selectedPlayer.updatedAt)}
+        title={getPlayerDisplayName(selectedPlayer)}
+        onClose={() => setViewerOpen(false)}
+      />
+    )}
+    </>
   );
 }

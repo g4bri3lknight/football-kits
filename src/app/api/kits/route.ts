@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import type { Prisma } from '@prisma/client';
 import { resolveLeagueId } from '@/lib/leagues';
+import { requireAdmin } from '@/lib/auth';
 
 // Funzione helper per generare un ID
 const generateId = () => {
@@ -73,6 +75,9 @@ export async function GET() {
 
 // POST /api/kits - Crea un nuovo kit
 export async function POST(request: NextRequest) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     let body;
     try {
@@ -207,7 +212,7 @@ export async function POST(request: NextRequest) {
       data.detail6Model3DName = body.detail6Model3DName || null;
     }
 
-    const kit = await db.kit.create({ data });
+    const kit = await db.kit.create({ data: data as Prisma.KitUncheckedCreateInput });
 
     return NextResponse.json(sanitizeKit(kit), { status: 201 });
   } catch (error) {

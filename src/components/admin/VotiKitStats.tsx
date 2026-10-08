@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ThumbsUp, ThumbsDown, Shirt, Trophy, BarChart3, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getImageUrl } from '@/lib/image-url';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface KitVoteStats {
   topLiked: { id: string; name: string; team: string; type: string; likes: number; dislikes: number; imageUrl?: string; logoUrl?: string }[];
@@ -29,7 +30,7 @@ export default function VotiKitStats() {
   const fetchKitStats = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/stats/kits');
+      const res = await adminFetch('/api/stats/kits');
       const data = await res.json();
       
       if (data.error) {

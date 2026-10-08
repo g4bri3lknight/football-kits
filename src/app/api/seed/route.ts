@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 
 const generateId = () => {
   const timestamp = Date.now().toString(36);
@@ -180,7 +181,10 @@ const nations = [
   { name: 'Zimbabwe', code: 'ZW' },
 ];
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     console.log('Seeding nations...');
 

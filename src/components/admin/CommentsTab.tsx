@@ -40,6 +40,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Comment } from './types';
 import { translateKitType, getKitTypeColor } from './utils';
 import { HoverTooltip } from '@/components/HoverTooltip';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface CommentsTabProps {
   adminToken: string;
@@ -81,7 +82,7 @@ export default function CommentsTab({ adminToken, adminNickname }: CommentsTabPr
   const fetchComments = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/comments');
+      const response = await adminFetch('/api/comments');
       const data = await response.json();
       setComments(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -120,7 +121,7 @@ export default function CommentsTab({ adminToken, adminNickname }: CommentsTabPr
 
     setSaving(true);
     try {
-      const response = await fetch('/api/comments', {
+      const response = await adminFetch('/api/comments', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,7 +184,7 @@ export default function CommentsTab({ adminToken, adminNickname }: CommentsTabPr
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/comments?id=${commentToDelete.id}&adminToken=${encodeURIComponent(adminToken)}`, {
+      const response = await adminFetch(`/api/comments?id=${commentToDelete.id}&adminToken=${encodeURIComponent(adminToken)}`, {
         method: 'DELETE',
       });
 
@@ -255,7 +256,7 @@ export default function CommentsTab({ adminToken, adminNickname }: CommentsTabPr
 
     setReplying(true);
     try {
-      const response = await fetch('/api/comments', {
+      const response = await adminFetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

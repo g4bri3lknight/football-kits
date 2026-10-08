@@ -77,6 +77,10 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
   const [timelineData, setTimelineData] = useState<YearGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  // Stagione la cui intestazione è attualmente agganciata (sticky) in alto
+  const [stuckYear, setStuckYear] = useState<string | null>(null);
+  // Spazio in fondo alla timeline: permette all'ultima stagione (spesso corta) di arrivare in cima
+  const [tailPad, setTailPad] = useState(0);
   const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline');
   const isProgrammaticScrollRef = useRef(false);
   const programmaticScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,6 +99,20 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
     if (!container) return;
 
     const handleScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+
+      // Intestazione agganciata (16px sotto il bordo alto, per non tagliare il cerchio): la sezione ha raggiunto quella soglia ma non è ancora finita
+      let stuck: string | null = null;
+      for (const group of timelineData) {
+        const element = document.getElementById(`timeline-year-${group.year}`);
+        if (!element) continue;
+        const rect = element.getBoundingClientRect();
+        if (rect.top - containerRect.top < 15 && rect.bottom - containerRect.top > 90) {
+          stuck = group.year;
+        }
+      }
+      setStuckYear((prev) => (prev === stuck ? prev : stuck));
+
       if (isProgrammaticScrollRef.current) return;
 
       const topThreshold = 10;
@@ -103,7 +121,6 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
       for (const group of timelineData) {
         const element = document.getElementById(`timeline-year-${group.year}`);
         if (element) {
-          const containerRect = container.getBoundingClientRect();
           const elementRect = element.getBoundingClientRect();
           const relativeTop = elementRect.top - containerRect.top;
           if (relativeTop < topThreshold) {
@@ -122,6 +139,28 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
 
     return () => container.removeEventListener('scroll', handleScroll);
   }, [loading, timelineData, viewMode, selectedYear]);
+
+  // Calcola lo spazio in fondo così anche l'ultima stagione può agganciarsi in alto
+  useEffect(() => {
+    if (loading || timelineData.length === 0 || viewMode !== 'timeline') return;
+    const container = scrollRef.current;
+    const last = document.getElementById(`timeline-year-${timelineData[timelineData.length - 1].year}`);
+    if (!container || !last) return;
+
+    const measure = () => {
+      setTailPad(Math.max(0, Math.round(container.clientHeight - last.offsetHeight - 48)));
+    };
+    measure();
+
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(container);
+    ro?.observe(last);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [loading, timelineData, viewMode]);
 
   // Auto-scroll the year nav button into view
   useEffect(() => {
@@ -185,12 +224,12 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
       hasDetail4: kit.hasDetail4,
       hasDetail5: kit.hasDetail5,
       hasDetail6: kit.hasDetail6,
-      detail1Label: kit.detail1Label,
-      detail2Label: kit.detail2Label,
-      detail3Label: kit.detail3Label,
-      detail4Label: kit.detail4Label,
-      detail5Label: kit.detail5Label,
-      detail6Label: kit.detail6Label,
+      detail1Label: kit.detail1Label ?? undefined,
+      detail2Label: kit.detail2Label ?? undefined,
+      detail3Label: kit.detail3Label ?? undefined,
+      detail4Label: kit.detail4Label ?? undefined,
+      detail5Label: kit.detail5Label ?? undefined,
+      detail6Label: kit.detail6Label ?? undefined,
       status: kit.status as 'NON_IMPOSTATO' | 'NUOVO' | 'AGGIORNATO',
       likes: kit.likes,
       dislikes: kit.dislikes,
@@ -202,11 +241,11 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
     const playerData: Player = {
       id: kit.player.id,
       name: kit.player.name,
-      surname: kit.player.surname,
+      surname: kit.player.surname ?? undefined,
       hasImage: kit.player.hasImage,
       status: kit.player.status as 'NON_IMPOSTATO' | 'NUOVO' | 'AGGIORNATO',
-      biography: kit.player.biography,
-      nationId: kit.player.nationId,
+      biography: kit.player.biography ?? undefined,
+      nationId: kit.player.nationId ?? undefined,
       Nation: kit.player.Nation,
       updatedAt: new Date(),
       createdAt: new Date(),
@@ -222,6 +261,22 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
     ? `${timelineData[timelineData.length - 1]?.year} - ${timelineData[0]?.year}`
     : '';
 
+  // Decenni (dalla prima parte della stagione, es. "2010/2011" -> 2010) per il salto rapido
+  const decades: { decade: number; firstYear: string; count: number }[] = [];
+  let decadesValid = true;
+  for (const group of timelineData) {
+    const y = parseInt(group.year, 10);
+    if (Number.isNaN(y)) {
+      decadesValid = false;
+      break;
+    }
+    const decade = Math.floor(y / 10) * 10;
+    const existing = decades.find((d) => d.decade === decade);
+    if (existing) existing.count += 1;
+    else decades.push({ decade, firstYear: group.year, count: 1 });
+  }
+  const selectedDecade = selectedYear ? Math.floor(parseInt(selectedYear, 10) / 10) * 10 : null;
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Panel - static at top, NOT inside scroll area */}
@@ -229,7 +284,7 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
         ref={panelRef}
         className="shrink-0 rounded-lg mx-2 mt-2 border border-white/10 overflow-hidden"
       >
-        <div className="bg-black/70 backdrop-blur-md">
+        <div className="bg-black/80 backdrop-blur-xl">
           {/* Stats row */}
           <div className="flex items-center justify-center gap-6 py-2 px-3">
             <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
@@ -275,6 +330,26 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
           {/* Year navigation - attached to stats row */}
           {timelineData.length > 0 && (
             <div className="border-t border-white/10 px-3 py-2">
+              {decadesValid && decades.length > 1 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-2">
+                  <span className="shrink-0 mr-1 text-[11px] uppercase tracking-wider text-white/55">
+                    Salta a
+                  </span>
+                  {decades.map((d) => (
+                    <button
+                      key={d.decade}
+                      onClick={() => scrollToYear(d.firstYear)}
+                      className={`shrink-0 h-7 px-3 text-xs font-semibold rounded-full border transition-all cursor-pointer ${
+                        selectedDecade === d.decade
+                          ? 'bg-[#0a6a8c] text-white border-white'
+                          : 'bg-black/60 text-white border-white/20 hover:bg-white/10'
+                      }`}
+                    >
+                      Anni {d.decade} · {d.count} {d.count === 1 ? 'stagione' : 'stagioni'}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="overflow-x-auto pb-2">
                 <div className="flex items-center gap-1.5">
                   {timelineData.map((group) => (
@@ -316,23 +391,33 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
           </div>
         ) : viewMode === 'timeline' ? (
           /* Timeline View */
-          <div className="relative z-0 px-2 py-4">
-            {/* Timeline line */}
-            <div className="absolute left-[29px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#002f42] via-[#cd2127] to-[#002f42]" />
+          <div className="relative z-0 px-2 pt-4" style={{ paddingBottom: 16 + tailPad }}>
+            {/* Timeline line (petrolio -> rosso, come il logo) */}
+            <div className="absolute left-[38px] md:left-[50px] top-0 bottom-0 w-1 rounded-full bg-gradient-to-b from-[#0f7b9f] via-[#cd2127] to-[#0f7b9f] shadow-[0_0_0_1.5px_rgba(0,0,0,0.55),0_0_14px_rgba(205,33,39,0.45)]" />
 
             {timelineData.map((group) => (
               <div
                 key={group.year}
                 id={`timeline-year-${group.year}`}
-                className="relative z-0 mb-8 last:mb-0"
+                className="relative isolate z-0 mb-7 last:mb-0 ml-12 md:ml-[76px] px-3 md:px-4 pb-3 md:pb-4"
                 style={{ scrollMarginTop: '16px' }}
               >
-                {/* Year marker */}
-                <div className="flex items-center gap-4 mb-4 -ml-1">
-                  <div className="relative w-[60px] h-[60px] rounded-full bg-gradient-to-br from-[#002f42] to-[#004d6d] flex items-center justify-center text-white font-bold text-sm shadow-lg ring-4 ring-black/40">
+                {/* Sfondo del pannello: nero 80% + blur forte (come il resto dell'app) */}
+                <div
+                  aria-hidden
+                  className="absolute inset-0 -z-10 rounded-2xl bg-black/80 backdrop-blur-xl border border-white/10"
+                />
+
+                {/* Intestazione stagione (sticky) con cerchio dell'anno */}
+                <div
+                  className={`sticky -top-2 z-20 -mx-3 md:-mx-4 mb-3 px-3 md:px-4 py-3 rounded-t-2xl border-b border-white/10 backdrop-blur-xl transition-colors ${
+                    stuckYear === group.year ? 'bg-black/80' : 'bg-transparent'
+                  }`}
+                >
+                  <div className="absolute top-1/2 -translate-y-1/2 -left-12 md:-left-[76px] w-16 h-16 md:w-[88px] md:h-[88px] rounded-full bg-gradient-to-br from-[#00394f] to-[#0a6a8c] flex items-center justify-center px-1 text-center leading-tight text-white font-bold text-[11px] md:text-sm shadow-[0_0_0_4px_rgba(0,0,0,0.65),0_0_0_6px_#cd2127,0_6px_18px_rgba(0,0,0,0.6)]">
                     {group.year}
                   </div>
-                  <div className="bg-black/70 backdrop-blur-md rounded-lg px-3 py-1.5">
+                  <div className="pl-5 md:pl-[30px]">
                     <h3 className="text-lg font-bold text-white">Stagione {group.year}</h3>
                     <p className="text-sm text-white/80">
                       {group.kits.length} kit{group.kits.length > 1 ? ' disponibili' : ' disponibile'}
@@ -341,7 +426,7 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
                 </div>
 
                 {/* Kits grid for this year */}
-                <div className="ml-[68px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                   {group.kits.map((kit) => (
                     <div key={kit.playerKitId} className="group">
                       <button

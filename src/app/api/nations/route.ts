@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 
 // Funzione helper per generare un ID
 const generateId = () => {
@@ -254,6 +255,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     // Prova a leggere il body della richiesta
     let body: { name?: string; code?: string; flag?: string } | null = null;
@@ -340,6 +344,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   try {
     // Elimina tutte le nazioni dal database
     await db.nation.deleteMany({});

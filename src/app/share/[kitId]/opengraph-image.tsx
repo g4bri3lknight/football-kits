@@ -23,7 +23,7 @@ export default async function Image({ params }: { params: Promise<{ kitId: strin
             id: true,
             name: true,
             team: true,
-            year: true,
+            League: { select: { season: true } },
             hasImage: true,
             imageData: true,
             imageMimeType: true,
@@ -205,7 +205,7 @@ export default async function Image({ params }: { params: Promise<{ kitId: strin
               )}
 
               {/* Anno */}
-              {kit.year && (
+              {kit.League?.season && (
                 <div
                   style={{
                     fontSize: '20px',
@@ -215,7 +215,7 @@ export default async function Image({ params }: { params: Promise<{ kitId: strin
                     borderRadius: '8px',
                   }}
                 >
-                  Stagione {kit.year}
+                  {`Stagione ${kit.League.season}`}
                 </div>
               )}
             </div>

@@ -4,10 +4,11 @@ import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 // Animation variants - matching Radix UI dialog animations
-const overlayVariants = {
+const overlayVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { 
     opacity: 1,
@@ -19,7 +20,7 @@ const overlayVariants = {
   }
 };
 
-const contentVariants = {
+const contentVariants: Variants = {
   hidden: { 
     opacity: 0, 
     scale: 0.95,
@@ -54,6 +55,9 @@ interface FramerDialogProps {
   className?: string;
   style?: React.CSSProperties;
   showCloseButton?: boolean;
+  /** Permette di bloccare la chiusura (es. mentre è aperto un visualizzatore sopra la finestra) */
+  onInteractOutside?: (event: Event) => void;
+  onEscapeKeyDown?: (event: KeyboardEvent) => void;
 }
 
 export function FramerDialog({ 
@@ -62,7 +66,9 @@ export function FramerDialog({
   children, 
   className,
   style,
-  showCloseButton = true
+  showCloseButton = true,
+  onInteractOutside,
+  onEscapeKeyDown,
 }: FramerDialogProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -79,7 +85,7 @@ export function FramerDialog({
             />
             
             {/* Content */}
-            <DialogPrimitive.Content asChild>
+            <DialogPrimitive.Content asChild onInteractOutside={onInteractOutside} onEscapeKeyDown={onEscapeKeyDown}>
               <motion.div
                 variants={contentVariants}
                 initial="hidden"

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AUTH_TOKEN_KEY = 'admin-auth-token';
@@ -44,6 +44,39 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Contatore dei tentativi (limite lato server, per IP)
+  const [maxAttempts, setMaxAttempts] = useState(10);
+  const [attemptsLeft, setAttemptsLeft] = useState(10);
+  const [lockedSeconds, setLockedSeconds] = useState(0);
+
+  const applyStatus = (s: { maxAttempts?: number; attemptsLeft?: number; locked?: boolean; retryAfterSeconds?: number }) => {
+    if (typeof s.maxAttempts === 'number') setMaxAttempts(s.maxAttempts);
+    if (typeof s.attemptsLeft === 'number') setAttemptsLeft(s.attemptsLeft);
+    setLockedSeconds(s.locked ? s.retryAfterSeconds ?? 0 : 0);
+  };
+
+  // Stato iniziale: se ci sono già stati errori (o un blocco) il contatore si vede subito
+  useEffect(() => {
+    fetch('/api/admin/login/status')
+      .then((r) => r.json())
+      .then(applyStatus)
+      .catch(() => {});
+  }, []);
+
+  // Conto alla rovescia del blocco
+  useEffect(() => {
+    if (lockedSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setLockedSeconds((s) => {
+        if (s <= 1) {
+          setAttemptsLeft(maxAttempts);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockedSeconds > 0, maxAttempts]);
 
   // Pulisci vecchi token quando si accede alla pagina di login
   useEffect(() => {
@@ -74,6 +107,7 @@ export default function AdminLoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        applyStatus(data);
         throw new Error(data.error || 'Login fallito');
       }
 
@@ -89,7 +123,7 @@ export default function AdminLoginPage() {
       });
 
       // Redirect alla dashboard usando window.location per un reload completo
-      window.location.href = `/admin/dashboard?t=${encodeURIComponent(token)}`;
+      window.location.href = '/admin/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login fallito');
       toast({
@@ -159,12 +193,36 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
+            {/* Contatore tentativi: visibile dopo il primo errore e durante il blocco */}
+            {(lockedSeconds > 0 || attemptsLeft < maxAttempts) && (
+              <div
+                role="status"
+                className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                  lockedSeconds > 0 || attemptsLeft <= 3
+                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                    : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
+                }`}
+              >
+                <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                {lockedSeconds > 0 ? (
+                  <span>
+                    Accesso bloccato per troppi tentativi. Riprova tra{' '}
+                    {Math.floor(lockedSeconds / 60)}:{String(lockedSeconds % 60).padStart(2, '0')}
+                  </span>
+                ) : (
+                  <span>
+                    Tentativi rimasti: <strong>{attemptsLeft}</strong> su {maxAttempts}
+                  </span>
+                )}
+              </div>
+            )}
+
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={loading || lockedSeconds > 0}
             >
-              {loading ? 'Accesso in corso...' : 'Accedi'}
+              {loading ? 'Accesso in corso...' : lockedSeconds > 0 ? 'Accesso bloccato' : 'Accedi'}
             </Button>
           </form>
 
