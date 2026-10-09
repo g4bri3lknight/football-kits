@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./figurine.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Viewer3DProvider } from "@/components/providers/Viewer3DProvider";
@@ -47,6 +48,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        {/* Applica subito lo stile salvato, prima del primo paint (evita il lampo dello stile scuro) */}
+        <script dangerouslySetInnerHTML={{ __html: "try{if(localStorage.getItem('gk-style')==='figurine')document.documentElement.dataset.style='figurine'}catch(e){}" }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

@@ -198,7 +198,7 @@ export function PlayerCard({
       className="h-full"
     >
       <Card
-        className="overflow-hidden hover:shadow-xl active:shadow-xl transition-all duration-300 cursor-pointer border-2 transition-custom-color hover:transition-custom-color active:transition-custom-color backdrop-blur-xl bg-black/80 relative card-glow h-full"
+        className="gk-fig-card overflow-hidden hover:shadow-xl active:shadow-xl transition-all duration-300 cursor-pointer border-2 transition-custom-color hover:transition-custom-color active:transition-custom-color backdrop-blur-xl bg-black/80 relative card-glow h-full"
         onClick={() => onPlayerClick(player)}
       >
       {/* Status Badge - Top Right */}

@@ -476,7 +476,7 @@ export function KitDialog({
                       className="flex-1 min-h-0 relative group"
                     >
                       <div 
-                        className={`absolute inset-0 rounded-lg border-2 flex items-center justify-center transition-all overflow-hidden ${
+                        className={`gk-kit-stage absolute inset-0 rounded-lg border-2 flex items-center justify-center transition-all overflow-hidden ${
                           detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'
                         }`}
                         style={{
@@ -535,7 +535,7 @@ export function KitDialog({
                 
                 {/* Central content */}
                 <div 
-                  className="col-span-3 rounded-lg overflow-hidden border-2 relative"
+                  className="col-span-3 rounded-lg overflow-hidden border-2 relative gk-kit-stage"
                   style={{ 
                     borderColor: '#002f42',
                     backgroundColor: viewerConfig.backgroundColor 
@@ -619,7 +619,7 @@ export function KitDialog({
                       className="flex-1 min-h-0 relative group"
                     >
                       <div 
-                        className={`absolute inset-0 rounded-lg border-2 flex items-center justify-center transition-all overflow-hidden ${
+                        className={`gk-kit-stage absolute inset-0 rounded-lg border-2 flex items-center justify-center transition-all overflow-hidden ${
                           detail.url ? 'hover:shadow-xl cursor-pointer transition-custom-color hover:z-30 z-0' : 'border-transparent'
                         }`}
                         style={{

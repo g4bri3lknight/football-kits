@@ -1,0 +1,168 @@
+/* ===== Stile "Figurine" (alternativo allo scuro) =====
+   Si attiva con <html data-style="figurine"> (tasto in alto, salvato in localStorage). */
+
+@font-face { font-family: 'GkRok'; font-weight: 400; font-display: swap; src: url('/fonts/figurine/rokkitt-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'GkRok'; font-weight: 700; font-display: swap; src: url('/fonts/figurine/rokkitt-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'GkOsw'; font-weight: 400; font-display: swap; src: url('/fonts/figurine/oswald-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'GkOsw'; font-weight: 500; font-display: swap; src: url('/fonts/figurine/oswald-latin-500-normal.woff2') format('woff2'); }
+
+/* Carta: dialoghi, popover, schede */
+html[data-style='figurine'] {
+  --background: #f7efd9;
+  --foreground: #2a1c10;
+  --card: #f3e7c9;
+  --card-foreground: #2a1c10;
+  --popover: #f7efd9;
+  --popover-foreground: #2a1c10;
+  --primary: #cd2127;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(42, 28, 16, .1);
+  --secondary-foreground: #2a1c10;
+  --muted: rgba(42, 28, 16, .08);
+  --muted-foreground: rgba(42, 28, 16, .66);
+  --accent: rgba(42, 28, 16, .1);
+  --accent-foreground: #2a1c10;
+  --border: rgba(42, 28, 16, .28);
+  --input: rgba(42, 28, 16, .3);
+  --ring: #cd2127;
+  color-scheme: light;
+}
+html[data-style='figurine'] body { font-family: 'GkOsw', var(--font-geist-sans), system-ui, sans-serif; background: #0d2217; letter-spacing: .01em; }
+html[data-style='figurine'] [data-slot='card-title'],
+html[data-style='figurine'] [data-slot='dialog-title'],
+html[data-style='figurine'] h1, html[data-style='figurine'] h2, html[data-style='figurine'] h3 {
+  font-family: 'GkRok', Georgia, serif; font-weight: 700; letter-spacing: .01em;
+}
+html[data-style='figurine'] [data-slot='card-title'] { text-transform: uppercase; }
+
+/* Zone sulla "erba": barre, footer, pannelli timeline, menu mobile → tornano chiari su scuro */
+html[data-style='figurine'] .gk-on-green {
+  --background: #0d2217; --foreground: #fffaf0; --card: #12301f; --card-foreground: #fffaf0;
+  --popover: #12301f; --popover-foreground: #fffaf0;
+  --secondary: rgba(255, 250, 240, .12); --secondary-foreground: #fffaf0;
+  --muted: rgba(255, 250, 240, .08); --muted-foreground: rgba(255, 250, 240, .66);
+  --accent: rgba(255, 250, 240, .12); --accent-foreground: #fffaf0;
+  --border: rgba(255, 250, 240, .2); --input: rgba(255, 250, 240, .25);
+  color: #fffaf0;
+}
+html[data-style='figurine'] .gk-on-green.gk-bar { background-color: rgba(13, 34, 23, .94); border-color: rgba(255, 250, 240, .18); }
+html[data-style='figurine'] .gk-on-green [class*='bg-black']:not(.gk-bar):not(.gk-panel):not(.gk-panel-bg):not(.gk-keepgreen) { background-color: #f3e7c9 !important; color: #2a1c10 !important; border-color: #fffaf0 !important; box-shadow: 0 0 0 1px rgba(0, 0, 0, .45); backdrop-filter: none !important; }
+html[data-style='figurine'] .gk-on-green [class*='bg-black']:not(.gk-bar):not(.gk-panel):not(.gk-panel-bg):not(.gk-keepgreen) * { color: #2a1c10; }
+html[data-style='figurine'] .gk-on-green input::placeholder, html[data-style='figurine'] .gk-on-green input::placeholder { color: rgba(42, 28, 16, .6); }
+html[data-style='figurine'] .gk-on-green [class*='bg-black']:not(.gk-bar):not(.gk-panel):not(.gk-panel-bg):not(.gk-keepgreen):hover { background-color: #fffaf0 !important; }
+/* voci attive (rosse) restano rosse con testo chiaro */
+html[data-style='figurine'] .gk-on-green [class*='bg-\[\#cd2127\]'] { background-color: #cd2127 !important; color: #fff !important; border-color: #fffaf0 !important; }
+html[data-style='figurine'] .gk-on-green [class*='bg-\[\#cd2127\]'] * { color: #fff; }
+/* contenitore dei tab (Home/Timeline, Timeline/Griglia): carta più scura così il tab attivo spicca */
+html[data-style='figurine'] .gk-on-green [class*='bg-black\/60']:not(.gk-bar):not(.gk-panel):not(.gk-panel-bg):not(.gk-keepgreen) { background-color: #e6d8b3 !important; }
+html[data-style='figurine'] .gk-on-green.gk-panel { background-color: rgba(13, 34, 23, .9); border-color: rgba(255, 250, 240, .18); }
+/* sfondo del pannello timeline (strato assoluto, non ha la classe gk-on-green) */
+html[data-style='figurine'] .gk-panel-bg { background-color: rgba(13, 34, 23, .88) !important; border-color: rgba(255, 250, 240, .2) !important; }
+html[data-style='figurine'] .gk-on-green [class*='border-white'] { border-color: rgba(255, 250, 240, .3); }
+
+/* Pagina: campo verde con righe e grana (niente foto casuale) */
+html[data-style='figurine'] .gk-root { background: #0d2217; }
+html[data-style='figurine'] .bg-fixed {
+  background-color: #0d2217;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .07 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>"),
+    radial-gradient(circle at 50% 50%, transparent 0 150px, rgba(255, 250, 240, .06) 151px 154px, transparent 155px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .018) 0 90px, transparent 90px 180px),
+    radial-gradient(ellipse at 50% 40%, #12301f, #0a1a11 80%) !important;
+  background-size: 160px 160px, 100% 100%, 100% 100%, 100% 100% !important;
+  background-repeat: repeat, no-repeat, repeat, no-repeat !important;
+}
+
+/* Scheda portiere → figurina */
+html[data-style='figurine'] .gk-fig-card {
+  background: #f3e7c9 !important;
+  color: #2a1c10;
+  border: 6px solid #fffaf0;
+  border-radius: 14px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 12px 22px rgba(0, 0, 0, .5), inset 0 0 0 2px #cd2127;
+  backdrop-filter: none;
+  --border: rgba(42, 28, 16, .28);
+}
+html[data-style='figurine'] .gk-fig-card:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 18px 30px rgba(0, 0, 0, .6), inset 0 0 0 2px #cd2127; border-color: #fffaf0; }
+html[data-style='figurine'] .gk-fig-card [data-slot='separator'] { background: transparent; border-top: 2px dashed rgba(42, 28, 16, .3); height: 0; }
+html[data-style='figurine'] .gk-fig-card [data-slot='avatar'] { box-shadow: 0 0 0 2px #cd2127; border: 2px solid #fffaf0; }
+
+/* Timeline: schede delle maglie su carta */
+html[data-style='figurine'] .gk-on-green .bg-card { background-color: #f3e7c9; color: #2a1c10; --card-foreground: #2a1c10; --muted-foreground: rgba(42, 28, 16, .66); --foreground: #2a1c10; --border: rgba(42, 28, 16, .28); --secondary: rgba(42, 28, 16, .1); --secondary-foreground: #2a1c10; }
+
+/* Tasto stile */
+.gk-style-toggle { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .3); background: rgba(0, 0, 0, .55); color: #fff; backdrop-filter: blur(8px); transition: transform .15s, background .15s; }
+.gk-style-toggle:hover { transform: scale(1.08); background: rgba(0, 0, 0, .75); }
+html[data-style='figurine'] .gk-style-toggle { background: #f3e7c9; color: #cd2127; border: 2px solid #fffaf0; box-shadow: 0 0 0 1px rgba(0, 0, 0, .4); }
+
+/* Riquadri immagine nella finestra della maglia: carta invece del grigio scuro */
+html[data-style='figurine'] .gk-kit-stage { background-color: #e9dcb8 !important; border-color: #cd2127 !important; }
+
+html[data-style='figurine'] .gk-keepgreen { background-color: rgba(13, 34, 23, .9) !important; }
+
+/* Altri tasti "chiari su scuro" (es. chip delle stagioni) → carta */
+html[data-style='figurine'] .gk-on-green button[class*='bg-white\/10'] { background-color: #f3e7c9 !important; color: #2a1c10 !important; border-color: #fffaf0 !important; }
+html[data-style='figurine'] .gk-on-green button[class*='bg-white\/10'] * { color: #2a1c10; }
+html[data-style='figurine'] .gk-on-green button[class*='bg-white\/10']:hover { background-color: #fffaf0 !important; }
+html[data-style='figurine'] .gk-on-green button [class*='bg-white\/20'] { background-color: rgba(42, 28, 16, .14) !important; }
+/* tab/chip attivi in petrolio: testo chiaro */
+html[data-style='figurine'] .gk-on-green [class*='bg-\[\#002f42\]'], html[data-style='figurine'] .gk-on-green [class*='bg-\[\#0a6a8c\]'] { color: #fff !important; }
+html[data-style='figurine'] .gk-on-green [class*='bg-\[\#002f42\]'] *, html[data-style='figurine'] .gk-on-green [class*='bg-\[\#0a6a8c\]'] * { color: #fff; }
+/* il rosso attivo dei chip stagione: il numerino resta leggibile */
+html[data-style='figurine'] .gk-on-green [class*='bg-\[\#cd2127\]'] [class*='bg-white\/20'] { background-color: rgba(255, 255, 255, .25) !important; }
+
+/* Menu laterale mobile e campi di testo/select nelle zone verdi → carta */
+html[data-style='figurine'] [data-slot='sheet-content'].gk-bar { background-color: #0d2217; }
+html[data-style='figurine'] .gk-on-green [data-slot='input'], html[data-style='figurine'] .gk-on-green [data-slot='select-trigger'] { background-color: #f3e7c9 !important; color: #2a1c10 !important; border-color: #fffaf0 !important; }
+html[data-style='figurine'] .gk-on-green [data-slot='select-trigger'] * , html[data-style='figurine'] .gk-on-green [data-slot='select-trigger'] [data-slot='select-value'] { color: #2a1c10; }
+html[data-style='figurine'] .gk-on-green [data-slot='select-trigger'][data-placeholder] { color: rgba(42, 28, 16, .6) !important; }
+html[data-style='figurine'] .gk-on-green [data-slot='sheet-close'] { color: #fffaf0; }
+
+/* ===== Via il petrolio: tutto nei colori figurine (carta, inchiostro, rosso) ===== */
+/* Timeline: cerchio dell'anno e linea */
+html[data-style='figurine'] [class*='from-[#00394f]'] {
+  background-image: none !important; background-color: #f3e7c9 !important; color: #2a1c10 !important;
+  box-shadow: 0 0 0 4px #fffaf0, 0 0 0 6px #cd2127, 0 6px 18px rgba(0, 0, 0, .6) !important;
+  font-family: 'GkRok', Georgia, serif; font-weight: 700;
+}
+html[data-style='figurine'] [class*='from-[#0f7b9f]'],
+html[data-style='figurine'] [class*='from-[#002f42]'][class*='via-[#cd2127]'] {
+  background-image: repeating-linear-gradient(180deg, #fffaf0 0 10px, transparent 10px 18px) !important; opacity: .65;
+}
+/* cerchio nella finestra timeline */
+html[data-style='figurine'] [class*='from-[#002f42]'][class*='to-[#004d6d]'] {
+  background-image: none !important; background-color: #f3e7c9 !important; color: #2a1c10 !important;
+  box-shadow: 0 0 0 3px #cd2127 !important; font-family: 'GkRok', Georgia, serif;
+}
+/* tab/chip attivi in petrolio → inchiostro */
+html[data-style='figurine'] [class*='bg-[#002f42]'], html[data-style='figurine'] [class*='bg-[#0a6a8c]'] { background-color: #2a1c10 !important; color: #fffaf0 !important; border-color: #fffaf0 !important; }
+html[data-style='figurine'] .gk-on-green [class*='bg-[#002f42]'] *, html[data-style='figurine'] .gk-on-green [class*='bg-[#0a6a8c]'] * { color: #fffaf0; }
+/* bordi e pulsanti con colori inline (finestre, riquadri dettaglio, "mi piace") */
+html[data-style='figurine'] [style*='border-color: rgb(0, 47, 66)'] { border-color: rgba(42, 28, 16, .45) !important; }
+html[data-style='figurine'] [data-slot='dialog-content'][style*='border-color'] , html[data-style='figurine'] [role='dialog'][style*='border-color: rgb(0, 47, 66)'] { border-color: #cd2127 !important; }
+html[data-style='figurine'] [style*='background-color: rgb(0, 47, 66)'] { background-color: #2a1c10 !important; }
+html[data-style='figurine'] [style*='background-color: rgba(0, 47, 66'] { background-color: rgba(42, 28, 16, .1) !important; }
+html[data-style='figurine'] [style*='color: rgb(0, 47, 66)'] { color: #2a1c10 !important; }
+/* classi globali */
+html[data-style='figurine'] .gk-badge { background-color: #2a1c10 !important; border-color: #cd2127 !important; color: #fffaf0; }
+html[data-style='figurine'] .dialog-custom-color { border-color: #cd2127; }
+html[data-style='figurine'] .card-custom-color { background: #f3e7c9; color: #2a1c10; }
+html[data-style='figurine'] .transition-custom-color { border-color: #fffaf0; }
+html[data-style='figurine'] .biography-img-custom-border { border-color: #cd2127; }
+/* barra di scorrimento */
+html[data-style='figurine'] ::-webkit-scrollbar-track { background: rgba(255, 250, 240, .08); }
+html[data-style='figurine'] ::-webkit-scrollbar-thumb { background: rgba(243, 231, 201, .55); }
+
+/* Testata: velo verde sulla foto */
+html[data-style='figurine'] header.sticky::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(rgba(13, 34, 23, .15), rgba(13, 34, 23, .55)); }
+
+/* Badge "Nuovo" / "Aggiornato" nei colori figurine */
+html[data-style='figurine'] .gk-fig-card [class*='bg-green-500'] { background-color: #cd2127 !important; color: #fff !important; border: 2px solid #fffaf0; }
+html[data-style='figurine'] .gk-fig-card [class*='bg-amber-500'] { background-color: #2a1c10 !important; color: #fffaf0 !important; border: 2px solid #fffaf0; }
+html[data-style='figurine'] .gk-fig-card [class*='bg-green-400'] { background-color: #cd2127 !important; }
+html[data-style='figurine'] .gk-fig-card [class*='bg-amber-400'] { background-color: #2a1c10 !important; }
+
+/* Logo: variante figurine al posto di quella originale */
+.gk-logo-fig { display: none; }
+html[data-style='figurine'] .gk-logo-fig { display: block; }
+html[data-style='figurine'] .gk-logo-dark { display: none; }

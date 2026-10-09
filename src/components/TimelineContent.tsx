@@ -284,7 +284,7 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
         ref={panelRef}
         className="shrink-0 rounded-lg mx-2 mt-2 border border-white/10 overflow-hidden"
       >
-        <div className="bg-black/80 backdrop-blur-xl">
+        <div className="gk-on-green gk-panel bg-black/80 backdrop-blur-xl">
           {/* Stats row */}
           <div className="flex items-center justify-center gap-6 py-2 px-3">
             <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
@@ -399,18 +399,18 @@ export function TimelineContent({ onKitClick }: TimelineContentProps) {
               <div
                 key={group.year}
                 id={`timeline-year-${group.year}`}
-                className="relative isolate z-0 mb-7 last:mb-0 ml-12 md:ml-[76px] px-3 md:px-4 pb-3 md:pb-4"
+                className="gk-on-green relative isolate z-0 mb-7 last:mb-0 ml-12 md:ml-[76px] px-3 md:px-4 pb-3 md:pb-4"
                 style={{ scrollMarginTop: '16px' }}
               >
                 {/* Sfondo del pannello: nero 80% + blur forte (come il resto dell'app) */}
                 <div
                   aria-hidden
-                  className="absolute inset-0 -z-10 rounded-2xl bg-black/80 backdrop-blur-xl border border-white/10"
+                  className="gk-panel-bg absolute inset-0 -z-10 rounded-2xl bg-black/80 backdrop-blur-xl border border-white/10"
                 />
 
                 {/* Intestazione stagione (sticky) con cerchio dell'anno */}
                 <div
-                  className={`sticky -top-2 z-20 -mx-3 md:-mx-4 mb-3 px-3 md:px-4 py-3 rounded-t-2xl border-b border-white/10 backdrop-blur-xl transition-colors ${
+                  className={`gk-keepgreen sticky -top-2 z-20 -mx-3 md:-mx-4 mb-3 px-3 md:px-4 py-3 rounded-t-2xl border-b border-white/10 backdrop-blur-xl transition-colors ${
                     stuckYear === group.year ? 'bg-black/80' : 'bg-transparent'
                   }`}
                 >

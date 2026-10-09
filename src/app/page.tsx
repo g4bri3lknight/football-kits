@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { StyleToggle } from '@/components/StyleToggle';
 import { Search, User as UserIcon, Menu, Clock, SlidersHorizontal, X } from 'lucide-react';
 import Flag from 'react-world-flags';
 
@@ -504,12 +505,16 @@ export default function Home() {
   const hasActiveFilters = playerNationFilter !== defaultNationId || leagueNationFilter || leagueNameFilter || kitSeasonFilter || kitTeamFilter || searchQuery;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted">
+    <div className="gk-root min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted">
       {/* Header */}
       <header 
         ref={headerRef} 
         className="border-b shadow-sm sticky top-0 z-40 overflow-hidden"
       >
+        {/* Tasto stile (desktop): piccolo, in alto a destra */}
+        <div className="hidden lg:block absolute top-3 right-4 z-10">
+          <StyleToggle />
+        </div>
         {/* Background layers - fade-out del layer superiore */}
         {/* Layer base (sfondo nero di fallback) */}
         <div 
@@ -568,22 +573,31 @@ export default function Home() {
                 <img
                   src="logo/logo.png"
                   alt="GK retro Kits"
-                  className="h-28 sm:h-32 md:h-36 lg:h-40 w-auto object-contain"
+                  className="gk-logo-dark h-28 sm:h-32 md:h-36 lg:h-40 w-auto object-contain"
                   onLoad={() => setLogoLoaded(true)}
                   onError={() => setLogoLoaded(false)}
+                />
+                {/* Variante nei colori dello stile figurine (stessa forma, colori adattati) */}
+                <img
+                  src="logo/logo-figurine.png"
+                  alt="GK retro Kits"
+                  className="gk-logo-fig h-28 sm:h-32 md:h-36 lg:h-40 w-auto object-contain"
                 />
               </div>
             </div>
 
-            {/* Burger Menu Mobile */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden flex-shrink-0 backdrop-blur-xl bg-black/80 border-white/20 hover:bg-black/90"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
+            {/* Stile (scuro / figurine) + Burger Menu Mobile */}
+            <div className="lg:hidden flex items-center gap-2 flex-shrink-0">
+              <StyleToggle />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setMobileMenuOpen(true)}
+                className="flex-shrink-0 backdrop-blur-xl bg-black/80 border-white/20 hover:bg-black/90"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
 
         </div>
@@ -593,7 +607,7 @@ export default function Home() {
       {/* Tab Bar - sticky below header */}
       <div
         ref={tabBarRef}
-        className="sticky z-30 bg-black/80 backdrop-blur-xl border-b border-white/10"
+        className="gk-on-green gk-bar sticky z-30 bg-black/80 backdrop-blur-xl border-b border-white/10"
         style={{ top: 'var(--header-only-h, 0px)' }}
       >
         <div className="flex items-center justify-center gap-4 py-1.5 px-4">
@@ -800,7 +814,7 @@ export default function Home() {
 
       {/* Mobile Menu Sheet */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="right" className="w-[300px] sm:w-[350px] overflow-y-auto">
+        <SheetContent side="right" className="gk-on-green gk-bar w-[300px] sm:w-[350px] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
@@ -1001,7 +1015,7 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer ref={footerRef} className="fixed bottom-0 left-0 right-0 backdrop-blur-xl bg-black/80 border-t border-white/10 py-3 px-4 footer z-20">
+      <footer ref={footerRef} className="gk-on-green gk-bar fixed bottom-0 left-0 right-0 backdrop-blur-xl bg-black/80 border-t border-white/10 py-3 px-4 footer z-20">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
           <p>© 2026 GK Retro Kits. Tutti i diritti riservati.</p>
         </div>
