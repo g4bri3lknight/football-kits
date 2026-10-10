@@ -15,7 +15,7 @@ import { BookOpen, ExternalLink, Maximize2 } from 'lucide-react';
 import { PhotoViewer } from '@/components/PhotoViewer';
 import Flag from 'react-world-flags';
 import { convertAlpha3ToAlpha2 } from '@/lib/country-codes';
-import { getPlayerDisplayName, isUrl, renderTextWithLinks } from '@/lib/player-utils';
+import { getPlayerDisplayName, isUrl, renderTextWithLinks, getPlayerCareer, seasonShort } from '@/lib/player-utils';
 
 interface BiographyDialogProps {
   selectedPlayer: Player | null;
@@ -75,6 +75,8 @@ export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDi
   }, [selectedPlayer?.id]);
 
   const hasFullImage = !!selectedPlayer?.hasFullImage;
+  const career = selectedPlayer ? getPlayerCareer(selectedPlayer) : [];
+  const careerKits = career.reduce((n, c) => n + c.kitCount, 0);
 
   return (
     <>
@@ -165,6 +167,55 @@ export function BiographyDialog({ selectedPlayer, onClose, onOpen }: BiographyDi
             <motion.div variants={itemVariants}>
               <Separator className="flex-shrink-0" />
             </motion.div>
+
+            {/* Carriera: squadre in cui ha giocato (dalle maglie in archivio) */}
+            {career.length > 0 && (
+              <motion.div variants={itemVariants} className="flex-shrink-0 mt-4 gk-career">
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Carriera</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {career.length} {career.length === 1 ? 'squadra' : 'squadre'} · {careerKits} {careerKits === 1 ? 'maglia' : 'maglie'}
+                  </span>
+                </div>
+                <div className="relative overflow-x-auto pb-2 [scrollbar-width:thin]">
+                  <ol className="relative flex gap-3 pt-5 min-w-min">
+                    {/* linea tratteggiata */}
+                    <span aria-hidden className="absolute left-2 right-2 top-[7px] border-t-2 border-dashed border-foreground/30" />
+                    {career.map((c) => (
+                      <li key={c.team} className="relative shrink-0 w-[132px] sm:w-[148px]">
+                        <span aria-hidden className="absolute -top-5 left-1 w-3.5 h-3.5 rounded-full bg-[#cd2127] border-[3px] border-background shadow" />
+                        <div className="gk-career-card rounded-lg border bg-muted/50 p-2 h-full">
+                          <div className="h-14 sm:h-16 flex items-center justify-center rounded-md bg-background/60 mb-1.5">
+                            {c.logoKitId ? (
+                              <img
+                                src={`/api/kits/${c.logoKitId}/logo${c.logoUpdatedAt ? `?t=${new Date(c.logoUpdatedAt).getTime()}` : ''}`}
+                                alt={`Logo ${c.team}`}
+                                className="h-full w-auto max-w-full object-contain p-1.5"
+                                loading="lazy"
+                              />
+                            ) : (
+                              // Nessun logo caricato: iniziali della squadra
+                              <span className="text-xl font-bold text-muted-foreground/70 tracking-wide select-none">
+                                {c.team.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm font-semibold leading-tight truncate" title={c.team}>{c.team}</p>
+                          <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                            {c.firstYear === null
+                              ? 'Stagione n.d.'
+                              : c.firstYear === c.lastYear
+                                ? seasonShort(c.firstYear)
+                                : `${seasonShort(c.firstYear)} → ${seasonShort(c.lastYear!)}`}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground/80 mt-0.5">{c.kitCount} {c.kitCount === 1 ? 'maglia' : 'maglie'}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </motion.div>
+            )}
 
             {/* Biografia con ScrollArea */}
             <motion.div variants={itemVariants} className="flex-1 overflow-hidden mt-4 min-h-0">

@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@/components/theme-provider";
+import { AdminForceDark } from "@/components/AdminForceDark";
 
 export default function AdminLayout({
   children,
@@ -13,6 +14,7 @@ export default function AdminLayout({
       enableSystem={false}
       disableTransitionOnChange
     >
+      <AdminForceDark />
       {children}
     </ThemeProvider>
   );
